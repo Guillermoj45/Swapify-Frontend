@@ -1,0 +1,7 @@
+{
+  "name": "swapify-front",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
