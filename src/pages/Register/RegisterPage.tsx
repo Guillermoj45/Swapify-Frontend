@@ -1,127 +1,193 @@
-import React, { useState } from 'react';
+"use client"
+
+import type React from "react"
+import { useState } from "react"
+import { Swiper, SwiperSlide } from "swiper/react"
+import { Autoplay, Pagination } from "swiper/modules"
+
+import "swiper/css"
+import "swiper/css/pagination"
+import "swiper/css/navigation"
+import "swiper/css/effect-cube"
+
 import {
     IonPage,
-    IonHeader,
-    IonToolbar,
-    IonButtons,
-    IonButton,
-    IonIcon,
-    IonTitle,
     IonContent,
     IonCard,
+    IonCardHeader,
     IonCardContent,
+    IonInput,
+    IonText,
     IonItem,
-    IonLabel,
-    IonInput
-} from '@ionic/react';
-import { chevronBackOutline, moonOutline, personOutline } from 'ionicons/icons';
-import { FaGoogle, FaFacebook, FaTwitter } from 'react-icons/fa';
+    IonGrid,
+    IonRow,
+    IonCol,
+} from "@ionic/react"
+import { FaGoogle, FaGithub, FaDiscord } from "react-icons/fa"
+import "./RegisterPage.css"
 
-const RegisterPage = () => {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+interface FormData {
+    nickname: string
+    name: string
+    email: string
+    birthdate: string
+    password: string
+}
+
+const RegisterPage: React.FC = () => {
+    const photos: string[] = [
+        "https://picsum.photos/1000/1000?random=1",
+        "https://picsum.photos/1000/1000?random=2",
+        "https://picsum.photos/1000/1000?random=3",
+    ]
+
+    const [form, setForm] = useState<FormData>({
+        nickname: "",
+        name: "",
+        email: "",
+        birthdate: "",
+        password: "",
+    })
+
+    const handleChange = (field: keyof FormData, value: string) => {
+        setForm({ ...form, [field]: value })
+    }
 
     const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log('Intentando registrar con:', { name, email, password });
-    };
+        e.preventDefault()
+        console.log("Datos enviados:", form)
+    }
+
+    const goToLogin = () => {
+        console.log("Navigating to login page...")
+        // Navigation logic here
+    }
 
     return (
-        <IonPage>
-            <IonHeader>
-                <IonToolbar color="primary">
-                    <IonButtons slot="start">
-                        <IonButton routerLink="/login">
-                            <IonIcon icon={chevronBackOutline} />
-                            Volver
-                        </IonButton>
-                    </IonButtons>
-                    <IonTitle>Registrarse</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton>
-                            <IonIcon icon={moonOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+        <IonPage className="register-page">
+            <IonContent fullscreen>
+                <IonGrid className="full-height-grid">
+                    <IonRow className="full-height-row">
+                        {/* Left column: Carousel (desktop only) */}
+                        <IonCol size="12" sizeMd="6" className="carousel-container ion-hide-md-down">
+                            <Swiper
+                                modules={[Autoplay, Pagination]}
+                                spaceBetween={50}
+                                slidesPerView={1}
+                                loop={true}
+                                autoplay={{
+                                    delay: 3000,
+                                    disableOnInteraction: false,
+                                }}
+                                pagination={{
+                                    clickable: true,
+                                }}
+                                className="carousel-swiper"
+                            >
+                                {photos.map((photo, index) => (
+                                    <SwiperSlide key={index} className="carousel-slide">
+                                        <div className="image-container">
+                                            <img src={photo || "/placeholder.svg"} alt={`Slide ${index + 1}`} className="carousel-image" />
+                                        </div>
+                                    </SwiperSlide>
+                                ))}
+                            </Swiper>
+                        </IonCol>
 
-            <IonContent className="ion-padding">
-                <div className="ion-text-center ion-padding">
-                    <IonIcon icon={personOutline} style={{ fontSize: '64px', background: '#93c5fd', borderRadius: '50%', padding: '15px' }} />
-                </div>
-
-                <IonCard>
-                    <IonCardContent>
-                        <form onSubmit={handleSubmit}>
-                            <IonItem>
-                                <IonLabel position="floating">Nombre completo</IonLabel>
-                                <IonInput
-                                    value={name}
-                                    onIonChange={e => setName(e.detail.value!)}
-                                    placeholder="Tu nombre"
-                                    required
-                                />
-                            </IonItem>
-
-                            <IonItem>
-                                <IonLabel position="floating">Correo electrónico</IonLabel>
-                                <IonInput
-                                    type="email"
-                                    value={email}
-                                    onIonChange={e => setEmail(e.detail.value!)}
-                                    placeholder="correo@ejemplo.com"
-                                    required
-                                />
-                            </IonItem>
-
-                            <IonItem>
-                                <IonLabel position="floating">Contraseña</IonLabel>
-                                <IonInput
-                                    type="password"
-                                    value={password}
-                                    onIonChange={e => setPassword(e.detail.value!)}
-                                    placeholder="••••••••"
-                                    required
-                                />
-                            </IonItem>
-
-                            <IonItem>
-                                <IonLabel position="floating">Confirmar contraseña</IonLabel>
-                                <IonInput
-                                    type="password"
-                                    value={confirmPassword}
-                                    onIonChange={e => setConfirmPassword(e.detail.value!)}
-                                    placeholder="••••••••"
-                                    required
-                                />
-                            </IonItem>
-
-                            <div className="ion-padding-top">
-                                <IonButton expand="block" type="submit">Registrarse</IonButton>
-                            </div>
-
-                            <div className="ion-text-center ion-padding-top">
-                                <p>O regístrate con</p>
-                                <div className="ion-padding">
-                                    <IonButton fill="clear">
-                                        <FaGoogle size={24} />
-                                    </IonButton>
-                                    <IonButton fill="clear">
-                                        <FaFacebook size={24} />
-                                    </IonButton>
-                                    <IonButton fill="clear">
-                                        <FaTwitter size={24} />
-                                    </IonButton>
+                        {/* Right column: Form */}
+                        <IonCol size="12" sizeMd="6" className="form-container">
+                            <div className="form-wrapper">
+                                <div className="logo-container">
+                                    <img src="/Logo.png" alt="Logo" className="logo" />
                                 </div>
+
+                                <IonCard className="register-card">
+                                    <IonCardHeader>
+                                        <h2 className="register-title">Registrarse</h2>
+                                        <IonText color="medium">
+                                            <p className="register-subtitle">Rellena el formulario para registrarte</p>
+                                        </IonText>
+                                    </IonCardHeader>
+
+                                    <IonCardContent>
+                                        <form onSubmit={handleSubmit}>
+                                            <IonItem className="form-item">
+                                                <IonInput
+                                                    placeholder="Nickname"
+                                                    value={form.nickname}
+                                                    onIonChange={(e) => handleChange("nickname", e.detail.value!)}
+                                                />
+                                            </IonItem>
+
+                                            <IonItem className="form-item">
+                                                <IonInput
+                                                    placeholder="Nombre"
+                                                    value={form.name}
+                                                    onIonChange={(e) => handleChange("name", e.detail.value!)}
+                                                />
+                                            </IonItem>
+
+                                            <IonItem className="form-item">
+                                                <IonInput
+                                                    type="email"
+                                                    placeholder="Email"
+                                                    value={form.email}
+                                                    onIonChange={(e) => handleChange("email", e.detail.value!)}
+                                                />
+                                            </IonItem>
+
+                                            <IonItem className="form-item">
+                                                <IonInput
+                                                    type="date"
+                                                    placeholder="Fecha de Nacimiento"
+                                                    value={form.birthdate}
+                                                    onIonChange={(e) => handleChange("birthdate", e.detail.value!)}
+                                                />
+                                            </IonItem>
+
+                                            <IonItem className="form-item">
+                                                <IonInput
+                                                    type="password"
+                                                    placeholder="Contraseña"
+                                                    value={form.password}
+                                                    onIonChange={(e) => handleChange("password", e.detail.value!)}
+                                                />
+                                            </IonItem>
+
+                                            <div className="social-icons">
+                                                <div className="icon black">
+                                                    <FaDiscord />
+                                                </div>
+                                                <div className="icon red">
+                                                    <FaGoogle />
+                                                </div>
+                                                <div className="icon blue">
+                                                    <FaGithub />
+                                                </div>
+                                            </div>
+
+                                            <button type="submit" className="register-button">
+                                                Registrarse
+                                            </button>
+                                        </form>
+
+                                        <IonText className="ion-text-center">
+                                            <p className="login-link">
+                                                ¿Tienes cuenta?{" "}
+                                                <span onClick={goToLogin} className="clickable">
+                          Pincha aquí
+                        </span>
+                                            </p>
+                                        </IonText>
+                                    </IonCardContent>
+                                </IonCard>
                             </div>
-                        </form>
-                    </IonCardContent>
-                </IonCard>
+                        </IonCol>
+                    </IonRow>
+                </IonGrid>
             </IonContent>
         </IonPage>
-    );
-};
+    )
+}
 
-export default RegisterPage;
+export default RegisterPage
