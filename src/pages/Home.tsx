@@ -1,5 +1,5 @@
 import './Home.css';
-import RegisterPage from "./Registro/RegisterPage";
+import RegisterPage from "./Register/RegisterPage";
 import React from "react";
 
 const Home: React.FC = () => {
