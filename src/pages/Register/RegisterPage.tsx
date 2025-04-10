@@ -101,6 +101,9 @@ const RegisterPage: React.FC = () => {
 
                                 <IonCard className="register-card">
                                     <IonCardHeader>
+                                        <div className="logo-container">
+                                            <img src="/Logo.png" alt="Logo" className="logo" />
+                                        </div>
                                         <h2 className="register-title">Registrarse</h2>
                                         <IonText color="medium">
                                             <p className="register-subtitle">Rellena el formulario para registrarte</p>
