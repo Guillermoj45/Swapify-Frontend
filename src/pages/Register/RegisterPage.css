@@ -20,6 +20,29 @@ ion-content {
 }
 
 /* Carousel styles */
+
+/* Base styles */
+.register-page {
+    --background: #1f3750;
+    background: var(--background);
+}
+
+ion-content {
+    --background: #1f3750;
+}
+
+/* Grid layout */
+.full-height-grid {
+    height: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.full-height-row {
+    height: 100%;
+}
+
+/* Carousel styles */
 .carousel-container {
     display: flex;
     justify-content: center;
@@ -101,6 +124,234 @@ ion-content {
     margin-bottom: 0.1rem;
     color: black;
 }
+
+.register-subtitle {
+    font-size: 0.8rem;
+    text-align: center;
+    margin: 0;
+    color: black;
+}
+
+/* Form elements */
+.form-item {
+    --background: #ffffff;
+    --color: #000000;
+    margin-bottom: 8px;
+    border-radius: 8px;
+}
+
+ion-input {
+    --background: #e0e0e0;
+    --color: #000000;
+    --padding-start: 8px;
+    --padding-end: 8px;
+    --padding-top: 8px;
+    --padding-bottom: 8px;
+    font-size: 0.9rem;
+    border-radius: 8px;
+}
+
+/* Social login */
+.social-icons {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 5rem;
+    width: 100%;
+}
+
+.icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    border: 3px solid #000;
+    box-shadow: 3px 3px 0 #424242;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: 0.3s ease;
+}
+
+.icon.black {
+    background: #5561f4;
+    color: white;
+}
+
+.icon.red {
+    background: #cd2b2b;
+    color: white;
+}
+
+.icon.blue {
+    background: #000;
+    color: #fff;
+}
+
+.icon:hover {
+    transform: translate(1.5px, 1.5px);
+    box-shadow: 1.5px 1.5px 0 #000;
+    background: #55ccb9;
+}
+
+.icon:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 #000;
+}
+
+/* Register button */
+.register-button {
+    width: 100%;
+    margin-top: 15px;
+    border: 3px solid #000;
+    box-shadow: 3px 3px 0 #424242;
+    background: #5ea5da;
+    font-size: 20px;
+    font-weight: bold;
+    color: #000;
+    border-radius: 20px;
+    text-align: center;
+    padding: 8px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.register-button:hover {
+    transform: translate(1.5px, 1.5px);
+    box-shadow: 1.5px 1.5px 0 #000;
+    background: #243850;
+    color: white;
+}
+
+.register-button:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 #000;
+}
+
+/* Login link */
+.login-link {
+    margin-top: 15px;
+    font-size: 0.8rem;
+    text-align: center;
+    color: black;
+}
+
+.clickable {
+    text-decoration: underline;
+    cursor: pointer;
+    color: #5ea5da;
+    font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .register-button {
+        font-size: 18px;
+    }
+
+    .icon {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+    }
+}
+.carousel-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    height: 100%;
+}
+
+.carousel-swiper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.carousel-image {
+    height: 80vh;
+    max-width: 50%;
+    width: auto;
+    object-fit: cover;
+    border-radius: 15px;
+    margin: 0 auto;
+    display: block;
+}
+
+.carousel-slide,
+.image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 20px 0;
+    color: #000;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #000;
+    margin: 0 10px;
+}
+
+/* Form container */
+.form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.form-wrapper {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+/* Logo */
+.logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 5px; /* Reduce the space below the image */
+}
+
+.logo {
+    width: 180px; /* Optionally reduce the size of the logo */
+    height: auto;
+}
+
+.register-title {
+    font-weight: bold;
+    text-align: center;
+    font-size: 1.5rem; /* Increase the font size */
+    margin-top: 0; /* Remove any extra space above the title */
+}
+/* Card styles */
+.register-card {
+    border-radius: 15px;
+    width: 90%;
+    max-height: 90vh;
+    background-color: white;
+    padding: 6px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+    margin: 0 auto;
+    overflow-y: auto;
+}
+
+/* Typography */
 
 .register-subtitle {
     font-size: 0.8rem;

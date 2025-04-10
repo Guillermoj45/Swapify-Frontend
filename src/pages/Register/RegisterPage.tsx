@@ -102,15 +102,30 @@ const RegisterPage: React.FC = () => {
                                 <IonCard className="register-card">
                                     <IonCardHeader>
                                         <div className="logo-container">
-                                            <img src="/Logo.png" alt="Logo" className="logo" />
+                                            <img src="/Logo2.png" alt="Logo" className="logo" />
                                         </div>
                                         <h2 className="register-title">Registrarse</h2>
-                                        <IonText color="medium">
-                                            <p className="register-subtitle">Rellena el formulario para registrarte</p>
-                                        </IonText>
                                     </IonCardHeader>
 
                                     <IonCardContent>
+
+                                        <div className="social-icons">
+                                            <div className="icon black">
+                                                <FaDiscord />
+                                            </div>
+                                            <div className="icon red">
+                                                <FaGoogle />
+                                            </div>
+                                            <div className="icon blue">
+                                                <FaGithub />
+                                            </div>
+                                        </div>
+
+                                        <div className="divider">
+                                            <span>O</span>
+                                        </div>
+
+
                                         <form onSubmit={handleSubmit}>
                                             <IonItem className="form-item">
                                                 <IonInput
@@ -155,23 +170,12 @@ const RegisterPage: React.FC = () => {
                                                 />
                                             </IonItem>
 
-                                            <div className="social-icons">
-                                                <div className="icon black">
-                                                    <FaDiscord />
-                                                </div>
-                                                <div className="icon red">
-                                                    <FaGoogle />
-                                                </div>
-                                                <div className="icon blue">
-                                                    <FaGithub />
-                                                </div>
-                                            </div>
 
                                             <button type="submit" className="register-button">
                                                 Registrarse
                                             </button>
                                         </form>
-
+                                          <br/>
                                         <IonText className="ion-text-center">
                                             <p className="login-link">
                                                 ¿Tienes cuenta?{" "}
