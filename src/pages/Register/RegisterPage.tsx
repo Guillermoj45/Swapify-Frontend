@@ -97,9 +97,7 @@ const RegisterPage: React.FC = () => {
                         {/* Right column: Form */}
                         <IonCol size="12" sizeMd="6" className="form-container">
                             <div className="form-wrapper">
-                                <div className="logo-container">
-                                    <img src="/Logo.png" alt="Logo" className="logo" />
-                                </div>
+
 
                                 <IonCard className="register-card">
                                     <IonCardHeader>

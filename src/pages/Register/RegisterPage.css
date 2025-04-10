@@ -37,7 +37,7 @@ ion-content {
 
 .carousel-image {
     height: 80vh;
-    max-width: 70%;
+    max-width: 50%;
     width: auto;
     object-fit: cover;
     border-radius: 15px;
@@ -45,14 +45,7 @@ ion-content {
     display: block;
 }
 
-/* Add these new styles for the carousel slide and image container */
-.carousel-slide {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-}
-
+.carousel-slide,
 .image-container {
     display: flex;
     justify-content: center;
@@ -73,6 +66,7 @@ ion-content {
     width: 100%;
     max-width: 500px;
     margin: 0 auto;
+    padding: 0 15px;
 }
 
 /* Logo */
@@ -89,25 +83,27 @@ ion-content {
 
 /* Card styles */
 .register-card {
-    border-radius: 20px;
-    width: 100%;
+    border-radius: 15px;
+    width: 90%;
+    max-height: 90vh;
     background-color: white;
-    padding: 10px;
+    padding: 6px;
     box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
     margin: 0 auto;
+    overflow-y: auto;
 }
 
 /* Typography */
 .register-title {
     font-weight: bold;
     text-align: center;
-    font-size: 1.4rem;
-    margin-bottom: 0.2rem;
+    font-size: 1rem;
+    margin-bottom: 0.1rem;
     color: black;
 }
 
 .register-subtitle {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     text-align: center;
     margin: 0;
     color: black;
@@ -117,35 +113,36 @@ ion-content {
 .form-item {
     --background: #ffffff;
     --color: #000000;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     border-radius: 8px;
 }
 
 ion-input {
     --background: #e0e0e0;
     --color: #000000;
-    --padding-start: 12px;
-    --padding-end: 12px;
-    --padding-top: 12px;
-    --padding-bottom: 12px;
+    --padding-start: 8px;
+    --padding-end: 8px;
+    --padding-top: 8px;
+    --padding-bottom: 8px;
+    font-size: 0.9rem;
     border-radius: 8px;
 }
 
 /* Social login */
 .social-icons {
-    margin-top: 1.5rem;
+    margin-top: 1rem;
     display: flex;
     justify-content: center;
-    gap: 2rem;
+    gap: 1rem;
 }
 
 .icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
-    width: 48px;
-    height: 48px;
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
     border: 3px solid #000;
     box-shadow: 3px 3px 0 #424242;
     cursor: pointer;
@@ -182,16 +179,16 @@ ion-input {
 /* Register button */
 .register-button {
     width: 100%;
-    margin-top: 20px;
+    margin-top: 15px;
     border: 3px solid #000;
     box-shadow: 3px 3px 0 #424242;
     background: #5ea5da;
-    font-size: 28px;
+    font-size: 20px;
     font-weight: bold;
     color: #000;
-    border-radius: 25px;
+    border-radius: 20px;
     text-align: center;
-    padding: 12px;
+    padding: 8px;
     cursor: pointer;
     transition: 0.3s ease;
 }
@@ -210,8 +207,8 @@ ion-input {
 
 /* Login link */
 .login-link {
-    margin-top: 25px;
-    font-size: 0.9rem;
+    margin-top: 15px;
+    font-size: 0.8rem;
     text-align: center;
     color: black;
 }
@@ -225,27 +222,13 @@ ion-input {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .form-wrapper {
-        padding: 0 15px;
-    }
-
     .register-button {
-        font-size: 24px;
+        font-size: 18px;
     }
 
     .icon {
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
-    }
-}
-
-@media (max-width: 480px) {
-    .social-icons {
-        gap: 1rem;
-    }
-
-    .register-button {
-        font-size: 20px;
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
     }
 }
