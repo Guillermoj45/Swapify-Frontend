@@ -1,9 +1,8 @@
-"use client"
-
-import type React from "react"
-import { useState } from "react"
+import React, { useState } from "react"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay, Pagination } from "swiper/modules"
+import UserService from "../../Services/UserService";
+import { User } from "../../Models/User";
 
 import "swiper/css"
 import "swiper/css/pagination"
@@ -17,21 +16,23 @@ import {
     IonCardHeader,
     IonCardContent,
     IonInput,
-    IonText,
     IonItem,
     IonGrid,
     IonRow,
     IonCol,
+    IonButton
 } from "@ionic/react"
 import { FaGoogle, FaGithub, FaDiscord } from "react-icons/fa"
+import { CgProfile } from "react-icons/cg";
 import "./RegisterPage.css"
 
 interface FormData {
     nickname: string
     name: string
+    rol: string,
     email: string
-    birthdate: string
-    password: string
+    bornDate: string
+    password: string,
 }
 
 const RegisterPage: React.FC = () => {
@@ -45,9 +46,14 @@ const RegisterPage: React.FC = () => {
         nickname: "",
         name: "",
         email: "",
-        birthdate: "",
+        rol: "USER",
+        bornDate: "",
         password: "",
     })
+
+    const [showImageInput, setShowImageInput] = useState(false)
+    const [selectedImage, setSelectedImage] = useState<File | null>(null)
+    const [previewUrl, setPreviewUrl] = useState<string>("")
 
     const handleChange = (field: keyof FormData, value: string) => {
         setForm({ ...form, [field]: value })
@@ -55,20 +61,47 @@ const RegisterPage: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        console.log("Datos enviados:", form)
+        setShowImageInput(true)
     }
 
-    const goToLogin = () => {
-        console.log("Navigating to login page...")
-        // Navigation logic here
-    }
+    const uploadPhoto = () => {
+        const fileInput = document.getElementById("fileInput") as HTMLInputElement;
+        if (fileInput) {
+            fileInput.click();
+        }
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setSelectedImage(file);
+            const preview = URL.createObjectURL(file);
+            setPreviewUrl(preview);
+        }
+    };
+
+    const handleRegister = async () => {
+        try {
+            const user = User.fromFormData(form);
+
+            if (selectedImage) {
+                // Convert image to base64
+                const base64Image = await User.fileToBase64(selectedImage);
+                user.profileImage = base64Image;
+            }
+
+            const response = await UserService.registerUser(user);
+            console.log("User registered successfully:", response);
+        } catch (error) {
+            console.error("Failed to register user:", error);
+        }
+    };
 
     return (
         <IonPage className="register-page">
             <IonContent fullscreen>
                 <IonGrid className="full-height-grid">
                     <IonRow className="full-height-row">
-                        {/* Left column: Carousel (desktop only) */}
                         <IonCol size="12" sizeMd="6" className="carousel-container ion-hide-md-down">
                             <Swiper
                                 modules={[Autoplay, Pagination]}
@@ -94,96 +127,142 @@ const RegisterPage: React.FC = () => {
                             </Swiper>
                         </IonCol>
 
-                        {/* Right column: Form */}
                         <IonCol size="12" sizeMd="6" className="form-container">
                             <div className="form-wrapper">
-
-
                                 <IonCard className="register-card">
                                     <IonCardHeader>
                                         <div className="logo-container">
                                             <img src="/Logo2.png" alt="Logo" className="logo" />
                                         </div>
-                                        <h2 className="register-title">Registrarse</h2>
+                                        { !showImageInput
+                                            ? (<h2 className="register-title">Registrarse</h2>)
+                                            : (<h2 className="register-title">
+                                                { selectedImage ? "Confirmar imagen de perfil" : "Añade una imagen de perfil" }
+                                            </h2>)
+                                        }
                                     </IonCardHeader>
 
                                     <IonCardContent>
+                                        { !showImageInput ? (
+                                            <>
+                                                <div className="social-icons">
+                                                    <div className="icon black">
+                                                        <FaDiscord />
+                                                    </div>
+                                                    <div className="icon red">
+                                                        <FaGoogle />
+                                                    </div>
+                                                    <div className="icon blue">
+                                                        <FaGithub />
+                                                    </div>
+                                                </div>
 
-                                        <div className="social-icons">
-                                            <div className="icon black">
-                                                <FaDiscord />
-                                            </div>
-                                            <div className="icon red">
-                                                <FaGoogle />
-                                            </div>
-                                            <div className="icon blue">
-                                                <FaGithub />
-                                            </div>
-                                        </div>
+                                                <div className="divider">
+                                                    <span>O</span>
+                                                </div>
 
-                                        <div className="divider">
-                                            <span>O</span>
-                                        </div>
+                                                <form onSubmit={handleSubmit}>
+                                                    <IonItem className="form-item">
+                                                        <IonInput
+                                                            placeholder="Nickname"
+                                                            value={form.nickname}
+                                                            onIonChange={(e) => handleChange("nickname", e.detail.value!)}
+                                                        />
+                                                    </IonItem>
 
+                                                    <IonItem className="form-item">
+                                                        <IonInput
+                                                            placeholder="Nombre"
+                                                            value={form.name}
+                                                            onIonChange={(e) => handleChange("name", e.detail.value!)}
+                                                        />
+                                                    </IonItem>
 
-                                        <form onSubmit={handleSubmit}>
-                                            <IonItem className="form-item">
-                                                <IonInput
-                                                    placeholder="Nickname"
-                                                    value={form.nickname}
-                                                    onIonChange={(e) => handleChange("nickname", e.detail.value!)}
+                                                    <IonItem className="form-item">
+                                                        <IonInput
+                                                            type="email"
+                                                            placeholder="Email"
+                                                            value={form.email}
+                                                            onIonChange={(e) => handleChange("email", e.detail.value!)}
+                                                        />
+                                                    </IonItem>
+
+                                                    <IonItem className="form-item">
+                                                        <IonInput
+                                                            type="date"
+                                                            placeholder="Fecha de Nacimiento"
+                                                            value={form.bornDate}
+                                                            onIonChange={(e) => handleChange("bornDate", e.detail.value!)}
+                                                        />
+                                                    </IonItem>
+
+                                                    <IonItem className="form-item">
+                                                        <IonInput
+                                                            type="password"
+                                                            placeholder="Contraseña"
+                                                            value={form.password}
+                                                            onIonChange={(e) => handleChange("password", e.detail.value!)}
+                                                        />
+                                                    </IonItem>
+
+                                                    <button type="submit" className="register-button">
+                                                        Continuar
+                                                    </button>
+                                                </form>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <input
+                                                    id="fileInput"
+                                                    type="file"
+                                                    accept="image/*"
+                                                    style={{ display: "none" }}
+                                                    onChange={handleFileChange}
                                                 />
-                                            </IonItem>
+                                                <div className="image-preview-container">
+                                                    <IonButton
+                                                        className="form-button"
+                                                        style={{
+                                                            width: "150px",
+                                                            height: "150px",
+                                                            padding: 0,
+                                                            borderRadius: "50%",
+                                                            overflow: "hidden" // Ensures content doesn't overflow the circular shape
+                                                        }}
+                                                        onClick={uploadPhoto}
+                                                    >
+                                                        {previewUrl ? (
+                                                            <img
+                                                                src={previewUrl}
+                                                                alt="Preview"
+                                                                style={{
+                                                                    width: "100%",
+                                                                    height: "100%",
+                                                                    objectFit: "cover",
+                                                                    borderRadius: "50%"
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <CgProfile style={{ fontSize: "100px" }} />
+                                                        )}
+                                                    </IonButton>
+                                                </div>
 
-                                            <IonItem className="form-item">
-                                                <IonInput
-                                                    placeholder="Nombre"
-                                                    value={form.name}
-                                                    onIonChange={(e) => handleChange("name", e.detail.value!)}
-                                                />
-                                            </IonItem>
+                                                {previewUrl && (
+                                                    <button className="register-button" onClick={uploadPhoto}>
+                                                        Cambiar imagen
+                                                    </button>
+                                                )}
 
-                                            <IonItem className="form-item">
-                                                <IonInput
-                                                    type="email"
-                                                    placeholder="Email"
-                                                    value={form.email}
-                                                    onIonChange={(e) => handleChange("email", e.detail.value!)}
-                                                />
-                                            </IonItem>
-
-                                            <IonItem className="form-item">
-                                                <IonInput
-                                                    type="date"
-                                                    placeholder="Fecha de Nacimiento"
-                                                    value={form.birthdate}
-                                                    onIonChange={(e) => handleChange("birthdate", e.detail.value!)}
-                                                />
-                                            </IonItem>
-
-                                            <IonItem className="form-item">
-                                                <IonInput
-                                                    type="password"
-                                                    placeholder="Contraseña"
-                                                    value={form.password}
-                                                    onIonChange={(e) => handleChange("password", e.detail.value!)}
-                                                />
-                                            </IonItem>
-
-
-                                            <button type="submit" className="register-button">
-                                                Registrarse
-                                            </button>
-                                        </form>
-                                          <br/>
-                                        <IonText className="ion-text-center">
-                                            <p className="login-link">
-                                                ¿Tienes cuenta?{" "}
-                                                <span onClick={goToLogin} className="clickable">
-                          Pincha aquí
-                        </span>
-                                            </p>
-                                        </IonText>
+                                                <button
+                                                    className="register-button"
+                                                    style={{ fontSize: "24px", padding: "12px 24px", marginTop: "16px" }}
+                                                    onClick={handleRegister}
+                                                >
+                                                    Registrarse
+                                                </button>
+                                            </>
+                                        )}
                                     </IonCardContent>
                                 </IonCard>
                             </div>

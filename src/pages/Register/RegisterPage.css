@@ -483,3 +483,8 @@ ion-input {
         font-size: 16px;
     }
 }
+
+.image-preview-container {
+    display: flex;
+    justify-content: center;
+}
