@@ -7,6 +7,8 @@ import "swiper/css"
 import "swiper/css/pagination"
 import "swiper/css/navigation"
 import "swiper/css/effect-cube"
+import UserService from "../../Services/UserService";
+import { LoginFormData } from "../../Models/LoginData";
 import {
     IonPage,
     IonContent,
@@ -22,11 +24,6 @@ import {
 } from "@ionic/react"
 import { FaGoogle, FaGithub, FaDiscord } from "react-icons/fa"
 import "../Register/RegisterPage.css"
-
-interface LoginFormData {
-    email: string
-    password: string
-}
 
 const LoginPage: React.FC = () => {
     const photos: string[] = [
@@ -53,6 +50,35 @@ const LoginPage: React.FC = () => {
         console.log("Navigating to register page...")
         // Navigation logic here
     }
+
+    const handleLogin = async () => {
+        try {
+            const response = await UserService.loginUser(form);
+            console.log("Login successful:", response);
+
+            // Check if token was returned successfully
+            if (response && response.token) {
+                // Redirect to profile page on successful login
+                window.location.href = '/profile';
+            } else {
+                alert("Inicio de sesión incorrecto. No se recibió un token válido.");
+            }
+        } catch (error: unknown) {
+            console.error("Login failed:", error);
+
+            // Type guard to safely access properties
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error as { response?: { status: number } };
+                if (axiosError.response?.status === 401) {
+                    alert("Usuario o contraseña incorrectos");
+                } else {
+                    alert("Error al iniciar sesión. Inténtalo de nuevo más tarde.");
+                }
+            } else {
+                alert("Error al iniciar sesión. Inténtalo de nuevo más tarde.");
+            }
+        }
+    };
 
     return (
         <IonPage className="register-page">
@@ -126,7 +152,7 @@ const LoginPage: React.FC = () => {
                                                     onIonChange={(e) => handleChange("password", e.detail.value!)}
                                                 />
                                             </IonItem>
-                                            <button type="submit" className="register-button">
+                                            <button onClick={handleLogin} type="submit" className="register-button">
                                                 Iniciar Sesión
                                             </button>
                                         </form>
