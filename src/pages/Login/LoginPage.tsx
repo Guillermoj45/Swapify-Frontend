@@ -1,14 +1,15 @@
 "use client"
-import type React from "react"
-import { useState } from "react"
+import React, { useState } from "react"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay, Pagination } from "swiper/modules"
 import "swiper/css"
 import "swiper/css/pagination"
 import "swiper/css/navigation"
 import "swiper/css/effect-cube"
-import UserService from "../../Services/UserService";
-import { LoginFormData } from "../../Models/LoginData";
+
+import UserService from "../../Services/UserService"
+import { LoginFormData } from "../../Models/LoginData"
+
 import {
     IonPage,
     IonContent,
@@ -21,7 +22,9 @@ import {
     IonGrid,
     IonRow,
     IonCol,
+    IonToast,
 } from "@ionic/react"
+
 import { FaGoogle, FaGithub, FaDiscord } from "react-icons/fa"
 import "../Register/RegisterPage.css"
 
@@ -37,80 +40,93 @@ const LoginPage: React.FC = () => {
         password: "",
     })
 
+    const [showToast, setShowToast] = useState(false)
+    const [toastMessage, setToastMessage] = useState("")
+    const [toastColor, setToastColor] = useState<"success" | "danger" | "warning">("danger")
+
     const handleChange = (field: keyof LoginFormData, value: string) => {
         setForm({ ...form, [field]: value })
     }
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        console.log("Login attempt:", form)
+    }
+
+    const showToastMessage = (message: string, color: "success" | "danger" | "warning" = "danger") => {
+        setToastMessage(message)
+        setToastColor(color)
+        setShowToast(true)
     }
 
     const goToRegister = () => {
-        console.log("Navigating to register page...")
-        // Navigation logic here
+        // Aquí pondrías lógica real con router, como useNavigate() si usas React Router
+        window.location.href = "/register"
     }
 
     const handleLogin = async () => {
-        try {
-            const response = await UserService.loginUser(form);
-            console.log("Login successful:", response);
+        const { email, password } = form
 
-            // Check if token was returned successfully
+        if (!email || !password) {
+            showToastMessage("Por favor, completa todos los campos.", "warning")
+            return
+        }
+
+        try {
+            const response = await UserService.loginUser(form)
+            console.log("Login successful:", response)
+
             if (response && response.token) {
-                // Redirect to profile page on successful login
-                window.location.href = '/profile';
+                showToastMessage("Inicio de sesión exitoso", "success")
+                setTimeout(() => {
+                    window.location.href = "/profile"
+                }, 1000)
             } else {
-                alert("Inicio de sesión incorrecto. No se recibió un token válido.");
+                showToastMessage("Inicio de sesión incorrecto. No se recibió un token válido.")
             }
         } catch (error: unknown) {
-            console.error("Login failed:", error);
+            console.error("Login failed:", error)
 
-            // Type guard to safely access properties
-            if (error && typeof error === 'object' && 'response' in error) {
-                const axiosError = error as { response?: { status: number } };
+            if (error && typeof error === "object" && "response" in error) {
+                const axiosError = error as { response?: { status: number } }
                 if (axiosError.response?.status === 401) {
-                    alert("Usuario o contraseña incorrectos");
+                    showToastMessage("Usuario o contraseña incorrectos", "danger")
                 } else {
-                    alert("Error al iniciar sesión. Inténtalo de nuevo más tarde.");
+                    showToastMessage("Error al iniciar sesión. Inténtalo de nuevo más tarde.", "danger")
                 }
             } else {
-                alert("Error al iniciar sesión. Inténtalo de nuevo más tarde.");
+                showToastMessage("Error al iniciar sesión. Inténtalo de nuevo más tarde.", "danger")
             }
         }
-    };
+    }
 
     return (
         <IonPage className="register-page">
             <IonContent fullscreen>
                 <IonGrid className="full-height-grid">
                     <IonRow className="full-height-row">
-                        {/* Left column: Carousel (desktop only) */}
                         <IonCol size="12" sizeMd="6" className="carousel-container ion-hide-md-down">
                             <Swiper
                                 modules={[Autoplay, Pagination]}
                                 spaceBetween={50}
                                 slidesPerView={1}
-                                loop={true}
+                                loop
                                 autoplay={{
                                     delay: 3000,
                                     disableOnInteraction: false,
                                 }}
-                                pagination={{
-                                    clickable: true,
-                                }}
+                                pagination={{ clickable: true }}
                                 className="carousel-swiper"
                             >
                                 {photos.map((photo, index) => (
                                     <SwiperSlide key={index} className="carousel-slide">
                                         <div className="image-container">
-                                            <img src={photo || "/placeholder.svg"} alt={`Slide ${index + 1}`} className="carousel-image" />
+                                            <img src={photo} alt={`Slide ${index + 1}`} className="carousel-image" />
                                         </div>
                                     </SwiperSlide>
                                 ))}
                             </Swiper>
                         </IonCol>
-                        {/* Right column: Form */}
+
                         <IonCol size="12" sizeMd="6" className="form-container">
                             <div className="form-wrapper">
                                 <IonCard className="register-card">
@@ -120,21 +136,16 @@ const LoginPage: React.FC = () => {
                                         </div>
                                         <h2 className="register-title">Iniciar Sesión</h2>
                                     </IonCardHeader>
+
                                     <IonCardContent>
                                         <div className="social-icons">
-                                            <div className="icon black">
-                                                <FaDiscord />
-                                            </div>
-                                            <div className="icon red">
-                                                <FaGoogle />
-                                            </div>
-                                            <div className="icon blue">
-                                                <FaGithub />
-                                            </div>
+                                            <div className="icon black"><FaDiscord /></div>
+                                            <div className="icon red"><FaGoogle /></div>
+                                            <div className="icon blue"><FaGithub /></div>
                                         </div>
-                                        <div className="divider">
-                                            <span>O</span>
-                                        </div>
+
+                                        <div className="divider"><span>O</span></div>
+
                                         <form onSubmit={handleSubmit}>
                                             <IonItem className="form-item">
                                                 <IonInput
@@ -144,6 +155,7 @@ const LoginPage: React.FC = () => {
                                                     onIonChange={(e) => handleChange("email", e.detail.value!)}
                                                 />
                                             </IonItem>
+
                                             <IonItem className="form-item">
                                                 <IonInput
                                                     type="password"
@@ -152,11 +164,13 @@ const LoginPage: React.FC = () => {
                                                     onIonChange={(e) => handleChange("password", e.detail.value!)}
                                                 />
                                             </IonItem>
+
                                             <button onClick={handleLogin} type="submit" className="register-button">
                                                 Iniciar Sesión
                                             </button>
                                         </form>
-                                        <br/>
+
+                                        <br />
                                         <IonText className="ion-text-center">
                                             <p className="login-link">
                                                 ¿No tienes cuenta?{" "}
@@ -171,6 +185,15 @@ const LoginPage: React.FC = () => {
                         </IonCol>
                     </IonRow>
                 </IonGrid>
+
+                {/* Toast de feedback */}
+                <IonToast
+                    isOpen={showToast}
+                    onDidDismiss={() => setShowToast(false)}
+                    message={toastMessage}
+                    duration={2000}
+                    color={toastColor}
+                />
             </IonContent>
         </IonPage>
     )
