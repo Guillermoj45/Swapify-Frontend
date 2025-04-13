@@ -3,7 +3,7 @@ export class User {
         public nickname: string = '',
         public name: string = '',
         public email: string = '',
-        public birthdate: string = '',
+        public bornDate: string = '',
         public password: string = '',
         public profileImage?: string,
         public rol: string = 'USER'
@@ -38,12 +38,12 @@ export class User {
     }
 
     toPayload() {
-        const { nickname, name, email, birthdate, password, rol, profileImage } = this;
+        const { nickname, name, email, bornDate, password, rol, profileImage } = this;
         return {
             nickname,
             name,
             email,
-            bornDate: birthdate,
+            bornDate: bornDate,
             password,
             rol,
             ...(profileImage && { profileImage })

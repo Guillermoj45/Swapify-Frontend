@@ -20,9 +20,9 @@ import {
     IonGrid,
     IonRow,
     IonCol,
-    IonButton
+    IonButton, IonToast
 } from "@ionic/react"
-import { FaGoogle, FaGithub, FaDiscord } from "react-icons/fa"
+import { FaGoogle, FaGithub, FaDiscord ,FaArrowLeft} from "react-icons/fa"
 import { CgProfile } from "react-icons/cg";
 import "./RegisterPage.css"
 
@@ -36,12 +36,15 @@ interface FormData {
 }
 
 const RegisterPage: React.FC = () => {
+
+    //Fotos que salen en el registro a la izq
     const photos: string[] = [
         "https://picsum.photos/1000/1000?random=1",
         "https://picsum.photos/1000/1000?random=2",
         "https://picsum.photos/1000/1000?random=3",
     ]
 
+    //Formulario reactivo con el que se construye el objeto
     const [form, setForm] = useState<FormData>({
         nickname: "",
         name: "",
@@ -51,9 +54,15 @@ const RegisterPage: React.FC = () => {
         password: "",
     })
 
+    // Constantes reactivas para controlar para cuando sale la foto de perfil
     const [showImageInput, setShowImageInput] = useState(false)
     const [selectedImage, setSelectedImage] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string>("")
+
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState("");
+
+
 
     const handleChange = (field: keyof FormData, value: string) => {
         setForm({ ...form, [field]: value })
@@ -81,21 +90,32 @@ const RegisterPage: React.FC = () => {
     };
 
     const handleRegister = async () => {
+        const { nickname, name, email, bornDate, password } = form;
+
+        if (!nickname || !name || !email || !bornDate || !password) {
+            setToastMessage("Por favor, completa todos los campos.");
+            setShowToast(true);
+            return;
+        }
+
         try {
             const user = User.fromFormData(form);
 
             if (selectedImage) {
-                // Convert image to base64
                 const base64Image = await User.fileToBase64(selectedImage);
                 user.profileImage = base64Image;
             }
 
             const response = await UserService.registerUser(user);
             console.log("User registered successfully:", response);
+            // Puedes mostrar un toast de éxito también si quieres
         } catch (error) {
+            setToastMessage("Error al registrar usuario. Inténtalo de nuevo.");
+            setShowToast(true);
             console.error("Failed to register user:", error);
         }
     };
+
 
     return (
         <IonPage className="register-page">
@@ -131,7 +151,16 @@ const RegisterPage: React.FC = () => {
                             <div className="form-wrapper">
                                 <IonCard className="register-card">
                                     <IonCardHeader>
-                                        <div className="logo-container">
+                                        <div className="logo-container" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            {showImageInput && (
+                                                <button
+                                                    className="register-button-back"
+                                                    style={{ marginRight: "30px" }}
+                                                    onClick={() => setShowImageInput(false)}
+                                                >
+                                                    <FaArrowLeft />
+                                                </button>
+                                            )}
                                             <img src="/Logo2.png" alt="Logo" className="logo" />
                                         </div>
                                         { !showImageInput
@@ -254,13 +283,17 @@ const RegisterPage: React.FC = () => {
                                                     </button>
                                                 )}
 
-                                                <button
-                                                    className="register-button"
-                                                    style={{ fontSize: "24px", padding: "12px 24px", marginTop: "16px" }}
-                                                    onClick={handleRegister}
-                                                >
-                                                    Registrarse
-                                                </button>
+                                                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                                    <button
+                                                        className="register-button"
+                                                        style={{ fontSize: "24px", padding: "12px 24px", marginTop: "16px" }}
+                                                        onClick={handleRegister}
+                                                    >
+                                                        Registrarse
+                                                    </button>
+                                                </div>
+
+
                                             </>
                                         )}
                                     </IonCardContent>
@@ -269,6 +302,15 @@ const RegisterPage: React.FC = () => {
                         </IonCol>
                     </IonRow>
                 </IonGrid>
+
+                <IonToast
+                    isOpen={showToast}
+                    onDidDismiss={() => setShowToast(false)}
+                    message={toastMessage}
+                    duration={2000}
+                    color="danger"
+                />
+
             </IonContent>
         </IonPage>
     )
