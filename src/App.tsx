@@ -36,6 +36,7 @@ import RegisterPage from "./pages/Register/RegisterPage";
 import LoginPage from "./pages/Login/LoginPage";
 import ProductsPage from "./pages/Products/ProductsPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
+import PasswordRecover from "./pages/PasswordRecovery/PasswordRecover";
 
 setupIonicReact();
 
@@ -60,6 +61,9 @@ const App: React.FC = () => (
                 </Route>
                 <Route exact path="/profile">
                     <ProfilePage />
+                </Route>
+                <Route exact path="/passwordRecover">
+                    <PasswordRecover/>
                 </Route>
             </IonRouterOutlet>
         </IonReactRouter>

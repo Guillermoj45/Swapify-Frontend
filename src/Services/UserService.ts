@@ -26,7 +26,7 @@ class UserService {
             });
 
             if (response.data.token) {
-                localStorage.setItem('authToken', response.data.token);
+                sessionStorage.setItem('token', response.data.token);
             }
 
             return response.data;

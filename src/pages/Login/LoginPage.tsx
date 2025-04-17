@@ -63,6 +63,10 @@ const LoginPage: React.FC = () => {
         window.location.href = "/register"
     }
 
+    const goToPasswordRecover = () => {
+        window.location.href = "/passwordRecover"
+    }
+
     const handleLogin = async () => {
         const { email, password } = form
 
@@ -176,6 +180,15 @@ const LoginPage: React.FC = () => {
                                                 ¿No tienes cuenta?{" "}
                                                 <span onClick={goToRegister} className="clickable">
                                                     Regístrate aquí
+                                                </span>
+                                            </p>
+                                        </IonText>
+                                        <br/>
+                                        <IonText className="ion-text-center">
+                                            <p className="login-link">
+                                                ¿Olvidaste la contraseña?{" "}
+                                                <span onClick={goToPasswordRecover} className="clickable">
+                                                    Recuperar Contraseña
                                                 </span>
                                             </p>
                                         </IonText>
