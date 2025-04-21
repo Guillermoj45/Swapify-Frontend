@@ -20,7 +20,7 @@ import {
     IonGrid,
     IonRow,
     IonCol,
-    IonButton, IonToast
+    IonButton, IonToast, IonInputPasswordToggle, IonText
 } from "@ionic/react"
 import { FaGoogle, FaGithub, FaDiscord ,FaArrowLeft} from "react-icons/fa"
 import { CgProfile } from "react-icons/cg";
@@ -69,6 +69,10 @@ const RegisterPage: React.FC = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         setShowImageInput(true)
+    }
+
+    const goToLogin = () => {
+        window.location.href = "/login"
     }
 
     const uploadPhoto = () => {
@@ -221,6 +225,7 @@ const RegisterPage: React.FC = () => {
                                                             value={form.bornDate}
                                                             onIonChange={(e) => handleChange("bornDate", e.detail.value!)}
                                                         />
+
                                                     </IonItem>
 
                                                     <IonItem className="form-item">
@@ -229,7 +234,9 @@ const RegisterPage: React.FC = () => {
                                                             placeholder="Contraseña"
                                                             value={form.password}
                                                             onIonChange={(e) => handleChange("password", e.detail.value!)}
-                                                        />
+                                                        >
+                                                            <IonInputPasswordToggle slot="end" />
+                                                        </IonInput>
                                                     </IonItem>
 
                                                     <button type="submit" className="register-button">
@@ -294,6 +301,15 @@ const RegisterPage: React.FC = () => {
 
                                             </>
                                         )}
+                                        <br/>
+                                        <IonText className="ion-text-center">
+                                            <p className="login-link">
+                                                ¿Tienes cuenta?{" "}
+                                                <span onClick={goToLogin} className="clickable">
+                                                    Ir a Login
+                                                </span>
+                                            </p>
+                                        </IonText>
                                     </IonCardContent>
                                 </IonCard>
                             </div>
