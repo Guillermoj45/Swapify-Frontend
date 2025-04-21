@@ -101,8 +101,8 @@ const PasswordRecover: React.FC = () => {
                                             <>
                                                 <IonItem className="form-item">
                                                     <IonInput
-                                                        label="Mail"
                                                         className="form-item"
+                                                        placeholder="Email"
                                                         value={email}
                                                         onIonChange={(e) => setEmail(e.detail.value!)}
                                                     />
@@ -144,15 +144,17 @@ const PasswordRecover: React.FC = () => {
                                         <button onClick={continuar} className="register-button">
                                             {isEmailStage ? "Continuar" : "Restablecer contraseña"}
                                         </button>
-                                        <IonText className="ion-text-center">
-                                            <p className="login-link">
-                                                ¿Tienes cuenta?{" "}
-                                                <span onClick={goToRegister} className="clickable">
+                                        <br/>
+
+                                    </IonCardContent>
+                                    <IonText className="ion-text-center">
+                                        <p className="login-link">
+                                            ¿Tienes cuenta?{" "}
+                                            <span onClick={goToRegister} className="clickable">
                                                     Ir a Login
                                                 </span>
-                                            </p>
-                                        </IonText>
-                                    </IonCardContent>
+                                        </p>
+                                    </IonText>
                                 </IonCard>
                             </div>
                         </IonCol>
