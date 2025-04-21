@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     IonContent,
     IonPage,
@@ -7,123 +7,259 @@ import {
     IonSearchbar,
     IonChip,
     IonLabel,
-    IonCard,
-    IonCardContent,
-    IonGrid,
-    IonRow,
-    IonCol,
     IonButtons,
-    IonMenuButton
+    IonMenuButton,
+    IonIcon,
+    IonButton
 } from '@ionic/react';
+import { chevronForward, heart, options, notificationsOutline, add } from 'ionicons/icons';
 import Navegation from "../../components/Navegation";
+import './ProductsPage.css';
 
 const ProductsPage = () => {
     const [searchText, setSearchText] = useState('');
-    const [selectedFilter, setSelectedFilter] = useState('Hoga');
+    const [selectedFilter, setSelectedFilter] = useState('Hogar');
     const [isDesktop, setIsDesktop] = useState(false);
+    const [currentSlide, setCurrentSlide] = useState(0);
+    // Fix: Properly type the ref to HTMLDivElement
+    const sliderRef = useRef<HTMLDivElement | null>(null);
 
     // Comprobar el ancho de la pantalla
     useEffect(() => {
         const mediaQuery = window.matchMedia('(min-width: 768px)');
-
         const handleResize = (e: MediaQueryListEvent) => {
             setIsDesktop(e.matches);
         };
-
         setIsDesktop(mediaQuery.matches);
         mediaQuery.addEventListener('change', handleResize);
-
         return () => {
             mediaQuery.removeEventListener('change', handleResize);
         };
     }, []);
 
-    // Datos de ejemplo para las tarjetas de objetos
-    const items = [
-        { id: 1, name: 'Objeto1', points: 100 },
-        { id: 2, name: 'Objeto1', points: 100 },
-        { id: 3, name: 'Objeto1', points: 100 },
-        { id: 4, name: 'Objeto1', points: 100 },
-        { id: 5, name: 'Objeto1', points: 100 },
-        { id: 6, name: 'Objeto1', points: 100 },
-        { id: 1, name: 'Objeto1', points: 100 },
-        { id: 2, name: 'Objeto1', points: 100 },
-        { id: 3, name: 'Objeto1', points: 100 },
-        { id: 4, name: 'Objeto1', points: 100 },
-        { id: 5, name: 'Objeto1', points: 100 },
-        { id: 6, name: 'Objeto1', points: 100 }
+    // Auto-scroll del slider
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentSlide((prev) => (prev + 1) % sliderItems.length);
+        }, 5000);
+        return () => clearInterval(timer);
+    }, []);
+
+    // Efecto para mover el slider cuando cambie el slide actual
+    useEffect(() => {
+        if (sliderRef.current) {
+            const scrollAmount = sliderRef.current.offsetWidth * currentSlide;
+            sliderRef.current.scrollTo({
+                left: scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    }, [currentSlide]);
+
+    // Handle manual scroll
+    const handleScroll = () => {
+        if (sliderRef.current) {
+            const scrollPosition = sliderRef.current.scrollLeft;
+            const slideWidth = sliderRef.current.offsetWidth;
+            const newSlide = Math.round(scrollPosition / slideWidth);
+            if (newSlide !== currentSlide) {
+                setCurrentSlide(newSlide);
+            }
+        }
+    };
+
+    // Elementos del slider
+    const sliderItems = [
+        {
+            id: 1,
+            title: 'Compra y vende artículos de segunda mano.',
+            description: 'Encuentra productos únicos a precios increíbles.',
+            buttonText: 'Vender ahora',
+            backgroundColor: '#f1ffe8',
+            textColor: '#0e5741',
+            buttonColor: '#0e5741'
+        },
+        {
+            id: 2,
+            title: 'Descubre ofertas especiales',
+            description: 'Miles de productos con grandes descuentos.',
+            buttonText: 'Ver ofertas',
+            backgroundColor: '#e8f0ff',
+            textColor: '#1a56a5',
+            buttonColor: '#1a56a5'
+        },
+        {
+            id: 3,
+            title: 'Vende lo que ya no usas',
+            description: 'Dale una segunda vida a tus objetos y gana dinero extra.',
+            buttonText: 'Publicar ahora',
+            backgroundColor: '#fff0e8',
+            textColor: '#a54c1a',
+            buttonColor: '#a54c1a'
+        }
+    ];
+
+    // Categorías de productos
+    const categories = [
+        {
+            title: "Lo que necesitas para tu jardín",
+            items: [
+                { id: 1, name: 'Sofá de jardín', points: '5.200 anuncios', image: 'sofa.jpg' },
+                { id: 2, name: 'Mesa de jardín', points: '29.177 anuncios', image: 'mesa.jpg' },
+                { id: 3, name: 'Sillón de jardín', points: '5.104 anuncios', image: 'sillon.jpg' },
+                { id: 4, name: 'Conjunto de jardín', points: '4.586 anuncios', image: 'conjunto.jpg' },
+                { id: 5, name: 'Pérgola', points: '1.711 anuncios', image: 'pergola.jpg' },
+                { id: 6, name: 'Sofá de jardín', points: '5.200 anuncios', image: 'sofa.jpg' },
+                { id: 7, name: 'Mesa de jardín', points: '29.177 anuncios', image: 'mesa.jpg' },
+                { id: 8, name: 'Sillón de jardín', points: '5.104 anuncios', image: 'sillon.jpg' },
+                { id: 9, name: 'Conjunto de jardín', points: '4.586 anuncios', image: 'conjunto.jpg' },
+                { id: 10, name: 'Pérgola', points: '1.711 anuncios', image: 'pergola.jpg' }
+            ]
+        },
+        {
+            title: "¡Bienvenida temporada de Barbacoas!",
+            items: [
+                { id: 6, name: 'Barbacoa Eléctrica', points: '4.235 anuncios', image: 'bbq_electrica.jpg' },
+                { id: 7, name: 'Barbacoa de carbón', points: '1.444 anuncios', image: 'bbq_carbon.jpg' },
+                { id: 8, name: 'Barbacoa sin humo', points: '274 anuncios', image: 'bbq_sinhumo.jpg' },
+                { id: 9, name: 'Barbacoa de gas', points: '4.676 anuncios', image: 'bbq_gas.jpg' },
+                { id: 10, name: 'Barbacoa de obra', points: '3.048 anuncios', image: 'bbq_obra.jpg' }
+            ]
+        },
+        {
+            title: "Renueva tu rutina",
+            items: [
+                { id: 11, name: 'Cinta de correr', points: '2.354 anuncios', image: 'cinta.jpg' },
+                { id: 12, name: 'Bicicleta estática', points: '3.750 anuncios', image: 'bici.jpg' },
+                { id: 13, name: 'Elíptica', points: '1.829 anuncios', image: 'eliptica.jpg' },
+                { id: 14, name: 'Pesas', points: '6.235 anuncios', image: 'pesas.jpg' },
+                { id: 15, name: 'Accesorios fitness', points: '8.120 anuncios', image: 'accesorios.jpg' }
+            ]
+        }
     ];
 
     // Filtros disponibles
-    const filters = ['Hoga', 'Tecno', 'Cuadr', 'Rafa', 'Javi'];
+    const filters = ['Hogar', 'Tecnología', 'Deporte', 'Jardín', 'Muebles'];
 
-    // Renderizar el menú de navegación y las tarjetas
     return (
-        <>
-            <IonPage id="main-content">
-                <IonHeader>
-                    <IonToolbar color="primary">
-                        {isDesktop && (
-                            <IonButtons slot="start">
-                                <IonMenuButton />
-                            </IonButtons>
-                        )}
+        <IonPage className="shopify-page" id="main-content">
+            <IonHeader className="shopify-header">
+                <IonToolbar color="light" className="shopify-toolbar">
+                    {isDesktop && (
+                        <IonButtons slot="start">
+                            <IonMenuButton />
+                        </IonButtons>
+                    )}
+                    <div className="search-container">
                         <IonSearchbar
                             value={searchText}
                             onIonChange={e => setSearchText(e.detail.value ?? '')}
                             placeholder="Buscar"
                             showCancelButton="never"
-                            className="ion-no-padding"
-                            style={{ '--background': 'white', '--border-radius': '20px' }}
+                            className="shopify-searchbar"
                         />
-                    </IonToolbar>
-                </IonHeader>
+                        <IonButtons slot="end" className="header-buttons">
+                            <IonButton className="notifications-button">
+                                <IonIcon icon={notificationsOutline} />
+                            </IonButton>
+                            <IonButton className="options-button">
+                                <IonIcon icon={options} />
+                            </IonButton>
+                        </IonButtons>
+                    </div>
+                </IonToolbar>
+            </IonHeader>
 
-                <IonContent fullscreen style={{ '--background': '#0ea5e9' }}>
-                    {/* Chips de filtros */}
-                    <div className="ion-padding-horizontal ion-padding-top" style={{ overflowX: 'auto', whiteSpace: 'nowrap', display: 'flex' }}>
-                        {filters.map((filter) => (
-                            <IonChip
-                                key={filter}
-                                color={selectedFilter === filter ? 'primary' : 'light'}
-                                onClick={() => setSelectedFilter(filter)}
-                                style={{ marginRight: '5px' }}
+            <IonContent className="wallapop-content">
+                {/* Banner Slider */}
+                <div className="slider-container">
+                    <div
+                        className="slider-track"
+                        ref={sliderRef}
+                        onScroll={handleScroll}
+                    >
+                        {sliderItems.map((item) => (
+                            <div
+                                key={item.id}
+                                className="slider-item"
+                                style={{ backgroundColor: item.backgroundColor }}
                             >
-                                <IonLabel>{filter}</IonLabel>
-                            </IonChip>
+                                <div className="slider-content">
+                                    <div className="slider-text" style={{ color: item.textColor }}>
+                                        <h2 className="slider-title">{item.title}</h2>
+                                        <p className="slider-description">{item.description}</p>
+                                        <button
+                                            className="slider-button"
+                                            style={{ backgroundColor: item.buttonColor }}
+                                        >
+                                            <IonIcon icon={add} className="button-icon" />
+                                            {item.buttonText}
+                                        </button>
+                                    </div>
+                                    <div className="slider-image">
+                                        {/* Placeholder para imagen */}
+                                    </div>
+                                </div>
+                            </div>
                         ))}
                     </div>
+                    <div className="slider-indicators">
+                        {sliderItems.map((_, index) => (
+                            <div
+                                key={index}
+                                className={`slider-indicator ${index === currentSlide ? 'active' : ''}`}
+                                onClick={() => setCurrentSlide(index)}
+                            ></div>
+                        ))}
+                    </div>
+                </div>
 
-                    {/* Grid de tarjetas */}
-                    <IonGrid>
-                        <IonRow>
-                            {items.map((item) => (
-                                <IonCol size="6" key={item.id}>
-                                    <IonCard style={{ margin: '8px', borderRadius: '10px', overflow: 'hidden' }}>
-                                        <div style={{
-                                            height: '150px',
-                                            backgroundColor: '#6b7280',
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'center'
-                                        }}>
-                                            {/* Área para la imagen */}
+                {/* Chips de filtros */}
+                <div className="filters-container">
+                    {filters.map((filter) => (
+                        <IonChip
+                            key={filter}
+                            color={selectedFilter === filter ? 'primary' : 'light'}
+                            onClick={() => setSelectedFilter(filter)}
+                            className={`filter-chip ${selectedFilter === filter ? 'selected' : ''}`}
+                        >
+                            <IonLabel>{filter}</IonLabel>
+                        </IonChip>
+                    ))}
+                </div>
+
+                {/* Secciones de categorías */}
+                {categories.map((category, index) => (
+                    <div key={index} className="category-section">
+                        <div className="category-header">
+                            <h2 className="section-title">{category.title}</h2>
+                            <IonButton fill="clear" className="view-all-button">
+                                Ver todo <IonIcon icon={chevronForward} />
+                            </IonButton>
+                        </div>
+
+                        {/* Contenedor horizontal con scroll */}
+                        <div className="items-scroll-container">
+                            {category.items.map((item) => (
+                                <div key={item.id} className="product-card">
+                                    <div className="product-image">
+                                        {/* Placeholder para imagen */}
+                                        <div className="favorite-button">
+                                            <IonIcon icon={heart} />
                                         </div>
-                                        <IonCardContent style={{ backgroundColor: 'white', padding: '10px', textAlign: 'left' }}>
-                                            <h3 style={{ margin: '0', fontWeight: 'bold' }}>{item.name}</h3>
-                                            <p style={{ margin: '0', color: '#6b7280' }}>{item.points} ptos</p>
-                                        </IonCardContent>
-                                    </IonCard>
-                                </IonCol>
+                                    </div>
+                                    <div className="product-info">
+                                        <h3 className="product-name">{item.name}</h3>
+                                        <p className="product-points">{item.points}</p>
+                                    </div>
+                                </div>
                             ))}
-                        </IonRow>
-                    </IonGrid>
-                </IonContent>
-
-                <Navegation isDesktop={isDesktop} />
-
-            </IonPage>
-        </>
+                        </div>
+                    </div>
+                ))}
+            </IonContent>
+            <Navegation isDesktop={isDesktop} />
+        </IonPage>
     );
 };
 

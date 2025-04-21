@@ -62,8 +62,6 @@ const RegisterPage: React.FC = () => {
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
 
-
-
     const handleChange = (field: keyof FormData, value: string) => {
         setForm({ ...form, [field]: value })
     }
