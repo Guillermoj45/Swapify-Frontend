@@ -17,6 +17,8 @@ import {
     IonList,
     IonItem,
     IonText,
+    IonButtons,
+    IonMenuButton,
     TextareaCustomEvent
 } from '@ionic/react';
 import { TextareaChangeEventDetail } from '@ionic/core';
@@ -29,9 +31,11 @@ import {
     ellipsisVertical,
     copy,
     trash,
-    checkmark
+    checkmark,
+    menuOutline
 } from 'ionicons/icons';
 import './IA.css';
+import Navegacion from '../../components/Navegation';
 
 // Definir interfaces para una escritura TypeScript adecuada
 interface Message {
@@ -58,10 +62,21 @@ const AIChatPage: React.FC = () => {
         "Necesito ayuda con mi código",
         "¿Cómo puedo mejorar mi proyecto?"
     ]);
+    const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const contentRef = useRef<HTMLIonContentElement>(null);
     const textareaRef = useRef<HTMLIonTextareaElement>(null);
+
+    // Detectar cambios en el tamaño de la pantalla
+    useEffect(() => {
+        const handleResize = () => {
+            setIsDesktop(window.innerWidth >= 768);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Scroll to bottom when messages change and ensure proper layout
     useEffect(() => {
@@ -223,170 +238,180 @@ const AIChatPage: React.FC = () => {
     };
 
     return (
-        <IonPage className="ai-chat-page">
-            <IonHeader className="ai-chat-header">
-                <IonToolbar>
-                    <IonTitle className="ion-text-center">Asistente IA</IonTitle>
-                    <IonButton slot="end" fill="clear" onClick={handleClearChat}>
-                        <IonIcon icon={refresh} />
-                    </IonButton>
-                </IonToolbar>
-            </IonHeader>
+        <>
+            <Navegacion isDesktop={isDesktop} isChatView={true} />
 
-            <IonContent ref={contentRef} className="ai-chat-content" scrollEvents={true}>
-                <div className="chat-container">
-                    {messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={`message-container ${message.sender === 'user' ? 'user-message' : 'ai-message'}`}
-                        >
-                            <div className="message-avatar">
-                                {message.sender === 'ai' ? (
-                                    <div className="ai-avatar">AI</div>
-                                ) : (
-                                    <IonAvatar>
-                                        <div className="user-avatar">TÚ</div>
-                                    </IonAvatar>
-                                )}
-                            </div>
-                            <div className="message-bubble">
-                                {message.image && (
-                                    <div className="message-image-container">
-                                        <img src={message.image} alt="Imagen compartida" className="message-image" />
+            <IonPage id="main-content" className="ai-chat-page">
+                <IonHeader className="ai-chat-header">
+                    <IonToolbar>
+                        <IonButtons slot="start">
+                            <IonMenuButton>
+                                <IonIcon icon={menuOutline} />
+                            </IonMenuButton>
+                        </IonButtons>
+                        <IonTitle className="ion-text-center">Asistente IA</IonTitle>
+                        <IonButton slot="end" fill="clear" onClick={handleClearChat}>
+                            <IonIcon icon={refresh} />
+                        </IonButton>
+                    </IonToolbar>
+                </IonHeader>
+
+                <IonContent ref={contentRef} className="ai-chat-content" scrollEvents={true}>
+                    <div className="chat-container">
+                        {messages.map((message) => (
+                            <div
+                                key={message.id}
+                                className={`message-container ${message.sender === 'user' ? 'user-message' : 'ai-message'}`}
+                            >
+                                <div className="message-avatar">
+                                    {message.sender === 'ai' ? (
+                                        <div className="ai-avatar">AI</div>
+                                    ) : (
+                                        <IonAvatar>
+                                            <div className="user-avatar">TÚ</div>
+                                        </IonAvatar>
+                                    )}
+                                </div>
+                                <div className="message-bubble">
+                                    {message.image && (
+                                        <div className="message-image-container">
+                                            <img src={message.image} alt="Imagen compartida" className="message-image" />
+                                        </div>
+                                    )}
+                                    <div className="message-text">{message.text}</div>
+                                    <div className="message-time">
+                                        {formatTime(message.timestamp)}
+                                        {message.isCopied && <span className="copied-indicator"><IonIcon icon={checkmark} /> Copiado</span>}
                                     </div>
-                                )}
-                                <div className="message-text">{message.text}</div>
-                                <div className="message-time">
-                                    {formatTime(message.timestamp)}
-                                    {message.isCopied && <span className="copied-indicator"><IonIcon icon={checkmark} /> Copiado</span>}
+                                </div>
+
+                                {/* Options button for messages */}
+                                <div className="message-options">
+                                    <IonButton
+                                        fill="clear"
+                                        size="small"
+                                        className="options-button"
+                                        onClick={() => setShowOptions({ open: true, id: message.id })}
+                                    >
+                                        <IonIcon icon={ellipsisVertical} size="small" />
+                                    </IonButton>
+
+                                    <IonPopover
+                                        isOpen={showOptions.open && showOptions.id === message.id}
+                                        onDidDismiss={() => setShowOptions({ open: false, id: null })}
+                                        className="options-popover"
+                                    >
+                                        <IonList>
+                                            <IonItem button onClick={() => handleCopyMessage(message.id)}>
+                                                <IonIcon slot="start" icon={copy} />
+                                                <IonLabel>Copiar mensaje</IonLabel>
+                                            </IonItem>
+                                            <IonItem button onClick={() => handleDeleteMessage(message.id)}>
+                                                <IonIcon slot="start" icon={trash} />
+                                                <IonLabel>Eliminar mensaje</IonLabel>
+                                            </IonItem>
+                                        </IonList>
+                                    </IonPopover>
                                 </div>
                             </div>
+                        ))}
 
-                            {/* Options button for messages */}
-                            <div className="message-options">
-                                <IonButton
-                                    fill="clear"
-                                    size="small"
-                                    className="options-button"
-                                    onClick={() => setShowOptions({ open: true, id: message.id })}
-                                >
-                                    <IonIcon icon={ellipsisVertical} size="small" />
-                                </IonButton>
-
-                                <IonPopover
-                                    isOpen={showOptions.open && showOptions.id === message.id}
-                                    onDidDismiss={() => setShowOptions({ open: false, id: null })}
-                                    className="options-popover"
-                                >
-                                    <IonList>
-                                        <IonItem button onClick={() => handleCopyMessage(message.id)}>
-                                            <IonIcon slot="start" icon={copy} />
-                                            <IonLabel>Copiar mensaje</IonLabel>
-                                        </IonItem>
-                                        <IonItem button onClick={() => handleDeleteMessage(message.id)}>
-                                            <IonIcon slot="start" icon={trash} />
-                                            <IonLabel>Eliminar mensaje</IonLabel>
-                                        </IonItem>
-                                    </IonList>
-                                </IonPopover>
+                        {isTyping && (
+                            <div className="message-container ai-message">
+                                <div className="message-avatar">
+                                    <div className="ai-avatar">AI</div>
+                                </div>
+                                <div className="message-bubble typing-indicator">
+                                    <IonSpinner name="dots" />
+                                </div>
                             </div>
-                        </div>
-                    ))}
-
-                    {isTyping && (
-                        <div className="message-container ai-message">
-                            <div className="message-avatar">
-                                <div className="ai-avatar">AI</div>
-                            </div>
-                            <div className="message-bubble typing-indicator">
-                                <IonSpinner name="dots" />
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </IonContent>
-
-            {suggestedPrompts.length > 0 && !selectedImage && (
-                <div className="suggested-prompts">
-                    {suggestedPrompts.map((prompt, index) => (
-                        <IonChip
-                            key={index}
-                            className="prompt-chip"
-                            onClick={() => handleSuggestedPrompt(prompt)}
-                        >
-                            <IonLabel>{prompt}</IonLabel>
-                        </IonChip>
-                    ))}
-                </div>
-            )}
-
-            {previewImage && (
-                <div className="preview-container">
-                    <div className="preview-image-wrapper">
-                        <img src={previewImage} alt="Vista previa" className="preview-image" />
-                        <IonButton
-                            fill="clear"
-                            className="clear-image-btn"
-                            onClick={handleClearImage}
-                        >
-                            <IonIcon icon={closeCircle} />
-                        </IonButton>
+                        )}
                     </div>
-                </div>
-            )}
+                </IonContent>
 
-            <IonFooter className="ai-chat-footer">
-                <div className="input-container">
-                    <IonTextarea
-                        ref={textareaRef}
-                        value={inputText}
-                        onIonChange={(e: TextareaCustomEvent<TextareaChangeEventDetail>) =>
-                            setInputText(e.detail.value ?? '')
-                        }
-                        placeholder="Escribe un mensaje..."
-                        autoGrow={true}
-                        rows={1}
-                        maxlength={1000}
-                        className="chat-input"
-                        onKeyDown={handleKeyPress}
-                    />
-
-                    <div className="input-buttons">
-                        <input
-                            type="file"
-                            accept="image/*"
-                            ref={fileInputRef}
-                            style={{ display: 'none' }}
-                            onChange={handleFileChange}
-                        />
-
-                        <IonButton fill="clear" onClick={handleImageSelect} className="action-button">
-                            <IonIcon icon={camera} />
-                        </IonButton>
-
-                        <IonButton fill="clear" className="action-button">
-                            <IonIcon icon={mic} />
-                        </IonButton>
-
-                        <IonButton
-                            className="send-button"
-                            disabled={inputText.trim() === '' && !selectedImage}
-                            onClick={handleSend}
-                        >
-                            <IonIcon icon={arrowUp} />
-                        </IonButton>
-                    </div>
-                </div>
-
-                {inputText.length > 0 && (
-                    <div className="character-counter">
-                        <IonText color={inputText.length > 800 ? (inputText.length > 900 ? "danger" : "warning") : "medium"}>
-                            {inputText.length}/1000
-                        </IonText>
+                {suggestedPrompts.length > 0 && !selectedImage && (
+                    <div className="suggested-prompts">
+                        {suggestedPrompts.map((prompt, index) => (
+                            <IonChip
+                                key={index}
+                                className="prompt-chip"
+                                onClick={() => handleSuggestedPrompt(prompt)}
+                            >
+                                <IonLabel>{prompt}</IonLabel>
+                            </IonChip>
+                        ))}
                     </div>
                 )}
-            </IonFooter>
-        </IonPage>
+
+                {previewImage && (
+                    <div className="preview-container">
+                        <div className="preview-image-wrapper">
+                            <img src={previewImage} alt="Vista previa" className="preview-image" />
+                            <IonButton
+                                fill="clear"
+                                className="clear-image-btn"
+                                onClick={handleClearImage}
+                            >
+                                <IonIcon icon={closeCircle} />
+                            </IonButton>
+                        </div>
+                    </div>
+                )}
+
+                <IonFooter className="ai-chat-footer">
+                    <div className="input-container">
+                        <IonTextarea
+                            ref={textareaRef}
+                            value={inputText}
+                            onIonChange={(e: TextareaCustomEvent<TextareaChangeEventDetail>) =>
+                                setInputText(e.detail.value ?? '')
+                            }
+                            placeholder="Escribe un mensaje..."
+                            autoGrow={true}
+                            rows={1}
+                            maxlength={1000}
+                            className="chat-input"
+                            onKeyDown={handleKeyPress}
+                        />
+
+                        <div className="input-buttons">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                ref={fileInputRef}
+                                style={{ display: 'none' }}
+                                onChange={handleFileChange}
+                            />
+
+                            <IonButton fill="clear" onClick={handleImageSelect} className="action-button">
+                                <IonIcon icon={camera} />
+                            </IonButton>
+
+                            <IonButton fill="clear" className="action-button">
+                                <IonIcon icon={mic} />
+                            </IonButton>
+
+                            <IonButton
+                                className="send-button"
+                                disabled={inputText.trim() === '' && !selectedImage}
+                                onClick={handleSend}
+                            >
+                                <IonIcon icon={arrowUp} />
+                            </IonButton>
+                        </div>
+                    </div>
+
+                    {inputText.length > 0 && (
+                        <div className="character-counter">
+                            <IonText color={inputText.length > 800 ? (inputText.length > 900 ? "danger" : "warning") : "medium"}>
+                                {inputText.length}/1000
+                            </IonText>
+                        </div>
+                    )}
+                </IonFooter>
+
+            </IonPage>
+        </>
     );
 };
 

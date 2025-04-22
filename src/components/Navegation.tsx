@@ -23,12 +23,19 @@ import {
 
 interface Props {
     isDesktop: boolean;
+    isChatView?: boolean;
 }
 
-const Navegacion: React.FC<Props> = ({ isDesktop }) => {
+const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDesktop, isChatView = false }) => {
+    // Siempre mostramos el menú hamburguesa para todas las pantallas en vistas de chat
+    // En otras vistas, seguimos la lógica original basada en el tamaño de pantalla
+    const showHamburgerMenu = isDesktop || isChatView;
+    const showTabBar = !isDesktop && !isChatView;
+
     return (
         <>
-            {isDesktop ? (
+            {/* Menú hamburguesa (siempre en vistas de chat, o cuando es escritorio en otras vistas) */}
+            {showHamburgerMenu && (
                 <IonMenu contentId="main-content">
                     <IonHeader>
                         <IonToolbar color="primary">
@@ -38,31 +45,31 @@ const Navegacion: React.FC<Props> = ({ isDesktop }) => {
                     <IonContent>
                         <IonList>
                             <IonMenuToggle>
-                                <IonItem button>
+                                <IonItem button routerLink="/home">
                                     <IonIcon slot="start" icon={homeOutline} />
                                     <IonLabel>Inicio</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle>
-                                <IonItem button>
+                                <IonItem button routerLink="/favorites">
                                     <IonIcon slot="start" icon={heartOutline} />
                                     <IonLabel>Favoritos</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle>
-                                <IonItem button>
+                                <IonItem button routerLink="/add">
                                     <IonIcon slot="start" icon={addOutline} />
                                     <IonLabel>Añadir</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle>
-                                <IonItem button>
+                                <IonItem button routerLink="/messages">
                                     <IonIcon slot="start" icon={mailOutline} />
                                     <IonLabel>Mensajes</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle>
-                                <IonItem button>
+                                <IonItem button routerLink="/settings">
                                     <IonIcon slot="start" icon={settingsOutline} />
                                     <IonLabel>Configuración</IonLabel>
                                 </IonItem>
@@ -70,7 +77,10 @@ const Navegacion: React.FC<Props> = ({ isDesktop }) => {
                         </IonList>
                     </IonContent>
                 </IonMenu>
-            ) : (
+            )}
+
+            {/* TabBar (solo en pantallas pequeñas y cuando NO es vista de chat) */}
+            {showTabBar && (
                 <IonFooter>
                     <IonTabBar slot="bottom">
                         <IonTabButton tab="home" href="/home">
