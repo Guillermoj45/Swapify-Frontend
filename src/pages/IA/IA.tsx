@@ -32,7 +32,9 @@ import {
     copy,
     trash,
     checkmark,
-    menuOutline
+    menuOutline,
+    sunny, // Icono para modo claro
+    moon // Icono para modo oscuro
 } from 'ionicons/icons';
 import './IA.css';
 import Navegacion from '../../components/Navegation';
@@ -63,6 +65,7 @@ const AIChatPage: React.FC = () => {
         "¿Cómo puedo mejorar mi proyecto?"
     ]);
     const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768);
+    const [darkMode, setDarkMode] = useState<boolean>(true); // Por defecto en modo oscuro
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const contentRef = useRef<HTMLIonContentElement>(null);
@@ -78,23 +81,30 @@ const AIChatPage: React.FC = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // Aplicar clase de tema al elemento raíz y configurar colores de fondo
+    useEffect(() => {
+        document.body.classList.toggle('light-mode', !darkMode);
+        document.body.classList.toggle('dark-mode', darkMode);
+
+        // Configurar colores de fondo según el modo
+        const backgroundColor = darkMode ? "#111827" : "#f5f7fa";
+        document.body.style.backgroundColor = backgroundColor;
+        document.documentElement.style.backgroundColor = backgroundColor;
+
+        // Encontrar y estilizar contenedores padres
+        const parentElements = document.querySelectorAll('ion-router-outlet, ion-content');
+        parentElements.forEach(el => {
+            if (el instanceof HTMLElement) {
+                el.style.backgroundColor = backgroundColor;
+            }
+        });
+    }, [darkMode]);
+
     // Scroll to bottom when messages change and ensure proper layout
     useEffect(() => {
         if (contentRef.current) {
             contentRef.current.scrollToBottom(500);
         }
-
-        // Force background color to eliminate black spaces
-        document.body.style.backgroundColor = "#111827";
-        document.documentElement.style.backgroundColor = "#111827";
-
-        // Find and style any parent containers that might cause black spaces
-        const parentElements = document.querySelectorAll('ion-router-outlet, ion-content');
-        parentElements.forEach(el => {
-            if (el instanceof HTMLElement) {
-                el.style.backgroundColor = "#111827";
-            }
-        });
     }, [messages]);
 
     // Focus on textarea when component mounts
@@ -140,6 +150,11 @@ const AIChatPage: React.FC = () => {
             setMessages(prevMessages => [...prevMessages, aiResponse]);
             setIsTyping(false);
         }, Math.random() * 1000 + 1000); // Random delay between 1-2 seconds for more realistic feel
+    };
+
+    // Cambiar entre modo oscuro y claro
+    const toggleDarkMode = (): void => {
+        setDarkMode(prevMode => !prevMode);
     };
 
     // Generate more natural AI responses based on input
@@ -241,7 +256,7 @@ const AIChatPage: React.FC = () => {
         <>
             <Navegacion isDesktop={isDesktop} isChatView={true} />
 
-            <IonPage id="main-content" className="ai-chat-page">
+            <IonPage id="main-content" className={`ai-chat-page ${!darkMode ? 'light-mode' : ''}`}>
                 <IonHeader className="ai-chat-header">
                     <IonToolbar>
                         <IonButtons slot="start">
@@ -250,9 +265,14 @@ const AIChatPage: React.FC = () => {
                             </IonMenuButton>
                         </IonButtons>
                         <IonTitle className="ion-text-center">Asistente IA</IonTitle>
-                        <IonButton slot="end" fill="clear" onClick={handleClearChat}>
-                            <IonIcon icon={refresh} />
-                        </IonButton>
+                        <IonButtons slot="end">
+                            <IonButton onClick={toggleDarkMode}>
+                                <IonIcon icon={darkMode ? sunny : moon} />
+                            </IonButton>
+                            <IonButton onClick={handleClearChat}>
+                                <IonIcon icon={refresh} />
+                            </IonButton>
+                        </IonButtons>
                     </IonToolbar>
                 </IonHeader>
 

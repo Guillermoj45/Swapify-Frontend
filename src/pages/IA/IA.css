@@ -1,12 +1,17 @@
-/* AIChatPage.css - Eliminación de espacios negros */
+/* AIChatPage.css - Con soporte para modo oscuro y claro */
 
+/* Estilos base */
 .ai-chat-page {
-    --background: #111827; /* Fondo oscuro para toda la página */
     font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    background-color: #111827;
     display: flex;
     flex-direction: column;
     height: 100%;
+}
+
+/* Modo Oscuro (default) */
+.ai-chat-page {
+    --background: #111827;
+    background-color: #111827;
 }
 
 .ai-chat-header ion-toolbar {
@@ -299,6 +304,117 @@
     object-fit: cover;
 }
 
+/* Modo Claro */
+.ai-chat-page.light-mode {
+    --background: #f5f7fa;
+    background-color: #f5f7fa;
+}
+
+.light-mode .ai-chat-header ion-toolbar {
+    --background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .ai-chat-header ion-title {
+    color: #333333;
+}
+
+.light-mode .ai-chat-content {
+    --background: #f5f7fa;
+}
+
+.light-mode .ai-message .message-bubble {
+    background-color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.light-mode .user-message .message-bubble {
+    background: linear-gradient(to bottom right, #3b82f6, #2563eb);
+}
+
+.light-mode .ai-message .message-text {
+    color: #333333;
+}
+
+.light-mode .message-time {
+    color: #64748b;
+}
+
+.light-mode .ai-chat-footer {
+    --background: #ffffff;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .input-container {
+    background-color: #ffffff;
+}
+
+.light-mode .chat-input {
+    --background: #f1f5f9;
+    --placeholder-color: #64748b;
+    color: #333333;
+}
+
+.light-mode .chat-input:focus-within {
+    --background: #e2e8f0;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.light-mode .action-button {
+    --color: #64748b;
+}
+
+.light-mode .send-button[disabled] {
+    --background: #e2e8f0;
+    opacity: 0.7;
+}
+
+.light-mode .suggested-prompts {
+    background-color: #ffffff;
+    border-top: 1px solid #e2e8f0;
+}
+
+.light-mode .prompt-chip {
+    --background: #f1f5f9;
+    --color: #475569;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .prompt-chip:hover {
+    --background: #e2e8f0;
+    --color: #334155;
+}
+
+.light-mode .preview-container {
+    background-color: #ffffff;
+    border-top: 1px solid #e2e8f0;
+}
+
+.light-mode .character-counter {
+    background-color: #ffffff;
+}
+
+.light-mode .clear-image-btn {
+    --background: #ffffff;
+}
+
+.light-mode .options-popover {
+    --background: #ffffff;
+}
+
+.light-mode .options-popover ion-item {
+    --background: #ffffff;
+    --color: #333333;
+}
+
+.light-mode .options-popover ion-item:hover {
+    --background: #f1f5f9;
+}
+
+.light-mode .options-popover ion-icon {
+    color: #64748b;
+}
+
 /* Animación para los puntos de carga */
 @keyframes pulse {
     0% { opacity: 0.4; }
@@ -323,127 +439,5 @@
     to {
         opacity: 1;
         transform: translateY(0);
-    }
-}
-
-/* Opciones de mensaje */
-.message-options {
-    position: relative;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.message-container:hover .message-options {
-    opacity: 1;
-}
-
-.options-button {
-    --background: transparent;
-    --border-radius: 50%;
-    --color: #94a3b8;
-    height: 32px;
-    width: 32px;
-    margin: 0;
-}
-
-.options-popover {
-    --background: #1e293b;
-    --width: 200px;
-}
-
-.options-popover ion-item {
-    --background: #1e293b;
-    --color: #e2e8f0;
-}
-
-.options-popover ion-item:hover {
-    --background: #2d3748;
-}
-
-.options-popover ion-icon {
-    color: #94a3b8;
-}
-
-.copied-indicator {
-    margin-left: 8px;
-    font-size: 11px;
-    color: #10b981;
-    display: inline-flex;
-    align-items: center;
-}
-
-.copied-indicator ion-icon {
-    margin-right: 2px;
-    font-size: 12px;
-}
-
-.character-counter {
-    text-align: right;
-    padding: 4px 16px 8px;
-    font-size: 12px;
-    background-color: #1a2235;
-}
-
-/* Asegurarse de que no haya espacios/huecos negros */
-ion-content {
-    --overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-/* Estilo para ocupar todo el espacio disponible */
-ion-page {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
-    background-color: #111827;
-}
-
-ion-content::part(scroll) {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-/* Ajustes específicos para eliminar los espacios negros */
-ion-app, ion-router-outlet, ion-content, .chat-container {
-    background-color: #111827 !important;
-}
-
-/* Asegurarse de que el contenido ocupe todo el espacio vertical */
-ion-content .inner-scroll {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Forzar el color de fondo en todas partes para eliminar espacios en blanco */
-:host, body, html, .ion-page, .ion-content::part(scroll) {
-    background-color: #111827 !important;
-}
-
-/* Responsive adjustments */
-@media (min-width: 768px) {
-    .chat-container {
-        max-width: 700px;
-        margin: 0 auto;
-        padding: 24px;
-    }
-
-    .message-container {
-        max-width: 70%;
-    }
-
-    .input-container {
-        max-width: 700px;
-        margin: 0 auto;
-    }
-
-    .suggested-prompts {
-        justify-content: center;
-        max-width: 700px;
-        margin: 0 auto;
     }
 }

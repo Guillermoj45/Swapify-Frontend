@@ -20,12 +20,6 @@ import {
     mailOutline,
     settingsOutline
 } from 'ionicons/icons';
-
-interface Props {
-    isDesktop: boolean;
-    isChatView?: boolean;
-}
-
 const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDesktop, isChatView = false }) => {
     // Siempre mostramos el menú hamburguesa para todas las pantallas en vistas de chat
     // En otras vistas, seguimos la lógica original basada en el tamaño de pantalla
