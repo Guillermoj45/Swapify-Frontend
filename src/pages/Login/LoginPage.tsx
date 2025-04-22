@@ -68,40 +68,49 @@ const LoginPage: React.FC = () => {
     }
 
     const handleLogin = async () => {
-        const { email, password } = form
+        const { email, password } = form;
 
         if (!email || !password) {
-            showToastMessage("Por favor, completa todos los campos.", "warning")
-            return
+            showToastMessage("Por favor, completa todos los campos.", "warning");
+            return;
         }
 
         try {
-            const response = await UserService.loginUser(form)
-            console.log("Login successful:", response)
+            const response = await UserService.loginUser(form);
+            console.log("Login successful:", response);
 
             if (response && response.token) {
-                showToastMessage("Inicio de sesión exitoso", "success")
+                showToastMessage("Inicio de sesión exitoso", "success");
                 setTimeout(() => {
-                    window.location.href = "/profile"
-                }, 1000)
+                    window.location.href = "/profile";
+                }, 1000);
             } else {
-                showToastMessage("Inicio de sesión incorrecto. No se recibió un token válido.")
+                showToastMessage(response.mensaje || "Inicio de sesión incorrecto. No se recibió un token válido.", "danger");
             }
         } catch (error: unknown) {
-            console.error("Login failed:", error)
+            console.error("Login failed:", error);
 
             if (error && typeof error === "object" && "response" in error) {
-                const axiosError = error as { response?: { status: number } }
-                if (axiosError.response?.status === 401) {
-                    showToastMessage("Usuario o contraseña incorrectos", "danger")
-                } else {
-                    showToastMessage("Error al iniciar sesión. Inténtalo de nuevo más tarde.", "danger")
+                const axiosError = error as { response?: { status: number, data?: { mensaje?: string } } };
+                const status = axiosError.response?.status;
+                const mensaje = axiosError.response?.data?.mensaje;
+
+                switch (status) {
+                    case 401:
+                        showToastMessage(mensaje || "Usuario o contraseña incorrectos", "danger");
+                        break;
+                    case 404:
+                        showToastMessage(mensaje || "Usuario no encontrado", "danger");
+                        break;
+                    default:
+                        showToastMessage(mensaje || "Error al iniciar sesión. Inténtalo de nuevo más tarde.", "danger");
+                        break;
                 }
             } else {
-                showToastMessage("Error al iniciar sesión. Inténtalo de nuevo más tarde.", "danger")
+                showToastMessage("Error al iniciar sesión. Inténtalo de nuevo más tarde.", "danger");
             }
         }
-    }
+    };
 
     return (
         <IonPage className="register-page">

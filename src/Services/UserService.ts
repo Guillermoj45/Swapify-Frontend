@@ -35,6 +35,27 @@ class UserService {
             throw error;
         }
     }
+
+    static async sendEmailUser(data: { email: string }): Promise<void> {
+        // Change to use params instead of body
+        const response = await api.post("/email/forgot-password", null, {
+            params: {
+                email: data.email
+            }
+        });
+        return response.data;
+    }
+
+    static async sendNewPassword(data: { code: string; newPassword: string }): Promise<void> {
+         await api.post("/email/reset-password", null, {
+            params: {
+                code: data.code,
+                newPassword: data.newPassword
+            }
+        });
+    }
+
+
 }
 
 export default UserService;

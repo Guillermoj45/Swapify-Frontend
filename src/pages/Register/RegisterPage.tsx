@@ -4,6 +4,7 @@ import { Autoplay, Pagination } from "swiper/modules"
 import UserService from "../../Services/UserService";
 import { User } from "../../Models/User";
 
+
 import "swiper/css"
 import "swiper/css/pagination"
 import "swiper/css/navigation"
@@ -110,7 +111,7 @@ const RegisterPage: React.FC = () => {
 
             const response = await UserService.registerUser(user);
             console.log("User registered successfully:", response);
-            // Puedes mostrar un toast de éxito también si quieres
+            goToLogin()
         } catch (error) {
             setToastMessage("Error al registrar usuario. Inténtalo de nuevo.");
             setShowToast(true);

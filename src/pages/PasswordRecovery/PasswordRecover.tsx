@@ -1,62 +1,79 @@
-"use client"
-import React, { useState } from "react"
-import { Swiper, SwiperSlide } from "swiper/react"
-import { Autoplay, Pagination } from "swiper/modules"
-import "swiper/css"
-import "swiper/css/pagination"
-import "swiper/css/navigation"
-import "swiper/css/effect-cube"
-
 import {
-    IonPage,
-    IonContent,
-    IonCard,
-    IonCardHeader,
-    IonCardContent,
-    IonText,
-    IonGrid,
-    IonRow,
-    IonCol,
-    IonInput, IonInputPasswordToggle, IonItem,
-} from "@ionic/react"
+    IonPage, IonContent, IonGrid, IonRow, IonCol,
+    IonCard, IonCardHeader, IonCardContent, IonInput,
+    IonItem, IonToast, IonText
+} from "@ionic/react";
+import { useState } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
 
-import "../Register/RegisterPage.css"
+import UserService from "../../Services/UserService"; // Asegurate que esta ruta sea correcta
+import { IonInputPasswordToggle } from "@ionic/react"; // Si estás usando un componente custom
 
-const PasswordRecover: React.FC = () => {
-    const photos: string[] = [
-        "https://picsum.photos/1000/1000?random=4",
-        "https://picsum.photos/1000/1000?random=5",
-        "https://picsum.photos/1000/1000?random=6",
-    ]
+const PasswordRecoveryPage = () => {
+    const [isEmailStage, setIsEmailStage] = useState(true);
+    const [email, setEmail] = useState("");
+    const [codigoEnviado, setCodigoEnviado] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
 
-    const [isEmailStage, setIsEmailStage] = useState(true)
-    const [email, setEmail] = useState("")
-    const [newPassword, setNewPassword] = useState("")
-    const [confirmPassword, setConfirmPassword] = useState("")
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState("");
+    const [toastColor, setToastColor] = useState<"success" | "danger" | "warning" | "primary">("primary");
 
-    const goToRegister = () => {
-        window.location.href = "/login"
-    }
+    const goToLogin = () => {
+        window.location.href = "/login";
+    };
 
-    const continuar = () => {
+    const handleSubmit = async () => {
         if (isEmailStage) {
             if (!email.trim()) {
-                //TODO  mostrar un error o alerta
-                return
+                showToastMessage("Por favor, introduce tu email.", "warning");
+                return;
             }
-            // Avanzar a la pantalla de contraseñas
-            setIsEmailStage(false)
+
+            try {
+                await UserService.sendEmailUser({ email });
+                setIsEmailStage(false);
+            } catch (error) {
+                console.error("Error enviando email:", error);
+                showToastMessage("Error al enviar el email de recuperación. Inténtalo de nuevo.", "danger");
+            }
         } else {
-            // Validar contraseñas y enviar formulario
-            if (newPassword !== confirmPassword) {
-                // Mostrar error de que no coinciden
-                return
+            if (!codigoEnviado.trim() || !newPassword.trim() || !confirmPassword.trim()) {
+                showToastMessage("Por favor, completa todos los campos.", "warning");
+                return;
             }
-            // Procesar cambio de contraseña (llamada a API)
-            console.log("Cambio de contraseña para:", email)
-            // Redirigir a login o mostrar mensaje de éxito
+
+            if (newPassword !== confirmPassword) {
+                showToastMessage("Las contraseñas no coinciden.", "danger");
+                return;
+            }
+
+            try {
+                await UserService.sendNewPassword({
+                    code: codigoEnviado,
+                    newPassword: newPassword,
+                });
+                setIsEmailStage(true);
+                showToastMessage("Contraseña actualizada correctamente.", "success");
+                setTimeout(goToLogin, 2000);
+            } catch (error) {
+                console.error("Error al actualizar la contraseña:", error);
+                showToastMessage("Ocurrió un error al actualizar la contraseña. Inténtalo más tarde.", "danger");
+            }
         }
-    }
+    };
+
+    const showToastMessage = (message: string, color: "success" | "danger" | "warning" | "primary") => {
+        setToastMessage(message);
+        setToastColor(color);
+        setShowToast(true);
+    };
+
+    const photos = ["/img1.jpg", "/img2.jpg", "/img3.jpg"]; // Reemplaza con tus imágenes reales
 
     return (
         <IonPage className="register-page">
@@ -69,10 +86,7 @@ const PasswordRecover: React.FC = () => {
                                 spaceBetween={50}
                                 slidesPerView={1}
                                 loop
-                                autoplay={{
-                                    delay: 3000,
-                                    disableOnInteraction: false,
-                                }}
+                                autoplay={{ delay: 3000, disableOnInteraction: false }}
                                 pagination={{ clickable: true }}
                                 className="carousel-swiper"
                             >
@@ -98,71 +112,78 @@ const PasswordRecover: React.FC = () => {
 
                                     <IonCardContent>
                                         {isEmailStage ? (
-                                            <>
-                                                <IonItem className="form-item">
-                                                    <IonInput
-                                                        className="form-item"
-                                                        placeholder="Email"
-                                                        value={email}
-                                                        onIonChange={(e) => setEmail(e.detail.value!)}
-                                                    />
-                                                </IonItem>
-
-                                            </>
+                                            <IonItem className="form-item">
+                                                <IonInput
+                                                    type="email"
+                                                    placeholder="Introduce tu email"
+                                                    value={email}
+                                                    onIonChange={(e) => setEmail(e.detail.value!)}
+                                                />
+                                            </IonItem>
                                         ) : (
                                             <>
                                                 <IonItem className="form-item">
-                                                <IonInput
-                                                    type="password"
-                                                    label="Nueva contraseña"
-                                                    className="form-item"
-                                                    value={newPassword}
-                                                    onIonChange={(e) => setNewPassword(e.detail.value!)}
-                                                >
-                                                    <IonInputPasswordToggle slot="end">
-
-                                                    </IonInputPasswordToggle>
-                                                </IonInput>
+                                                    <IonInput
+                                                        type="text"
+                                                        placeholder="Código enviado"
+                                                        value={codigoEnviado}
+                                                        onIonChange={(e) => setCodigoEnviado(e.detail.value!)}
+                                                    />
                                                 </IonItem>
-                                                <br />
                                                 <IonItem className="form-item">
-                                                <IonInput
-                                                    type="password"
-                                                    label="Confirmar contraseña"
-                                                    className="form-item"
-                                                    value={confirmPassword}
-                                                    onIonChange={(e) => setConfirmPassword(e.detail.value!)}
-                                                >
-                                                    <IonInputPasswordToggle slot="end">
-
-                                                    </IonInputPasswordToggle>
-                                                </IonInput>
+                                                    <IonInput
+                                                        type="password"
+                                                        placeholder="Nueva contraseña"
+                                                        value={newPassword}
+                                                        onIonChange={(e) => setNewPassword(e.detail.value!)}
+                                                    >
+                                                        <IonInputPasswordToggle slot="end" />
+                                                    </IonInput>
+                                                </IonItem>
+                                                <IonItem className="form-item">
+                                                    <IonInput
+                                                        type="password"
+                                                        placeholder="Confirmar contraseña"
+                                                        value={confirmPassword}
+                                                        onIonChange={(e) => setConfirmPassword(e.detail.value!)}
+                                                    >
+                                                        <IonInputPasswordToggle slot="end" />
+                                                    </IonInput>
                                                 </IonItem>
                                             </>
                                         )}
+
                                         <br />
-                                        <button onClick={continuar} className="register-button">
+                                        <button onClick={handleSubmit} className="register-button">
                                             {isEmailStage ? "Continuar" : "Restablecer contraseña"}
                                         </button>
-                                        <br/>
 
-                                    </IonCardContent>
-                                    <IonText className="ion-text-center">
-                                        <p className="login-link">
-                                            ¿Tienes cuenta?{" "}
-                                            <span onClick={goToRegister} className="clickable">
+                                        <IonText className="ion-text-center">
+                                            <p className="login-link">
+                                                ¿Tienes cuenta?{" "}
+                                                <span onClick={goToLogin} className="clickable">
                                                     Ir a Login
                                                 </span>
-                                        </p>
-                                    </IonText>
+                                            </p>
+                                        </IonText>
+                                    </IonCardContent>
                                 </IonCard>
                             </div>
                         </IonCol>
                     </IonRow>
                 </IonGrid>
+
+                <IonToast
+                    isOpen={showToast}
+                    onDidDismiss={() => setShowToast(false)}
+                    message={toastMessage}
+                    duration={2000}
+                    color={toastColor}
+                    buttons={[{ text: "OK", role: "cancel" }]}
+                />
             </IonContent>
         </IonPage>
-    )
-}
+    );
+};
 
-export default PasswordRecover
+export default PasswordRecoveryPage;
