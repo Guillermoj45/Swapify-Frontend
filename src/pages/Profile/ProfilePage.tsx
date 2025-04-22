@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+// ProfilePage.tsx
+"use client"
+
+import { useState, useEffect } from "react"
 import {
     IonContent,
     IonPage,
@@ -10,247 +13,269 @@ import {
     IonAvatar,
     IonInput,
     IonTextarea,
-    IonItem, IonMenuButton, IonToolbar, IonHeader
-} from '@ionic/react';
-import { addOutline, starOutline } from 'ionicons/icons';
-import { FaBuilding, FaMapMarkerAlt } from 'react-icons/fa';
-import Navegation from "../../components/Navegation";
+    IonItem,
+    IonMenuButton,
+    IonToolbar,
+    IonHeader,
+    IonSegment,
+    IonSegmentButton,
+    IonLabel,
+    IonList,
+    IonThumbnail,
+    IonBadge
+} from "@ionic/react"
+import {
+    starOutline,
+    star,
+    informationCircleOutline,
+    cartOutline,
+    heartOutline,
+    chatbubbleOutline,
+    bookmarkOutline
+} from "ionicons/icons"
+import { FaBuilding, FaMapMarkerAlt } from "react-icons/fa"
+import Navegation from "../../components/Navegation"
+import "./ProfilePage.css"
 
 const ProfilePage = () => {
-    const [ isDesktop, setIsDesktop] = useState(false);
+    const [isDesktop, setIsDesktop] = useState(false)
+    const [activeTab, setActiveTab] = useState("reseñas")
     const [userInfo, setUserInfo] = useState({
-        name: 'Sebastian',
-        rating: 4.9,
+        name: "Sebastian",
+        rating: 4,
         totalReviews: 349,
         itemsForSale: 33,
         trades: 249,
-        fullName: '',
-        city: '',
-        hobby: '',
-        socialMedia: '',
-        biography: ''
-    });
+        fullName: "",
+        city: "",
+        hobby: "",
+        socialMedia: "",
+        biography: ""
+    })
 
-    // Comprobar el ancho de la pantalla
+    // Dummy data
+    const itemsForSale = [
+        { id: 1, title: "Zapatillas Nike", price: "89€", image: "https://via.placeholder.com/60" },
+        { id: 2, title: "iPhone 12", price: "450€", image: "https://via.placeholder.com/60" },
+        { id: 3, title: "Camiseta Adidas", price: "25€", image: "https://via.placeholder.com/60" }
+    ]
+    const wishlistItems = [
+        { id: 1, title: "PlayStation 5", price: "499€", image: "https://via.placeholder.com/60" },
+        { id: 2, title: "MacBook Pro", price: "1299€", image: "https://via.placeholder.com/60" }
+    ]
+    const reviews = [
+        { id: 1, product: "Samsung DS2 5G", comment: "Todo perfecto", reviewer: "rafa", rating: 5, date: "26 Aug 2024", image: "https://via.placeholder.com/40" },
+        { id: 2, product: "Apple AirPods", comment: "Excelente servicio", reviewer: "maria", rating: 4, date: "15 Sep 2024", image: "https://via.placeholder.com/40" }
+    ]
+
     useEffect(() => {
-        const mediaQuery = window.matchMedia('(min-width: 768px)');
-
-        const handleResize = (e: MediaQueryListEvent) => {
-            setIsDesktop(e.matches);
-        };
-
-        setIsDesktop(mediaQuery.matches);
-        mediaQuery.addEventListener('change', handleResize);
-
-        return () => {
-            mediaQuery.removeEventListener('change', handleResize);
-        };
-    }, []);
+        const mq = window.matchMedia("(min-width: 768px)")
+        const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+        setIsDesktop(mq.matches)
+        mq.addEventListener("change", onChange)
+        return () => mq.removeEventListener("change", onChange)
+    }, [])
 
     const handleInputChange = (field: keyof typeof userInfo, value: string) => {
-        setUserInfo({
-            ...userInfo,
-            [field]: value
-        });
-    };
+        setUserInfo({ ...userInfo, [field]: value })
+    }
+
+    const renderStars = (rating: number) => {
+        return Array.from({ length: 5 }, (_, i) => (
+            <IonIcon
+                key={i}
+                icon={i < rating ? star : starOutline}
+                className={i < rating ? "star-filled" : "star-outline"}
+            />
+        ))
+    }
+
+    const renderTabContent = () => {
+        switch (activeTab) {
+            case "enVenta":
+                return (
+                    <div className="tab-content">
+                        <h3 className="tab-title">Artículos en venta ({userInfo.itemsForSale})</h3>
+                        <IonList lines="none" style={{ backgroundColor: "white" }}>
+                            {itemsForSale.map(item => (
+                                <IonItem key={item.id} lines="none" className="item-card">
+                                    <IonThumbnail slot="start">
+                                        <img src={item.image} alt={item.title} />
+                                    </IonThumbnail>
+                                    <div className="item-details">
+                                        <h4>{item.title}</h4>
+                                        <IonBadge className="price-badge">{item.price}</IonBadge>
+                                    </div>
+                                </IonItem>
+                            ))}
+                        </IonList>
+                        <IonButton expand="block" className="view-all-btn">Ver todos</IonButton>
+                    </div>
+                )
+
+            case "deseados":
+                return (
+                    <div className="tab-content">
+                        <h3 className="tab-title">Lista de deseos ({userInfo.trades})</h3>
+                        <IonList  style={{ backgroundColor: "white" }}>
+                            {wishlistItems.map(item => (
+                                <IonItem key={item.id} lines="full" className="item-card">
+                                    <IonThumbnail slot="start">
+                                        <img src={item.image} alt={item.title} />
+                                    </IonThumbnail>
+                                    <div className="item-details">
+                                        <h4>{item.title}</h4>
+                                        <IonBadge color="tertiary">{item.price}</IonBadge>
+                                    </div>
+                                </IonItem>
+                            ))}
+                        </IonList>
+                        <IonButton expand="block" className="view-all-btn">Ver todos</IonButton>
+                    </div>
+                )
+
+            case "reseñas":
+                return (
+                    <div className="tab-content reviews-tab">
+                        {reviews.map(review => (
+                            <div key={review.id} className="review-card">
+                                <div className="review-user">
+                                    <img src={review.image} alt={review.reviewer} className="reviewer-img" />
+                                    <div className="review-product">
+                                        <h4>{review.product}</h4>
+                                        <p>{review.comment}</p>
+                                        <span className="reviewer-name">Por {review.reviewer}</span>
+                                    </div>
+                                </div>
+                                <div className="review-meta">
+                                    <div className="review-stars">{renderStars(review.rating)}</div>
+                                    <div className="review-date">{review.date}</div>
+                                    <IonIcon icon={bookmarkOutline} className="bookmark-icon" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )
+
+            case "info":
+                return (
+                    <div className="tab-content">
+                        <h3 className="tab-title">Tu información</h3>
+                        <IonList style={{ backgroundColor: "white" }}>
+                            <IonItem lines="none" className="input-item">
+                                <IonLabel color="primary">Nombre</IonLabel>
+                                <IonInput
+                                    labelPlacement="floating"
+                                    value={userInfo.fullName}
+                                    readonly={true}
+                                    onIonChange={e => handleInputChange("fullName", e.detail.value || "")}
+                                />
+                            </IonItem>
+                            <IonItem lines="none" className="input-item">
+                                <IonLabel color="primary">Ciudad</IonLabel>
+                                <IonInput
+                                    labelPlacement="floating"
+                                    value={userInfo.city}
+                                    readonly={true}
+                                    onIonChange={e => handleInputChange("city", e.detail.value || "")}
+                                />
+                            </IonItem>
+                            <IonItem lines="none" className="input-item">
+                                <IonLabel color="primary">Hobby</IonLabel>
+                                <IonInput
+                                    labelPlacement="floating"
+                                    value={userInfo.hobby}
+                                    readonly={true}
+                                    onIonChange={e => handleInputChange("hobby", e.detail.value || "")}
+                                />
+                            </IonItem>
+                            <IonItem lines="none" className="input-item">
+                                <IonLabel color="primary">Redes Sociales</IonLabel>
+                                <IonInput
+                                    labelPlacement="floating"
+                                    value={userInfo.socialMedia}
+                                    readonly={true}
+                                    onIonChange={e => handleInputChange("socialMedia", e.detail.value || "")}
+                                />
+                            </IonItem>
+                            <IonItem lines="none" className="input-item">
+                                <IonLabel color="primary">Biaografia</IonLabel>
+                                <IonTextarea
+                                    labelPlacement="floating" rows={4}
+                                    value={userInfo.biography}
+                                    readonly={true}
+                                    onIonChange={e => handleInputChange("biography", e.detail.value || "")}
+                                />
+                            </IonItem>
+                        </IonList>
+                    </div>
+                )
+
+            default:
+                return null
+        }
+    }
 
     return (
         <IonPage>
-
             <Navegation isDesktop={isDesktop} />
-
             <IonHeader>
-                <IonToolbar color="primary">
+                <IonToolbar className="toolbar">
                     <IonMenuButton slot="start" />
                 </IonToolbar>
             </IonHeader>
-
-            <IonContent id="main-content" fullscreen style={{ '--background': '#0ea5e9' }}>
-                {/* Background image section */}
-                <div style={{
-                    height: '150px',
-                    backgroundColor: '#e5e7eb',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    color: '#6b7280'
-                }}>
-                    Aquí va una imagen de background
-                </div>
-
-                {/* User profile header */}
-                <div style={{ backgroundColor: '#0ea5e9', padding: '0 15px 15px 15px' }}>
+            <IonContent fullscreen>
+                <div className="hero-banner"><span>Aquí va una imagen de background</span></div>
+                <section className="profile-header">
                     <IonGrid>
                         <IonRow>
-                            <IonCol size="8">
-                                <div style={{ display: 'flex', alignItems: 'center' }}>
-                                    <IonButton
-                                        fill="solid"
-                                        color="light"
-                                        size="small"
-                                        style={{
-                                            '--border-radius': '20px',
-                                            marginRight: '10px',
-                                            '--background': 'rgba(255, 255, 255, 0.3)'
-                                        }}
-                                    >
-                                        <IonIcon icon={starOutline} slot="start" />
-                                        PRO
-                                    </IonButton>
+                            <IonCol size="8" className="profile-info">
+                                <IonButton shape="round" fill="solid" className="pro-badge">
+                                    <IonIcon icon={starOutline} slot="start" /> PRO
+                                </IonButton>
+                                <h2 className="profile-name">{userInfo.name}</h2>
+                                <div className="rating">
+                                    <div className="stars-container">{renderStars(userInfo.rating)}</div>
+                                    <span className="reviews">({userInfo.totalReviews})</span>
                                 </div>
-                                <h2 style={{
-                                    margin: '8px 0',
-                                    color: 'white',
-                                    fontWeight: 'bold',
-                                    fontSize: '24px'
-                                }}>
-                                    {userInfo.name}
-                                </h2>
-                                <div style={{ display: 'flex', alignItems: 'center' }}>
-                                    <div style={{
-                                        display: 'flex',
-                                        backgroundColor: '#fcd34d',
-                                        borderRadius: '10px',
-                                        padding: '2px 6px',
-                                        alignItems: 'center',
-                                        marginRight: '5px'
-                                    }}>
-                                        <IonIcon icon={starOutline} style={{ color: 'white' }} />
-                                        <span style={{ color: 'white', marginLeft: '3px' }}>{userInfo.rating}</span>
-                                    </div>
-                                    <span style={{ color: 'white', fontSize: '12px' }}>
-                    ({userInfo.totalReviews})
-                  </span>
-                                </div>
-                                <div style={{ display: 'flex', marginTop: '10px' }}>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        marginRight: '15px',
-                                        color: 'white',
-                                        fontSize: '12px'
-                                    }}>
-                                        <FaBuilding style={{ marginRight: '5px' }} />
-                                        <span>100% fiable</span>
-                                    </div>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        color: 'white',
-                                        fontSize: '12px'
-                                    }}>
-                                        <FaMapMarkerAlt style={{ marginRight: '5px' }} />
-                                        <span>31 comprados</span>
-                                    </div>
+                                <div className="stats-small">
+                                    <div><FaBuilding /> <span>100% fiable</span></div>
+                                    <div><FaMapMarkerAlt /> <span>31 comprados</span></div>
                                 </div>
                             </IonCol>
-                            <IonCol size="4" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start' }}>
-                                <IonAvatar style={{
-                                    width: '60px',
-                                    height: '60px',
-                                    border: '3px solid white'
-                                }}>
+                            <IonCol size="4" className="avatar-col">
+                                <IonAvatar className="avatar">
                                     <img src="https://via.placeholder.com/60" alt="User avatar" />
                                 </IonAvatar>
                             </IonCol>
                         </IonRow>
                     </IonGrid>
-                </div>
+                </section>
 
-                {/* User stats */}
-                <div style={{
-                    backgroundColor: 'white',
-                    display: 'flex',
-                    justifyContent: 'space-around',
-                    padding: '15px 0',
-                    borderBottom: '1px solid #e5e7eb'
-                }}>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontWeight: 'bold', fontSize: '22px', color: 'black' }}>{userInfo.itemsForSale}</div>
-                        <div style={{ color: 'black', fontSize: '14px' }}>En venta</div>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontWeight: 'bold', fontSize: '22px', color: 'black' }}>{userInfo.trades}</div>
-                        <div style={{ color: 'black', fontSize: '14px' }}>Deseados</div>
-                    </div>
-                    <div style={{
-                        textAlign: 'center',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                        <div style={{
-                            width: '38px',
-                            height: '38px',
-                            borderRadius: '50%',
-                            border: '1px solid black',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center'
-                        }}>
-                            <IonIcon icon={addOutline} style={{ fontSize: '24px', color: 'black' }}/>
-                        </div>
-                        <div style={{ color: '#6b7280', fontSize: '14px', marginTop: '2px' }}>Info</div>
-                    </div>
-                </div>
-
-                {/* User form */}
-                <div style={{ backgroundColor: '#0ea5e9', padding: '15px' }}>
-                    <IonItem lines="none" style={{ '--background': 'white', '--border-radius': '10px', marginBottom: '10px' }}>
-                        <IonInput
-                            label="Nombre completo:"
-                            labelPlacement="floating"
-                            value={userInfo.fullName}
-                            onIonChange={(e) => handleInputChange('fullName', e.detail.value ?? '')}
-                            style={{color:'black', fontSize: '16px'}}
-                        />
-                    </IonItem>
-
-                    <IonItem lines="none" style={{ '--background': 'white', '--border-radius': '10px', marginBottom: '10px' }}>
-                        <IonInput
-                            label="Ciudad:"
-                            labelPlacement="floating"
-                            value={userInfo.city}
-                            onIonChange={(e) => handleInputChange('city', e.detail.value ?? '')}
-                            style={{color:'black', fontSize: '16px'}}
-                        />
-                    </IonItem>
-
-                    <IonItem lines="none" style={{ '--background': 'white', '--border-radius': '10px', marginBottom: '10px' }}>
-                        <IonInput
-                            label="Hobby:"
-                            labelPlacement="floating"
-                            value={userInfo.hobby}
-                            onIonChange={(e) => handleInputChange('hobby', e.detail.value ?? '')}
-                            style={{color:'black', fontSize: '16px'}}
-                        />
-                    </IonItem>
-
-                    <IonItem lines="none" style={{ '--background': 'white', '--border-radius': '10px', marginBottom: '10px' }}>
-                        <IonInput
-                            label="Redes sociales:"
-                            labelPlacement="floating"
-                            value={userInfo.socialMedia}
-                            onIonChange={(e) => handleInputChange('socialMedia', e.detail.value ?? '')}
-                            style={{color:'black', fontSize: '16px'}}
-                        />
-                    </IonItem>
-
-                    <IonItem lines="none" style={{ '--background': 'white', '--border-radius': '10px', marginBottom: '10px' }}>
-                        <IonTextarea
-                            label="Biografía:"
-                            labelPlacement="floating"
-                            value={userInfo.biography}
-                            onIonChange={(e) => handleInputChange('biography', e.detail.value ?? '')}
-                            rows={4}
-                            style={{color:'black', fontSize: '16px'}}
-                        />
-                    </IonItem>
-                </div>
+                <section className="profile-tabs">
+                    <IonSegment value={activeTab} onIonChange={e => setActiveTab(String(e.detail.value!))} className="segment-container">
+                        <IonSegmentButton value="enVenta" className="segment-button">
+                            <IonIcon icon={cartOutline} />
+                            <IonLabel>En venta</IonLabel>
+                        </IonSegmentButton>
+                        <IonSegmentButton value="deseados" className="segment-button">
+                            <IonIcon icon={heartOutline} />
+                            <IonLabel>Deseados</IonLabel>
+                        </IonSegmentButton>
+                        <IonSegmentButton value="reseñas" className="segment-button">
+                            <IonIcon icon={chatbubbleOutline} />
+                            <IonLabel>Reseñas</IonLabel>
+                        </IonSegmentButton>
+                        <IonSegmentButton value="info" className="segment-button">
+                            <IonIcon icon={informationCircleOutline} />
+                            <IonLabel>Info</IonLabel>
+                        </IonSegmentButton>
+                    </IonSegment>
+                    <div className="tab-container">{renderTabContent()}</div>
+                </section>
             </IonContent>
         </IonPage>
-    );
-};
+    )
+}
 
-export default ProfilePage;
+export default ProfilePage
