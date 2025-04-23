@@ -18,8 +18,6 @@ import {
     IonBadge,
     IonList,
     IonThumbnail,
-    IonFab,
-    IonFabButton,
     IonSearchbar
 } from '@ionic/react';
 import {

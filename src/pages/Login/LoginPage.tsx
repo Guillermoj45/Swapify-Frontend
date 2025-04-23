@@ -30,9 +30,10 @@ import "../Register/RegisterPage.css"
 
 const LoginPage: React.FC = () => {
     const photos: string[] = [
-        "https://picsum.photos/1000/1000?random=4",
-        "https://picsum.photos/1000/1000?random=5",
-        "https://picsum.photos/1000/1000?random=6",
+        "Home.png",
+        "NuevaVenta.png",
+        "Perfil_En_Venta.png",
+        "PlanesSwapify.png"
     ]
 
     const [form, setForm] = useState<LoginFormData>({

@@ -40,9 +40,10 @@ const RegisterPage: React.FC = () => {
 
     //Fotos que salen en el registro a la izq
     const photos: string[] = [
-        "https://picsum.photos/1000/1000?random=1",
-        "https://picsum.photos/1000/1000?random=2",
-        "https://picsum.photos/1000/1000?random=3",
+        "Home.png",
+        "NuevaVenta.png",
+        "Perfil_En_Venta.png",
+        "PlanesSwapify.png"
     ]
 
     //Formulario reactivo con el que se construye el objeto

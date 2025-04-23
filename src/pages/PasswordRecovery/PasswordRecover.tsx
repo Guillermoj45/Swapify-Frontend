@@ -73,7 +73,12 @@ const PasswordRecoveryPage = () => {
         setShowToast(true);
     };
 
-    const photos = ["/img1.jpg", "/img2.jpg", "/img3.jpg"]; // Reemplaza con tus imágenes reales
+    const photos: string[] = [
+        "Home.png",
+        "NuevaVenta.png",
+        "Perfil_En_Venta.png",
+        "PlanesSwapify.png"
+    ] // Reemplaza con tus imágenes reales
 
     return (
         <IonPage className="register-page">
