@@ -78,7 +78,7 @@ const PasswordRecoveryPage = () => {
         "NuevaVenta.png",
         "Perfil_En_Venta.png",
         "PlanesSwapify.png"
-    ] // Reemplaza con tus imágenes reales
+    ]
 
     return (
         <IonPage className="register-page">

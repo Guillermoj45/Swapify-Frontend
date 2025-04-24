@@ -9,6 +9,7 @@ import "swiper/css/effect-cube"
 
 import UserService from "../../Services/UserService"
 import { LoginFormData } from "../../Models/LoginData"
+import { useHistory } from "react-router-dom";
 
 import {
     IonPage,
@@ -29,6 +30,9 @@ import { FaGoogle, FaGithub, FaDiscord } from "react-icons/fa"
 import "../Register/RegisterPage.css"
 
 const LoginPage: React.FC = () => {
+
+    const history = useHistory()
+
     const photos: string[] = [
         "Home.png",
         "NuevaVenta.png",
@@ -57,15 +61,6 @@ const LoginPage: React.FC = () => {
         setToastMessage(message)
         setToastColor(color)
         setShowToast(true)
-    }
-
-    const goToRegister = () => {
-        // Aquí pondrías lógica real con router, como useNavigate() si usas React Router
-        window.location.href = "/register"
-    }
-
-    const goToPasswordRecover = () => {
-        window.location.href = "/passwordRecover"
     }
 
     const handleLogin = async () => {
@@ -188,7 +183,7 @@ const LoginPage: React.FC = () => {
                                         <IonText className="ion-text-center">
                                             <p className="login-link">
                                                 ¿No tienes cuenta?{" "}
-                                                <span onClick={goToRegister} className="clickable">
+                                                <span onClick={() => history.push("/register")} className="clickable">
                                                     Regístrate aquí
                                                 </span>
                                             </p>
@@ -197,7 +192,7 @@ const LoginPage: React.FC = () => {
                                         <IonText className="ion-text-center">
                                             <p className="login-link">
                                                 ¿Olvidaste la contraseña?{" "}
-                                                <span onClick={goToPasswordRecover} className="clickable">
+                                                <span onClick={() => history.push("/passwordRecover")} className="clickable">
                                                     Recuperar Contraseña
                                                 </span>
                                             </p>

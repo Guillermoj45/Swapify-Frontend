@@ -1,8 +1,9 @@
-import React, { useState } from "react"
+import React, {useState} from "react"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay, Pagination } from "swiper/modules"
 import UserService from "../../Services/UserService";
 import { User } from "../../Models/User";
+import { useHistory } from "react-router-dom";
 
 
 import "swiper/css"
@@ -21,7 +22,7 @@ import {
     IonGrid,
     IonRow,
     IonCol,
-    IonButton, IonToast, IonInputPasswordToggle, IonText
+    IonButton, IonToast, IonInputPasswordToggle, IonText, IonLoading
 } from "@ionic/react"
 import { FaGoogle, FaGithub, FaDiscord ,FaArrowLeft} from "react-icons/fa"
 import { CgProfile } from "react-icons/cg";
@@ -63,6 +64,13 @@ const RegisterPage: React.FC = () => {
 
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
+    const [toastColor, setToastColor] = useState("");
+
+    // Add this with your other state variables
+    const [isLoading, setIsLoading] = useState(false);
+
+    const history = useHistory();
+
 
     const handleChange = (field: keyof FormData, value: string) => {
         setForm({ ...form, [field]: value })
@@ -71,10 +79,6 @@ const RegisterPage: React.FC = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         setShowImageInput(true)
-    }
-
-    const goToLogin = () => {
-        window.location.href = "/login"
     }
 
     const uploadPhoto = () => {
@@ -98,9 +102,13 @@ const RegisterPage: React.FC = () => {
 
         if (!nickname || !name || !email || !bornDate || !password) {
             setToastMessage("Por favor, completa todos los campos.");
+            setToastColor("danger");
             setShowToast(true);
             return;
         }
+
+
+        setIsLoading(true);
 
         try {
             const user = User.fromFormData(form);
@@ -112,11 +120,26 @@ const RegisterPage: React.FC = () => {
 
             const response = await UserService.registerUser(user);
             console.log("User registered successfully:", response);
-            goToLogin()
+
+            // Mostrar mensaje de correo de verificación
+            setToastMessage("Registro exitoso. Te hemos enviado un correo de verificación.");
+            setToastColor("success");
+            setShowToast(true);
+
+            // Esperar un momento para que el usuario vea el mensaje
+            setTimeout(() => {
+                history.push("/login");
+            }, 2500); // 2.5 segundos
+
         } catch (error) {
             setToastMessage("Error al registrar usuario. Inténtalo de nuevo.");
+            setToastColor("danger");
             setShowToast(true);
             console.error("Failed to register user:", error);
+        }
+        finally {
+            // Hide loading when done (whether success or error)
+            setIsLoading(false);
         }
     };
 
@@ -307,8 +330,8 @@ const RegisterPage: React.FC = () => {
                                         <IonText className="ion-text-center">
                                             <p className="login-link">
                                                 ¿Tienes cuenta?{" "}
-                                                <span onClick={goToLogin} className="clickable">
-                                                    Ir a Login
+                                                <span onClick={() => history.push("/login")} className="clickable">
+                                                        Ir a Login
                                                 </span>
                                             </p>
                                         </IonText>
@@ -324,7 +347,13 @@ const RegisterPage: React.FC = () => {
                     onDidDismiss={() => setShowToast(false)}
                     message={toastMessage}
                     duration={2000}
-                    color="danger"
+                    color={toastColor}
+                />
+
+                <IonLoading
+                    isOpen={isLoading}
+                    message={'Registrando usuario...'}
+                    spinner="circles"
                 />
 
             </IonContent>

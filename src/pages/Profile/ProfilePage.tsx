@@ -1,42 +1,56 @@
 "use client"
 
-import { useState } from "react"
-import {
-    IonContent,
-    IonPage,
-    IonIcon,
-    IonButton,
-    IonGrid,
-    IonRow,
-    IonCol,
-    IonAvatar,
-    IonInput,
-    IonTextarea,
-    IonItem,
-    IonMenuButton,
-    IonToolbar,
-    IonHeader,
-    IonSegment,
-    IonSegmentButton,
-    IonLabel,
-    IonList,
-    IonThumbnail,
-    IonBadge,
-} from "@ionic/react"
-import {
-    starOutline,
-    star,
-    informationCircleOutline,
-    cartOutline,
-    heartOutline,
-    chatbubbleOutline,
-    bookmarkOutline,
-} from "ionicons/icons"
-import { Building, MapPin } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useHistory } from "react-router-dom";
 import "./ProfilePage.css"
 
+import {
+    IonAvatar,
+    IonBadge,
+    IonButton,
+    IonCol,
+    IonContent,
+    IonGrid,
+    IonHeader,
+    IonIcon,
+    IonInput,
+    IonItem,
+    IonLabel,
+    IonList,
+    IonMenuButton,
+    IonPage,
+    IonRow,
+    IonSegment,
+    IonSegmentButton,
+    IonTextarea,
+    IonThumbnail,
+    IonToolbar,
+} from "@ionic/react"
+
+import {
+    bookmarkOutline,
+    cartOutline,
+    chatbubbleOutline,
+    heartOutline,
+    informationCircleOutline,
+    star,
+    starOutline,
+} from "ionicons/icons"
+
+import { Building, MapPin } from "lucide-react"
+
 export default function ProfilePage() {
+    const history = useHistory();
+
+    useEffect(() => {
+        if (!sessionStorage.getItem("token")) {
+            history.push("/login");
+        }
+    }, [history]);
+
+
     const [activeTab, setActiveTab] = useState("reseñas")
+
     const [userInfo, setUserInfo] = useState({
         name: "Sebastian",
         rating: 4,
@@ -50,7 +64,6 @@ export default function ProfilePage() {
         biography: "",
     })
 
-    // Dummy data
     const itemsForSale = [
         { id: 1, title: "Zapatillas Nike", price: "89€", image: "/placeholder.svg?height=60&width=60" },
         { id: 2, title: "iPhone 12", price: "450€", image: "/placeholder.svg?height=60&width=60" },
@@ -87,11 +100,14 @@ export default function ProfilePage() {
         setUserInfo({ ...userInfo, [field]: value })
     }
 
-    const renderStars = (rating: number) => {
-        return Array.from({ length: 5 }, (_, i) => (
-            <IonIcon key={i} icon={i < rating ? star : starOutline} className={i < rating ? "star-filled" : "star-outline"} />
+    const renderStars = (rating: number) =>
+        Array.from({ length: 5 }, (_, i) => (
+            <IonIcon
+                key={i}
+                icon={i < rating ? star : starOutline}
+                className={i < rating ? "star-filled" : "star-outline"}
+            />
         ))
-    }
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -101,9 +117,9 @@ export default function ProfilePage() {
                         <h3 className="tab-title">Artículos en venta ({userInfo.itemsForSale})</h3>
                         <IonList lines="none" style={{ backgroundColor: "white" }}>
                             {itemsForSale.map((item) => (
-                                <IonItem key={item.id} lines="none" className="item-card">
+                                <IonItem key={item.id} className="item-card">
                                     <IonThumbnail slot="start">
-                                        <img src={item.image || "/placeholder.svg"} alt={item.title} />
+                                        <img src={item.image} alt={item.title} />
                                     </IonThumbnail>
                                     <div className="item-details">
                                         <h4>{item.title}</h4>
@@ -112,34 +128,28 @@ export default function ProfilePage() {
                                 </IonItem>
                             ))}
                         </IonList>
-                        <IonButton expand="block" className="view-all-btn">
-                            Ver todos
-                        </IonButton>
+                        <IonButton expand="block" className="view-all-btn">Ver todos</IonButton>
                     </div>
                 )
 
             case "deseados":
                 return (
                     <div className="tab-content">
-                        <h3 className="tab-title">Lista de deseos ({userInfo.trades})</h3>
+                        <h3 className="tab-title">Lista de deseos ({wishlistItems.length})</h3>
                         <IonList style={{ backgroundColor: "white" }}>
                             {wishlistItems.map((item) => (
-                                <IonItem key={item.id} lines="full" className="item-card wishlist-item">
+                                <IonItem key={item.id} className="item-card wishlist-item">
                                     <IonThumbnail slot="start">
-                                        <img src={item.image || "/placeholder.svg"} alt={item.title} />
+                                        <img src={item.image} alt={item.title} />
                                     </IonThumbnail>
                                     <div className="item-details">
                                         <h4>{item.title}</h4>
-                                        <IonBadge color="tertiary" className="price-badge secondary">
-                                            {item.price}
-                                        </IonBadge>
+                                        <IonBadge color="tertiary" className="price-badge secondary">{item.price}</IonBadge>
                                     </div>
                                 </IonItem>
                             ))}
                         </IonList>
-                        <IonButton expand="block" className="view-all-btn">
-                            Ver todos
-                        </IonButton>
+                        <IonButton expand="block" className="view-all-btn">Ver todos</IonButton>
                     </div>
                 )
 
@@ -149,7 +159,7 @@ export default function ProfilePage() {
                         {reviews.map((review) => (
                             <div key={review.id} className="review-card">
                                 <div className="review-user">
-                                    <img src={review.image || "/placeholder.svg"} alt={review.reviewer} className="reviewer-img" />
+                                    <img src={review.image} alt={review.reviewer} className="reviewer-img" />
                                     <div className="review-product">
                                         <h4>{review.product}</h4>
                                         <p>{review.comment}</p>
@@ -171,49 +181,26 @@ export default function ProfilePage() {
                     <div className="tab-content">
                         <h3 className="tab-title">Tu información</h3>
                         <IonList style={{ backgroundColor: "white" }}>
-                            <IonItem lines="none" className="input-item">
-                                <IonLabel color="primary">Nombre</IonLabel>
-                                <IonInput
-                                    labelPlacement="floating"
-                                    value={userInfo.fullName}
-                                    readonly={true}
-                                    onIonChange={(e) => handleInputChange("fullName", e.detail.value || "")}
-                                />
-                            </IonItem>
-                            <IonItem lines="none" className="input-item">
-                                <IonLabel color="primary">Ciudad</IonLabel>
-                                <IonInput
-                                    labelPlacement="floating"
-                                    value={userInfo.city}
-                                    readonly={true}
-                                    onIonChange={(e) => handleInputChange("city", e.detail.value || "")}
-                                />
-                            </IonItem>
-                            <IonItem lines="none" className="input-item">
-                                <IonLabel color="primary">Hobby</IonLabel>
-                                <IonInput
-                                    labelPlacement="floating"
-                                    value={userInfo.hobby}
-                                    readonly={true}
-                                    onIonChange={(e) => handleInputChange("hobby", e.detail.value || "")}
-                                />
-                            </IonItem>
-                            <IonItem lines="none" className="input-item">
-                                <IonLabel color="primary">Redes Sociales</IonLabel>
-                                <IonInput
-                                    labelPlacement="floating"
-                                    value={userInfo.socialMedia}
-                                    readonly={true}
-                                    onIonChange={(e) => handleInputChange("socialMedia", e.detail.value || "")}
-                                />
-                            </IonItem>
-                            <IonItem lines="none" className="input-item">
+                            {[
+                                { label: "Nombre", value: userInfo.fullName, field: "fullName" },
+                                { label: "Ciudad", value: userInfo.city, field: "city" },
+                                { label: "Hobby", value: userInfo.hobby, field: "hobby" },
+                                { label: "Redes Sociales", value: userInfo.socialMedia, field: "socialMedia" },
+                            ].map(({ label, value, field }) => (
+                                <IonItem key={field} className="input-item">
+                                    <IonLabel color="primary">{label}</IonLabel>
+                                    <IonInput value={value} readonly onIonChange={(e: CustomEvent) => handleInputChange("fullName", e.detail.value || "")}>
+
+                                    </IonInput>
+
+                                </IonItem>
+                            ))}
+                            <IonItem className="input-item">
                                 <IonLabel color="primary">Biografía</IonLabel>
                                 <IonTextarea
-                                    labelPlacement="floating"
                                     rows={4}
                                     value={userInfo.biography}
-                                    readonly={true}
+                                    readonly
                                     onIonChange={(e) => handleInputChange("biography", e.detail.value || "")}
                                 />
                             </IonItem>
@@ -234,9 +221,7 @@ export default function ProfilePage() {
                 </IonToolbar>
             </IonHeader>
             <IonContent fullscreen>
-                <div className="hero-banner">
-                    <span>Aquí va una imagen de background</span>
-                </div>
+                <div className="hero-banner"><span>Aquí va una imagen de background</span></div>
                 <section className="profile-header">
                     <IonGrid>
                         <IonRow>
@@ -250,12 +235,8 @@ export default function ProfilePage() {
                                     <span className="reviews">({userInfo.totalReviews})</span>
                                 </div>
                                 <div className="stats-small">
-                                    <div>
-                                        <Building size={16} /> <span>100% fiable</span>
-                                    </div>
-                                    <div>
-                                        <MapPin size={16} /> <span>31 comprados</span>
-                                    </div>
+                                    <div><Building size={16} /> <span>100% fiable</span></div>
+                                    <div><MapPin size={16} /> <span>31 comprados</span></div>
                                 </div>
                             </IonCol>
                             <IonCol size="4" className="avatar-col">
@@ -266,29 +247,12 @@ export default function ProfilePage() {
                         </IonRow>
                     </IonGrid>
                 </section>
-
                 <section className="profile-tabs">
-                    <IonSegment
-                        value={activeTab}
-                        onIonChange={(e) => setActiveTab(String(e.detail.value!))}
-                        className="segment-container"
-                    >
-                        <IonSegmentButton value="enVenta" className="segment-button">
-                            <IonIcon icon={cartOutline} />
-                            <IonLabel>En venta</IonLabel>
-                        </IonSegmentButton>
-                        <IonSegmentButton value="deseados" className="segment-button">
-                            <IonIcon icon={heartOutline} />
-                            <IonLabel>Deseados</IonLabel>
-                        </IonSegmentButton>
-                        <IonSegmentButton value="reseñas" className="segment-button">
-                            <IonIcon icon={chatbubbleOutline} />
-                            <IonLabel>Reseñas</IonLabel>
-                        </IonSegmentButton>
-                        <IonSegmentButton value="info" className="segment-button">
-                            <IonIcon icon={informationCircleOutline} />
-                            <IonLabel>Info</IonLabel>
-                        </IonSegmentButton>
+                    <IonSegment value={activeTab} onIonChange={(e) => setActiveTab(String(e.detail.value))} className="segment-container">
+                        <IonSegmentButton value="enVenta"><IonIcon icon={cartOutline} /><IonLabel>En venta</IonLabel></IonSegmentButton>
+                        <IonSegmentButton value="deseados"><IonIcon icon={heartOutline} /><IonLabel>Deseados</IonLabel></IonSegmentButton>
+                        <IonSegmentButton value="reseñas"><IonIcon icon={chatbubbleOutline} /><IonLabel>Reseñas</IonLabel></IonSegmentButton>
+                        <IonSegmentButton value="info"><IonIcon icon={informationCircleOutline} /><IonLabel>Info</IonLabel></IonSegmentButton>
                     </IonSegment>
                     <div className="tab-container">{renderTabContent()}</div>
                 </section>

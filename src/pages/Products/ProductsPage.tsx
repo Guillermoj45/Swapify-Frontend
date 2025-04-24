@@ -15,8 +15,17 @@ import {
 import { chevronForward, heart, options, notificationsOutline, add } from 'ionicons/icons';
 import Navegation from "../../components/Navegation";
 import './ProductsPage.css';
+import {useHistory} from "react-router-dom";
 
 const ProductsPage = () => {
+    const history = useHistory();
+
+    useEffect(() => {
+        if (!sessionStorage.getItem("token")) {
+            history.push("/login");
+        }
+    }, [history]);
+
     const [searchText, setSearchText] = useState('');
     const [selectedFilter, setSelectedFilter] = useState('Hogar');
     const [isDesktop, setIsDesktop] = useState(false);
