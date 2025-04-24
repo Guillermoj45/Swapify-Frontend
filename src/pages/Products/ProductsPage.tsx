@@ -12,7 +12,15 @@ import {
     IonIcon,
     IonButton
 } from '@ionic/react';
-import { chevronForward, heart, options, notificationsOutline, add } from 'ionicons/icons';
+import {
+    chevronForward,
+    heart,
+    options,
+    notificationsOutline,
+    add,
+    sunny,
+    moon
+} from 'ionicons/icons';
 import Navegation from "../../components/Navegation";
 import './ProductsPage.css';
 import {useHistory} from "react-router-dom";
@@ -30,7 +38,7 @@ const ProductsPage = () => {
     const [selectedFilter, setSelectedFilter] = useState('Hogar');
     const [isDesktop, setIsDesktop] = useState(false);
     const [currentSlide, setCurrentSlide] = useState(0);
-    // Fix: Properly type the ref to HTMLDivElement
+    const [darkMode, setDarkMode] = useState(false);
     const sliderRef = useRef<HTMLDivElement | null>(null);
 
     // Comprobar el ancho de la pantalla
@@ -45,6 +53,20 @@ const ProductsPage = () => {
             mediaQuery.removeEventListener('change', handleResize);
         };
     }, []);
+
+    // Check user's preferred color scheme on component mount
+    useEffect(() => {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setDarkMode(prefersDark);
+
+        // Apply theme class to body
+        document.body.classList.toggle('dark-theme', prefersDark);
+    }, []);
+
+    // Apply dark mode class when darkMode state changes
+    useEffect(() => {
+        document.body.classList.toggle('dark-theme', darkMode);
+    }, [darkMode]);
 
     // Auto-scroll del slider
     useEffect(() => {
@@ -77,6 +99,11 @@ const ProductsPage = () => {
         }
     };
 
+    // Toggle dark mode
+    const toggleDarkMode = () => {
+        setDarkMode(prev => !prev);
+    };
+
     // Elementos del slider
     const sliderItems = [
         {
@@ -84,27 +111,27 @@ const ProductsPage = () => {
             title: 'Compra y vende artículos de segunda mano.',
             description: 'Encuentra productos únicos a precios increíbles.',
             buttonText: 'Vender ahora',
-            backgroundColor: '#f1ffe8',
-            textColor: '#0e5741',
-            buttonColor: '#0e5741'
+            backgroundColor: darkMode ? '#0d1f15' : '#f1ffe8',
+            textColor: darkMode ? '#64ffa9' : '#0e5741',
+            buttonColor: darkMode ? '#12b687' : '#0e5741'
         },
         {
             id: 2,
             title: 'Descubre ofertas especiales',
             description: 'Miles de productos con grandes descuentos.',
             buttonText: 'Ver ofertas',
-            backgroundColor: '#e8f0ff',
-            textColor: '#1a56a5',
-            buttonColor: '#1a56a5'
+            backgroundColor: darkMode ? '#0d1b30' : '#e8f0ff',
+            textColor: darkMode ? '#64aaff' : '#1a56a5',
+            buttonColor: darkMode ? '#1a56a5' : '#1a56a5'
         },
         {
             id: 3,
             title: 'Vende lo que ya no usas',
             description: 'Dale una segunda vida a tus objetos y gana dinero extra.',
             buttonText: 'Publicar ahora',
-            backgroundColor: '#fff0e8',
-            textColor: '#a54c1a',
-            buttonColor: '#a54c1a'
+            backgroundColor: darkMode ? '#301a0d' : '#fff0e8',
+            textColor: darkMode ? '#ffa964' : '#a54c1a',
+            buttonColor: darkMode ? '#a54c1a' : '#a54c1a'
         }
     ];
 
@@ -151,9 +178,9 @@ const ProductsPage = () => {
     const filters = ['Hogar', 'Tecnología', 'Deporte', 'Jardín', 'Muebles'];
 
     return (
-        <IonPage className="shopify-page" id="main-content">
+        <IonPage className={`shopify-page ${darkMode ? 'dark-theme' : 'light-theme'}`} id="main-content">
             <IonHeader className="shopify-header">
-                <IonToolbar color="light" className="shopify-toolbar">
+                <IonToolbar className={`shopify-toolbar ${darkMode ? 'dark-toolbar' : ''}`}>
                     {isDesktop && (
                         <IonButtons slot="start">
                             <IonMenuButton />
@@ -165,9 +192,12 @@ const ProductsPage = () => {
                             onIonChange={e => setSearchText(e.detail.value ?? '')}
                             placeholder="Buscar"
                             showCancelButton="never"
-                            className="shopify-searchbar"
+                            className={`shopify-searchbar ${darkMode ? 'dark-searchbar' : ''}`}
                         />
                         <IonButtons slot="end" className="header-buttons">
+                            <IonButton className="theme-toggle-button" onClick={toggleDarkMode}>
+                                <IonIcon icon={darkMode ? sunny : moon} />
+                            </IonButton>
                             <IonButton className="notifications-button">
                                 <IonIcon icon={notificationsOutline} />
                             </IonButton>
@@ -228,7 +258,6 @@ const ProductsPage = () => {
                     {filters.map((filter) => (
                         <IonChip
                             key={filter}
-                            color={selectedFilter === filter ? 'primary' : 'light'}
                             onClick={() => setSelectedFilter(filter)}
                             className={`filter-chip ${selectedFilter === filter ? 'selected' : ''}`}
                         >
@@ -252,7 +281,7 @@ const ProductsPage = () => {
                             {category.items.map((item) => (
                                 <div key={item.id} className="product-card">
                                     <div className="product-image">
-                                        {/* Placeholder para imagen */}
+                                        {/* Placeholder for real images */}
                                         <div className="favorite-button">
                                             <IonIcon icon={heart} />
                                         </div>

@@ -6,6 +6,44 @@
     font-family: 'SF Pro Display', 'Segoe UI', 'Roboto', sans-serif;
 }
 
+/* Dark Theme Variables - Más contrastado y visual */
+.dark-theme {
+    --background-color: #0a0a0a;
+    --card-background: #141414;
+    --text-color: #ffffff;
+    --text-secondary: #b0b0b0;
+    --border-color: #2c2c2c;
+    --header-bg: #000000;
+    --searchbar-bg: #1c1c1c;
+    --chip-bg: #202020;
+    --chip-color: #e0e0e0;
+    --accent-color: #3a76dc; /* Changed to blue */
+    --hover-color: #2760c0; /* Darker blue for hover */
+    --shadow-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Light Theme Variables */
+.light-theme {
+    --background-color: #f5f6f8;
+    --card-background: #ffffff;
+    --text-color: #212121;
+    --text-secondary: #757575;
+    --border-color: #e0e0e0;
+    --header-bg: #ffffff;
+    --searchbar-bg: #f5f6f8;
+    --chip-bg: #f5f6f8;
+    --chip-color: #555555;
+    --accent-color: #3a76dc; /* Changed to blue */
+    --hover-color: #2760c0; /* Darker blue for hover */
+    --shadow-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Apply theme to body */
+body.dark-theme {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
 .shopify-header {
     position: fixed;
     top: 0;
@@ -15,11 +53,17 @@
 }
 
 .shopify-toolbar {
-    --background: white;
+    --background: var(--header-bg);
     --border-width: 0;
     --min-height: 60px;
     padding: 0 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+/* Specific styles for dark toolbar */
+.dark-toolbar {
+    --background: #000000 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .search-container {
@@ -31,26 +75,53 @@
 
 /* Searchbar */
 .shopify-searchbar {
-    --background: #f5f6f8;
+    --background: var(--searchbar-bg);
     --border-radius: 50px;
     --box-shadow: none;
-    --placeholder-color: #757575;
-    --icon-color: #12b687;
-    --color: #212121;
+    --placeholder-color: var(--text-secondary);
+    --icon-color: var(--accent-color);
+    --color: var(--text-color);
     --padding-start: 16px;
     --padding-end: 16px;
     flex-grow: 1;
     margin: 0;
 }
 
+/* Dark theme specific searchbar */
+.dark-searchbar {
+    --background: #1c1c1c !important;
+    --placeholder-color: #888888 !important;
+    --color: #ffffff !important;
+}
+
 .header-buttons {
     margin-left: 8px;
 }
 
-.notifications-button, .options-button {
-    --color: #12b687;
+.notifications-button, .options-button, .theme-toggle-button {
+    --color: var(--accent-color);
     --padding-start: 8px;
     --padding-end: 8px;
+}
+
+/* Fixed button icon colors for light mode to make them visible */
+.light-theme .notifications-button,
+.light-theme .options-button {
+    --color: #3a76dc; /* Blue color to ensure visibility */
+}
+
+.light-theme .theme-toggle-button{
+    --color: #1e1e1e;
+}
+
+/* Mejorar visibilidad de los botones en modo oscuro */
+.dark-theme .theme-toggle-button {
+    --color: #ffcc00; /* Amarillo/dorado para el botón de sol */
+}
+
+.dark-theme .notifications-button,
+.dark-theme .options-button {
+    --color: #5c8fee; /* Blue más brillante en modo oscuro */
 }
 
 /* Slider Banner */
@@ -114,7 +185,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #12b687;
     color: white;
     border: none;
     border-radius: 50px;
@@ -161,9 +231,18 @@
 }
 
 .slider-indicator.active {
-    background-color: #12b687;
+    background-color: var(--accent-color);
     width: 24px;
     border-radius: 4px;
+}
+
+/* Mejorar contraste en modo oscuro */
+.dark-theme .slider-indicator {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.dark-theme .slider-indicator.active {
+    background-color: #5c8fee;
 }
 
 /* Filtros */
@@ -174,7 +253,7 @@
     width: 100%;
     padding: 16px 8px 10px;
     scrollbar-width: none; /* Firefox */
-    background-color: white;
+    background-color: var(--card-background);
 }
 
 .filters-container::-webkit-scrollbar {
@@ -184,25 +263,59 @@
 .filter-chip {
     flex: 0 0 auto;
     margin-right: 8px;
-    --background: #f5f6f8;
-    --color: #555;
+    --background: var(--chip-bg);
+    --color: var(--chip-color);
     --border-radius: 20px;
     min-width: auto;
     font-size: 14px;
     height: 32px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.filter-chip::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-color: transparent;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.filter-chip:not(.selected):hover::after {
+    background-color: rgba(58, 118, 220, 0.1);
 }
 
 .filter-chip.selected {
-    --background: #12b687;
+    --background: var(--accent-color);
     --color: white;
+    box-shadow: 0 2px 8px rgba(58, 118, 220, 0.3);
+}
+
+/* Mejorar la visualización en modo oscuro */
+.dark-theme .filter-chip.selected {
+    --background: #5c8fee;
+    --color: #ffffff;
+    box-shadow: 0 2px 12px rgba(92, 143, 238, 0.4);
 }
 
 /* Categorías */
 .category-section {
     width: 100%;
     padding: 16px 0;
-    background-color: white;
+    background-color: var(--card-background);
     margin-bottom: 8px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+.dark-theme .category-section {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    border: 1px solid #2c2c2c;
 }
 
 .category-header {
@@ -217,16 +330,20 @@
     font-size: 20px;
     font-weight: bold;
     margin: 0;
-    color: #212121;
+    color: var(--text-color);
 }
 
 .view-all-button {
-    --color: #12b687;
+    --color: var(--accent-color);
     --padding-start: 8px;
     --padding-end: 8px;
     font-size: 14px;
     font-weight: 500;
     height: 32px;
+}
+
+.dark-theme .view-all-button {
+    --color: #5c8fee;
 }
 
 /* Contenedor de productos */
@@ -239,6 +356,7 @@
     box-sizing: border-box;
     scrollbar-width: none; /* Firefox */
     -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
+    gap: 12px;
 }
 
 .items-scroll-container::-webkit-scrollbar {
@@ -249,68 +367,151 @@
 .product-card {
     flex: 0 0 auto;
     width: 180px;
-    margin-right: 12px;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    background-color: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    background-color: var(--card-background);
+    box-shadow: 0 3px 10px var(--shadow-color);
     scroll-snap-align: start;
     position: relative;
-    transition: transform 0.2s;
+    transition: all 0.3s ease;
 }
 
 .product-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px var(--shadow-color);
+}
+
+.dark-theme .product-card {
+    border: 1px solid #2c2c2c;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.dark-theme .product-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+    border-color: #3c3c3c;
 }
 
 .product-image {
     height: 180px;
-    background-color: #f5f6f8;
+    background-color: var(--searchbar-bg);
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: hidden;
+}
+
+/* Image placeholder for when real images are missing */
+.image-placeholder {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, var(--accent-color), #5c8fee);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 22px;
+    font-weight: bold;
+    box-shadow: 0 3px 10px rgba(58, 118, 220, 0.3);
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.dark-theme .image-placeholder {
+    background: linear-gradient(145deg, #5c8fee, #3a76dc);
+    box-shadow: 0 3px 15px rgba(92, 143, 238, 0.4);
 }
 
 .favorite-button {
     position: absolute;
     top: 8px;
     right: 8px;
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(255, 255, 255, 0.8);
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 2;
+}
+
+.dark-theme .favorite-button {
+    background-color: rgba(20, 20, 20, 0.8);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .favorite-button ion-icon {
     color: #bbb;
     font-size: 18px;
+    transition: all 0.3s ease;
+}
+
+.favorite-button:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+    transform: scale(1.1);
+}
+
+.dark-theme .favorite-button:hover {
+    background-color: rgba(30, 30, 30, 0.9);
+}
+
+.favorite-button:hover ion-icon {
+    color: #ff4556;
+    transform: scale(1.1);
 }
 
 .product-info {
-    padding: 12px;
+    padding: 14px;
     text-align: left;
 }
 
 .product-name {
     margin: 0;
     font-weight: 600;
-    font-size: 14px;
-    color: #212121;
+    font-size: 15px;
+    color: var(--text-color);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    transition: color 0.3s ease;
+}
+
+.product-card:hover .product-name {
+    color: var(--accent-color);
 }
 
 .product-points {
-    margin: 4px 0 0;
-    color: #757575;
+    margin: 5px 0 0;
+    color: var(--text-secondary);
     font-size: 12px;
     font-weight: 500;
+}
+
+/* Animation for theme toggle */
+.theme-toggle-button {
+    transition: transform 0.5s ease;
+}
+
+.theme-toggle-button:active {
+    transform: rotate(360deg);
+}
+
+/* Efecto de neón en modo oscuro */
+.dark-theme .slider-button {
+    box-shadow: 0 0 15px rgba(58, 118, 220, 0.4);
+}
+
+.dark-theme .slider-button:hover {
+    box-shadow: 0 0 20px rgba(58, 118, 220, 0.6);
+}
+
+.dark-theme .product-card:hover::before {
+    opacity: 0.4;
+    transform: scale(1);
 }
 
 /* Ajustes responsive */
@@ -368,4 +569,26 @@
     .product-image {
         height: 220px;
     }
+}
+
+/* Skeletons for loading state */
+@keyframes shimmer {
+    0% {
+        background-position: -468px 0;
+    }
+    100% {
+        background-position: 468px 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(to right, #f6f7f8 8%, #edeef1 18%, #f6f7f8 33%);
+    background-size: 800px 104px;
+    animation: shimmer 1.5s infinite linear;
+}
+
+.dark-theme .skeleton {
+    background: linear-gradient(to right, #2a2a2a 8%, #333333 18%, #2a2a2a 33%);
+    background-size: 800px 104px;
+    animation: shimmer 1.5s infinite linear;
 }
