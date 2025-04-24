@@ -18,8 +18,9 @@ import {
     heartOutline,
     addOutline,
     mailOutline,
-    settingsOutline
+    settingsOutline, medicalOutline
 } from 'ionicons/icons';
+
 const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDesktop, isChatView = false }) => {
     // Siempre mostramos el menú hamburguesa para todas las pantallas en vistas de chat
     // En otras vistas, seguimos la lógica original basada en el tamaño de pantalla
@@ -45,27 +46,33 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle>
-                                <IonItem button routerLink="/favorites">
+                                <IonItem button routerLink="/products">
                                     <IonIcon slot="start" icon={heartOutline} />
-                                    <IonLabel>Favoritos</IonLabel>
+                                    <IonLabel>Productos</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle>
-                                <IonItem button routerLink="/add">
+                                <IonItem button routerLink="/profile">
                                     <IonIcon slot="start" icon={addOutline} />
-                                    <IonLabel>Añadir</IonLabel>
+                                    <IonLabel>Perfil</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle>
-                                <IonItem button routerLink="/messages">
+                                <IonItem button routerLink="/IA">
                                     <IonIcon slot="start" icon={mailOutline} />
-                                    <IonLabel>Mensajes</IonLabel>
+                                    <IonLabel>IA</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle>
-                                <IonItem button routerLink="/settings">
+                                <IonItem button routerLink="/login">
                                     <IonIcon slot="start" icon={settingsOutline} />
-                                    <IonLabel>Configuración</IonLabel>
+                                    <IonLabel>Login</IonLabel>
+                                </IonItem>
+                            </IonMenuToggle>
+                            <IonMenuToggle>
+                                <IonItem button routerLink="/premiumSuscribe">
+                                    <IonIcon slot="start" icon={medicalOutline} />
+                                    <IonLabel>Suscripción</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                         </IonList>
@@ -80,17 +87,17 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                         <IonTabButton tab="home" href="/home">
                             <IonIcon icon={homeOutline} />
                         </IonTabButton>
-                        <IonTabButton tab="favorites" href="/favorites">
+                        <IonTabButton tab="products" href="/products">
                             <IonIcon icon={heartOutline} />
                         </IonTabButton>
-                        <IonTabButton tab="add" href="/add">
+                        <IonTabButton tab="profile" href="/profile">
                             <IonIcon icon={addOutline} />
                         </IonTabButton>
-                        <IonTabButton tab="messages" href="/messages">
+                        <IonTabButton tab="ia" href="/IA">
                             <IonIcon icon={mailOutline} />
                         </IonTabButton>
-                        <IonTabButton tab="settings" href="/settings">
-                            <IonIcon icon={settingsOutline} />
+                        <IonTabButton tab="premium" href="/premiumSuscribe">
+                            <IonIcon icon={medicalOutline} />
                         </IonTabButton>
                     </IonTabBar>
                 </IonFooter>
