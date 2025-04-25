@@ -23,16 +23,28 @@ import {
 } from 'ionicons/icons';
 import Navegation from "../../components/Navegation";
 import './ProductsPage.css';
-import {useHistory} from "react-router-dom";
+import {useHistory, useLocation} from "react-router-dom";
 
+
+
+interface CustomLocationState {
+  token?: string;
+}
 const ProductsPage = () => {
     const history = useHistory();
+    const location = useLocation<CustomLocationState>();
 
     useEffect(() => {
+        const mensaje = new URLSearchParams(location.search).get('token');
+        if (mensaje){
+            sessionStorage.setItem("token", mensaje);
+            history.push("/products");
+        }
+
         if (!sessionStorage.getItem("token")) {
             history.push("/login");
         }
-    }, [history]);
+    }, [history, location]);
 
     const [searchText, setSearchText] = useState('');
     const [selectedFilter, setSelectedFilter] = useState('Hogar');

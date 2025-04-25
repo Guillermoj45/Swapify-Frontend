@@ -27,6 +27,7 @@ import {
 import { FaGoogle, FaGithub, FaDiscord ,FaArrowLeft} from "react-icons/fa"
 import { CgProfile } from "react-icons/cg";
 import "./RegisterPage.css"
+import api from "../../Services/apiConfig";
 
 interface FormData {
     nickname: string
@@ -202,15 +203,15 @@ const RegisterPage: React.FC = () => {
                                         { !showImageInput ? (
                                             <>
                                                 <div className="social-icons">
-                                                    <div className="icon black">
-                                                        <FaDiscord />
-                                                    </div>
-                                                    <div className="icon red">
-                                                        <FaGoogle />
-                                                    </div>
-                                                    <div className="icon blue">
-                                                        <FaGithub />
-                                                    </div>
+                                                    <a href={api.getUri() + "/oauth2/authorization/discord"}>
+                                                        <div className="icon black"><FaDiscord/></div>
+                                                    </a>
+                                                    <a href={api.getUri() + "/oauth2/authorization/google"}>
+                                                        <div className="icon red"><FaGoogle/></div>
+                                                    </a>
+                                                    <a href={api.getUri() + "/oauth2/authorization/github"}>
+                                                        <div className="icon blue"><FaGithub/></div>
+                                                    </a>
                                                 </div>
 
                                                 <div className="divider">

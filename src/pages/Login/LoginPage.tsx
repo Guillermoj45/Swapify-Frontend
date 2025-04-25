@@ -28,6 +28,7 @@ import {
 
 import { FaGoogle, FaGithub, FaDiscord } from "react-icons/fa"
 import "../Register/RegisterPage.css"
+import api from "../../Services/apiConfig";
 
 const LoginPage: React.FC = () => {
 
@@ -78,7 +79,7 @@ const LoginPage: React.FC = () => {
             if (response && response.token) {
                 showToastMessage("Inicio de sesión exitoso", "success");
                 setTimeout(() => {
-                    window.location.href = "/profile";
+                    window.location.href = "/products";
                 }, 1000);
             } else {
                 showToastMessage(response.mensaje || "Inicio de sesión incorrecto. No se recibió un token válido.", "danger");
@@ -148,9 +149,15 @@ const LoginPage: React.FC = () => {
 
                                     <IonCardContent>
                                         <div className="social-icons">
-                                            <div className="icon black"><FaDiscord /></div>
-                                            <div className="icon red"><FaGoogle /></div>
-                                            <div className="icon blue"><FaGithub /></div>
+                                            <a href={api.getUri() + "/oauth2/authorization/discord"}>
+                                                <div className="icon black"><FaDiscord/></div>
+                                            </a>
+                                            <a href={api.getUri() + "/oauth2/authorization/google"}>
+                                                <div className="icon red"><FaGoogle/></div>
+                                            </a>
+                                            <a href={api.getUri() + "/oauth2/authorization/github"}>
+                                                <div className="icon blue"><FaGithub/></div>
+                                            </a>
                                         </div>
 
                                         <div className="divider"><span>O</span></div>
