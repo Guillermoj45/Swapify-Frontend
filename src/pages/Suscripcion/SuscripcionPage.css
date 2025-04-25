@@ -1,0 +1,305 @@
+/* SuscripcionPage.css */
+
+/* Global styles */
+:root {
+    --primary-color: #3880ff;
+    --secondary-color: #005685;
+    --gradient-start: #ff8a00;
+    --gradient-end: #e52e71;
+    --text-light: #ffffff;
+    --text-dark: #333333;
+    --card-bg: #ffffff;
+    --feature-icon: #4caf50;
+    --limited-icon: #ff5722;
+    --border-radius: 12px;
+    --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.subscription-content {
+    background-color: #f5f7fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Main toolbar */
+.main-toolbar {
+    --background: var(--primary-color);
+    --color: var(--text-light);
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Hero section */
+.hero-section {
+    margin-bottom: 32px;
+    padding: 16px;
+    border-radius: var(--border-radius);
+    background-color: #fff;
+    box-shadow: var(--box-shadow);
+}
+
+.hero-content {
+    padding: 24px 16px;
+}
+
+.premium-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--secondary-color);
+    margin-bottom: 8px;
+}
+
+.premium-subtitle {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 24px;
+}
+
+/* Features list */
+.features-list {
+    margin-bottom: 24px;
+}
+
+.feature-item {
+    --padding-start: 0;
+    margin-bottom: 12px;
+}
+
+.feature-icon {
+    color: var(--feature-icon);
+    font-size: 20px;
+    margin-right: 12px;
+}
+
+/* Phone image container */
+.phone-container {
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    border-radius: var(--border-radius);
+    padding: 32px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.phone-image {
+    max-width: 220px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
+    animation: float 3s ease-in-out infinite;
+}
+
+.glow-effect {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    filter: blur(30px);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+/* CTA Button */
+.cta-button {
+    --background: var(--secondary-color);
+    --background-hover: #004b75;
+    --border-radius: 8px;
+    --color: var(--text-light);
+    font-weight: 600;
+    font-size: 16px;
+    margin: 16px 0;
+    height: 48px;
+    text-transform: none;
+    --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Plans comparison section */
+.plans-comparison {
+    background: var(--secondary-color);
+    color: var(--text-light);
+    padding: 32px 20px;
+    border-radius: var(--border-radius);
+    margin-top: 20px;
+    box-shadow: var(--box-shadow);
+}
+
+.comparison-title {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 24px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.info-icon {
+    margin-right: 8px;
+    font-size: 24px;
+}
+
+.plans-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+@media (min-width: 768px) {
+    .plans-container {
+        flex-direction: row;
+    }
+}
+
+/* Plan cards */
+.plan-card {
+    margin: 0;
+    border-radius: var(--border-radius);
+    overflow: visible;
+    flex: 1;
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.plan-card:hover {
+    transform: translateY(-5px);
+}
+
+.premium-card {
+    background-color: var(--card-bg);
+    border: 2px solid var(--gradient-end);
+}
+
+.free-card {
+    background-color: var(--card-bg);
+}
+
+.plan-badge {
+    position: absolute;
+    top: -12px;
+    right: 24px;
+    background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+    color: var(--text-light);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 16px;
+    z-index: 3;
+}
+
+.plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eee;
+}
+
+.plan-header h3 {
+    color: var(--text-dark);
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.plan-price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.price {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.period {
+    font-size: 14px;
+    color: #888;
+}
+
+.free-badge {
+    --background: #777;
+    --color: #fff;
+    font-weight: 600;
+    padding: 8px 12px;
+}
+
+/* Plan features */
+.plan-features {
+    list-style-type: none;
+    padding: 0;
+    margin: 0 0 24px 0;
+}
+
+.plan-features li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    color: var(--text-dark);
+    font-size: 15px;
+}
+
+.plan-features ion-icon {
+    margin-right: 12px;
+    font-size: 18px;
+}
+
+.plan-features ion-icon.limited-icon {
+    color: var(--limited-icon);
+}
+
+/* Plan buttons */
+.premium-button {
+    --background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+    --background-hover: linear-gradient(90deg, #e57c00, #c52762);
+    --border-radius: 8px;
+    --color: var(--text-light);
+    font-weight: 600;
+    font-size: 16px;
+    margin: 16px 0 0 0;
+    height: 48px;
+    text-transform: none;
+    --box-shadow: 0 4px 8px rgba(229, 46, 113, 0.25);
+}
+
+.free-button {
+    --color: var(--secondary-color);
+    --border-color: var(--secondary-color);
+    --background: transparent;
+    --background-hover: rgba(0, 86, 133, 0.05);
+    --border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    margin: 16px 0 0 0;
+    height: 48px;
+    text-transform: none;
+}
+
+/* Money-back guarantee text */
+.guarantee-text {
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 24px;
+}
+
+/* Animations */
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
