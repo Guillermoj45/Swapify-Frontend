@@ -84,7 +84,7 @@ const SuscripcionPage: React.FC = () => {
                     <div className="plans-container">
                         {/* Premium plan card */}
                         <IonCard className="plan-card premium-card">
-                            <div className="plan-badge premium-badge">Recomendado</div>
+
                             <IonCardContent>
                                 <div className="plan-header">
                                     <h3>PLAN PREMIUM</h3>
@@ -128,10 +128,10 @@ const SuscripcionPage: React.FC = () => {
 
                                 <IonButton
                                     expand="block"
-                                    className="premium-button"
+                                    className="free-button"
                                     onClick={() => history.push('/products')}
                                 >
-                                    Suscribirse ahora
+                                     Seguir en plan normal
                                 </IonButton>
                             </IonCardContent>
                         </IonCard>

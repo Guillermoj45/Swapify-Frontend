@@ -18,7 +18,7 @@ import {
     IonItem,
     IonLabel
 } from '@ionic/react';
-import { lockClosedOutline, chevronForwardOutline } from 'ionicons/icons';
+import { lockClosedOutline } from 'ionicons/icons';
 import { FaApplePay } from "react-icons/fa";
 import { FaCcPaypal } from "react-icons/fa";
 
@@ -160,26 +160,33 @@ OjU2KzAwOjAw0ssWdwAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyMy0wMi0xM1QwODoxOTo1Nisw MDo
                                         <span>Pago seguro con cifrado SSL</span>
                                     </div>
 
-                                    <div className="form-container">
-                                        <IonItem lines="full" className="input-item">
-                                            <IonLabel position="floating">Nombre en la tarjeta</IonLabel>
-                                            <IonInput
-                                                type="text"
-                                                value={cardName}
-                                                onIonChange={(e) => setCardName(e.detail.value?.toUpperCase() || '')}
-                                                placeholder="NOMBRE APELLIDO"
-                                            />
-                                        </IonItem>
+                                    <div className="form-container spaced-inputs">
+                                        <IonRow>
+                                            <IonCol>
+                                                <IonItem lines="full" className="input-item">
+                                                    <IonLabel position="floating">Nombre en la tarjeta</IonLabel>
+                                                    <IonInput
+                                                        type="text"
+                                                        value={cardName}
+                                                        onIonChange={(e) => setCardName(e.detail.value?.toUpperCase() || '')}
+                                                        placeholder="NOMBRE APELLIDO"
+                                                    />
+                                                </IonItem>
+                                            </IonCol>
+                                            <IonCol>
+                                                <IonItem lines="full" className="input-item">
+                                                    <IonLabel position="floating">Número de tarjeta</IonLabel>
+                                                    <IonInput
+                                                        type="text"
+                                                        value={cardNumber}
+                                                        onIonChange={handleCardNumberChange}
+                                                        placeholder="0000 0000 0000 0000"
+                                                    />
+                                                </IonItem>
+                                            </IonCol>
+                                        </IonRow>
 
-                                        <IonItem lines="full" className="input-item">
-                                            <IonLabel position="floating">Número de tarjeta</IonLabel>
-                                            <IonInput
-                                                type="text"
-                                                value={cardNumber}
-                                                onIonChange={handleCardNumberChange}
-                                                placeholder="0000 0000 0000 0000"
-                                            />
-                                        </IonItem>
+
 
                                         <IonRow>
                                             <IonCol size="6">
