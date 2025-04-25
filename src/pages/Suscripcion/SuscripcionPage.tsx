@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     IonPage,
     IonHeader,
@@ -14,143 +13,133 @@ import {
     IonCol,
     IonGrid,
     IonImg,
+    IonButton,
+    IonIcon
 } from '@ionic/react';
-
+import { informationCircle, checkmarkCircle } from 'ionicons/icons';
+import { useHistory } from "react-router-dom";
+import './SuscripcionPage.css';
 
 const SuscripcionPage: React.FC = () => {
-    // Determine if desktop for navigation component
+
+    const premiumFeatures = [
+        "Prioridad de visibilidad de productos",
+        "Alertas prioritarias",
+        "Numero ilimitado de productos para subir",
+        "Sumar hasta 20 puntos mas al precio evaluado",
+        "Ver todos los productos sin restricción"
+    ];
+
+    const history = useHistory();
+
 
     return (
         <IonPage>
             <IonHeader>
-                <IonToolbar color="primary">
+                <IonToolbar color="primary" className="main-toolbar">
                     <IonTitle>Suscripción</IonTitle>
                 </IonToolbar>
             </IonHeader>
-            <IonContent className="ion-padding">
-
+            <IonContent className="ion-padding subscription-content">
                 {/* Top section with phone image */}
-                <IonGrid>
+                <IonGrid className="hero-section">
                     <IonRow>
-                        <IonCol size="12" sizeMd="7">
-                            <div style={{ padding: '20px' }}>
-                                <h1 style={{
-                                    fontSize: '24px',
-                                    fontWeight: 'bold',
-                                    marginBottom: '20px'
-                                }}>
-                                    Plan Premium
-                                </h1>
-
-                                {/* Features list */}
-                                <IonList lines="none">
-                                    {[1, 2, 3, 4, 5, 6].map((item) => (
-                                        <IonItem key={item}>
-                                            <IonLabel>Características de esta ventaja</IonLabel>
-                                        </IonItem>
-                                    ))}
-                                </IonList>
+                        <IonCol size="12" sizeMd="7" className="hero-content">
+                            <div className="premium-header">
+                                <h1>Plan Premium</h1>
+                                <p className="premium-subtitle">Desbloquea todo el potencial de nuestra aplicación</p>
                             </div>
+
+                            {/* Features list */}
+                            <IonList lines="none" className="features-list">
+                                {premiumFeatures.map((feature, index) => (
+                                    <IonItem key={index} className="feature-item">
+                                        <IonIcon icon={checkmarkCircle} slot="start" className="feature-icon" />
+                                        <IonLabel>{feature}</IonLabel>
+                                    </IonItem>
+                                ))}
+                            </IonList>
                         </IonCol>
 
                         <IonCol size="12" sizeMd="5" className="ion-text-center">
-                            <div style={{
-                                background: 'linear-gradient(135deg, #ff8a00, #e52e71)',
-                                borderRadius: '10px',
-                                padding: '20px',
-                                height: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
+                            <div className="phone-container">
                                 <IonImg
-                                    src="/assets/images/phone-mockup.png"
+                                    src="/image 78.png"
                                     alt="Phone mockup"
-                                    style={{
-                                        maxWidth: '200px',
-                                        margin: '0 auto'
-                                    }}
+                                    className="phone-image"
                                 />
+                                <div className="glow-effect"></div>
                             </div>
                         </IonCol>
                     </IonRow>
                 </IonGrid>
 
                 {/* Bottom section with plans */}
-                <div style={{
-                    background: '#005685',
-                    color: 'white',
-                    padding: '20px',
-                    marginTop: '20px',
-                    borderRadius: '10px'
-                }}>
-                    <h2 style={{
-                        textAlign: 'center',
-                        marginBottom: '30px',
-                        fontSize: '22px'
-                    }}>
-                        Detalles de los planes... PREMIUM VS GRATUITO
+                <div className="plans-comparison">
+                    <h2 className="comparison-title">
+                        <IonIcon icon={informationCircle} className="info-icon" />
+                        Comparativa de planes
                     </h2>
 
-                    {/* Premium plan card */}
-                    <IonCard style={{
-                        marginBottom: '20px',
-                        borderRadius: '10px'
-                    }}>
-                        <IonCardContent style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '20px'
-                        }}>
-                            <IonLabel style={{
-                                fontWeight: 'bold',
-                                fontSize: '18px'
-                            }}>
-                                PLAN PREMIUM
-                            </IonLabel>
-                            <div style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                background: '#ccc',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
-                                <svg width="24" height="24" viewBox="0 0 24 24">
-                                    <path fill="currentColor" d="M12 2L1 21h22L12 2zm-1 10V9h2v3h-2zm0 5v-3h2v3h-2z"/>
-                                </svg>
-                            </div>
-                        </IonCardContent>
-                    </IonCard>
+                    <div className="plans-container">
+                        {/* Premium plan card */}
+                        <IonCard className="plan-card premium-card">
+                            <div className="plan-badge premium-badge">Recomendado</div>
+                            <IonCardContent>
+                                <div className="plan-header">
+                                    <h3>PLAN PREMIUM</h3>
+                                    <div className="plan-price">
+                                        <span className="price">9,99€</span>
+                                        <span className="period">/mes</span>
+                                    </div>
+                                </div>
 
-                    {/* Free plan card */}
-                    <IonCard style={{
-                        borderRadius: '10px'
-                    }}>
-                        <IonCardContent style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '20px'
-                        }}>
-                            <IonLabel style={{
-                                fontWeight: 'bold',
-                                fontSize: '18px'
-                            }}>
-                                PLAN GRATUITO
-                            </IonLabel>
-                            <div style={{
-                                background: '#333',
-                                color: 'white',
-                                padding: '5px 10px',
-                                borderRadius: '4px'
-                            }}>
-                                FREE
-                            </div>
-                        </IonCardContent>
-                    </IonCard>
+                                <ul className="plan-features">
+                                    <li><IonIcon icon={checkmarkCircle} /> Todas las funciones</li>
+                                    <li><IonIcon icon={checkmarkCircle} /> Soporte prioritario</li>
+                                    <li><IonIcon icon={checkmarkCircle} /> Sin anuncios</li>
+                                    <li><IonIcon icon={checkmarkCircle} /> Actualizaciones anticipadas</li>
+                                </ul>
+
+                                <IonButton
+                                    expand="block"
+                                    className="premium-button"
+                                    onClick={() => history.push('/paymentGateway')}
+                                >
+                                    Suscribirse ahora
+                                </IonButton>
+                            </IonCardContent>
+                        </IonCard>
+
+                        {/* Free plan card */}
+                        <IonCard className="plan-card free-card">
+                            <IonCardContent>
+                                <div className="plan-header">
+                                    <h3>PLAN GRATUITO</h3>
+                                    <div className="free-badge">FREE</div>
+                                </div>
+
+                                <ul className="plan-features">
+                                    <li><IonIcon icon={checkmarkCircle} /> Funciones básicas</li>
+                                    <li><IonIcon icon={checkmarkCircle} /> Soporte comunitario</li>
+                                    <li><IonIcon icon={checkmarkCircle} className="limited-icon" /> Publicidad</li>
+                                    <li><IonIcon icon={checkmarkCircle} className="limited-icon" /> Funciones limitadas</li>
+                                </ul>
+
+                                <IonButton
+                                    expand="block"
+                                    className="premium-button"
+                                    onClick={() => history.push('/products')}
+                                >
+                                    Suscribirse ahora
+                                </IonButton>
+                            </IonCardContent>
+                        </IonCard>
+                    </div>
+
+                    <p className="guarantee-text">
+                        30 días de garantía de devolución de dinero. Sin compromiso.
+                    </p>
                 </div>
             </IonContent>
         </IonPage>

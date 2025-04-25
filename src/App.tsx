@@ -39,6 +39,7 @@ import ProfilePage from "./pages/Profile/ProfilePage";
 import PasswordRecover from "./pages/PasswordRecovery/PasswordRecover";
 import SuscripcionPage from "./pages/Suscripcion/SuscripcionPage";
 import IA from "./pages/IA/IA";
+import PagoPremium from "./pages/PagoPremium/PagoPremium";
 
 setupIonicReact();
 
@@ -72,6 +73,9 @@ const App: React.FC = () => (
                 </Route>
                 <Route exact path="/premiumSuscribe">
                     <SuscripcionPage />
+                </Route>
+                <Route exact path="/paymentGateway">
+                    <PagoPremium/>
                 </Route>
             </IonRouterOutlet>
         </IonReactRouter>
