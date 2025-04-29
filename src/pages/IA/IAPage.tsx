@@ -151,6 +151,12 @@ const AIChatPage: React.FC = () => {
             const files = selectedImages;
             const message = inputText;
 
+            // Debug before sending
+            console.log('Enviando mensaje a la IA:');
+            console.log('- Texto:', message);
+            console.log('- Número de imágenes:', files.length);
+            console.log('- ID de chat actual:', currentChatId || 'nuevo chat');
+
             // Reset UI state
             setInputText('');
             setSelectedImages([]);
@@ -164,6 +170,10 @@ const AIChatPage: React.FC = () => {
                 productId || undefined
             );
 
+            // Debug response
+            console.log('Respuesta recibida de la IA:');
+            console.log(response);
+
             // Process response from API
             if (response) {
                 // Save chat ID for continued conversation
@@ -172,11 +182,15 @@ const AIChatPage: React.FC = () => {
                 // Show AI response
                 const aiResponse: Message = {
                     id: response.id,
-                    text: response.response,
+                    text: response.response || 'No se recibió respuesta de texto',
                     sender: "ai",
                     timestamp: new Date(response.timestamp),
                     images: response.images
                 };
+
+                // Verificar si el mensaje original se mantiene
+                console.log('Mensaje original enviado:', message);
+                console.log('Mensaje devuelto por API:', response.message);
 
                 setMessages(prevMessages => [...prevMessages, aiResponse]);
             }
