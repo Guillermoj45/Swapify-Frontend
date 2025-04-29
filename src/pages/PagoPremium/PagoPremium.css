@@ -156,12 +156,6 @@
     left: 18.6em;
 }
 
-.logo {
-    position: absolute;
-    top: 6.8em;
-    left: 11.7em;
-}
-
 .chip {
     position: absolute;
     top: 2.3em;
@@ -300,7 +294,5 @@
 }
 
 .ui-card-container > * {
-    height: 100%; /* Asegura que el contenido se ajuste al contenedor */
-    max-height: 150px; /* Ajusta la altura máxima */
-}
-
+    height: 100%;
+}/* Asegura que el contenido se ajuste

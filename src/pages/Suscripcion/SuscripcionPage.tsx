@@ -14,30 +14,74 @@ import {
     IonGrid,
     IonImg,
     IonButton,
-    IonIcon
+    IonIcon,
 } from '@ionic/react';
-import { informationCircle, checkmarkCircle } from 'ionicons/icons';
+import {
+    informationCircle,
+    checkmarkCircle,
+    moon,
+    sunny,
+    flashOutline,
+    notificationsOutline,
+    cloudUploadOutline,
+    statsChartOutline,
+    eyeOutline,
+    arrowForward
+} from 'ionicons/icons';
 import { useHistory } from "react-router-dom";
 import './SuscripcionPage.css';
+import { useState, useEffect } from 'react';
 
 const SuscripcionPage: React.FC = () => {
 
     const premiumFeatures = [
-        "Prioridad de visibilidad de productos",
-        "Alertas prioritarias",
-        "Numero ilimitado de productos para subir",
-        "Sumar hasta 20 puntos mas al precio evaluado",
-        "Ver todos los productos sin restricción"
+        {
+            icon: eyeOutline,
+            text: "Prioridad de visibilidad de productos"
+        },
+        {
+            icon: notificationsOutline,
+            text: "Alertas prioritarias"
+        },
+        {
+            icon: cloudUploadOutline,
+            text: "Numero ilimitado de productos para subir"
+        },
+        {
+            icon: statsChartOutline,
+            text: "Sumar hasta 20 puntos más al precio evaluado"
+        },
+        {
+            icon: flashOutline,
+            text: "Ver todos los productos sin restricción"
+        }
     ];
 
     const history = useHistory();
 
+    const [isDarkMode, setDarkMode] = useState(false);
+
+    useEffect(() => {
+        document.body.classList.toggle('dark', isDarkMode);
+    }, [isDarkMode]);
+
+    const toggleDarkMode = () => {
+        setDarkMode(prev => !prev);
+    };
 
     return (
         <IonPage>
             <IonHeader>
                 <IonToolbar color="primary" className="main-toolbar">
                     <IonTitle>Suscripción</IonTitle>
+                    <IonButton
+                        fill="clear"
+                        slot="end"
+                        onClick={toggleDarkMode}
+                        className="theme-toggle-btn"
+                    >
+                        <IonIcon icon={isDarkMode ? sunny : moon} />
+                    </IonButton>
                 </IonToolbar>
             </IonHeader>
             <IonContent className="ion-padding subscription-content">
@@ -54,8 +98,8 @@ const SuscripcionPage: React.FC = () => {
                             <IonList lines="none" className="features-list">
                                 {premiumFeatures.map((feature, index) => (
                                     <IonItem key={index} className="feature-item">
-                                        <IonIcon icon={checkmarkCircle} slot="start" className="feature-icon" />
-                                        <IonLabel>{feature}</IonLabel>
+                                        <IonIcon icon={feature.icon} slot="start" className="feature-icon" />
+                                        <IonLabel>{feature.text}</IonLabel>
                                     </IonItem>
                                 ))}
                             </IonList>
@@ -84,7 +128,6 @@ const SuscripcionPage: React.FC = () => {
                     <div className="plans-container">
                         {/* Premium plan card */}
                         <IonCard className="plan-card premium-card">
-
                             <IonCardContent>
                                 <div className="plan-header">
                                     <h3>PLAN PREMIUM</h3>
@@ -95,10 +138,26 @@ const SuscripcionPage: React.FC = () => {
                                 </div>
 
                                 <ul className="plan-features">
-                                    <li><IonIcon icon={checkmarkCircle} /> Todas las funciones</li>
-                                    <li><IonIcon icon={checkmarkCircle} /> Soporte prioritario</li>
-                                    <li><IonIcon icon={checkmarkCircle} /> Sin anuncios</li>
-                                    <li><IonIcon icon={checkmarkCircle} /> Actualizaciones anticipadas</li>
+                                    <li>
+                                        <IonIcon icon={checkmarkCircle} className="limited-icon" />
+                                        Prioridad de visibilidad de productos
+                                    </li>
+                                    <li>
+                                        <IonIcon icon={checkmarkCircle} className="limited-icon" />
+                                        Alertas prioritarias
+                                    </li>
+                                    <li>
+                                        <IonIcon icon={checkmarkCircle} className="limited-icon" />
+                                        Productos ilimitados para subir
+                                    </li>
+                                    <li>
+                                        <IonIcon icon={checkmarkCircle} className="limited-icon" />
+                                        +20 puntos al precio evaluado
+                                    </li>
+                                    <li>
+                                        <IonIcon icon={checkmarkCircle} className="limited-icon" />
+                                        Acceso a todos los productos sin restricción
+                                    </li>
                                 </ul>
 
                                 <IonButton
@@ -107,6 +166,7 @@ const SuscripcionPage: React.FC = () => {
                                     onClick={() => history.push('/paymentGateway')}
                                 >
                                     Suscribirse ahora
+                                    <IonIcon icon={arrowForward} slot="end" />
                                 </IonButton>
                             </IonCardContent>
                         </IonCard>
@@ -120,26 +180,39 @@ const SuscripcionPage: React.FC = () => {
                                 </div>
 
                                 <ul className="plan-features">
-                                    <li><IonIcon icon={checkmarkCircle} /> Funciones básicas</li>
-                                    <li><IonIcon icon={checkmarkCircle} /> Soporte comunitario</li>
-                                    <li><IonIcon icon={checkmarkCircle} className="limited-icon" /> Publicidad</li>
-                                    <li><IonIcon icon={checkmarkCircle} className="limited-icon" /> Funciones limitadas</li>
+                                    <li>
+                                        <IonIcon icon={checkmarkCircle} />
+                                        Visibilidad estándar de productos
+                                    </li>
+                                    <li>
+                                        <IonIcon icon={checkmarkCircle} />
+                                        Alertas básicas
+                                    </li>
+                                    <li>
+                                        <IonIcon icon={checkmarkCircle} />
+                                        Máximo 5 productos para subir
+                                    </li>
+                                    <li>
+                                        <IonIcon icon={checkmarkCircle} />
+                                        Sin bonus al precio evaluado
+                                    </li>
+                                    <li>
+                                        <IonIcon icon={checkmarkCircle} />
+                                        Acceso limitado a productos
+                                    </li>
                                 </ul>
 
                                 <IonButton
                                     expand="block"
                                     className="free-button"
+                                    fill="outline"
                                     onClick={() => history.push('/products')}
                                 >
-                                     Seguir en plan normal
+                                    Seguir en plan normal
                                 </IonButton>
                             </IonCardContent>
                         </IonCard>
                     </div>
-
-                    <p className="guarantee-text">
-                        30 días de garantía de devolución de dinero. Sin compromiso.
-                    </p>
                 </div>
             </IonContent>
         </IonPage>
