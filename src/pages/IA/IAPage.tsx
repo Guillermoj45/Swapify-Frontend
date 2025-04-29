@@ -19,7 +19,8 @@ import {
     IonText,
     IonButtons,
     IonMenuButton,
-    TextareaCustomEvent
+    TextareaCustomEvent,
+    useIonToast
 } from '@ionic/react';
 import { TextareaChangeEventDetail } from '@ionic/core';
 import {
@@ -33,19 +34,30 @@ import {
     trash,
     checkmark,
     menuOutline,
-    sunny, // Icono para modo claro
-    moon // Icono para modo oscuro
+    sunny,
+    moon
 } from 'ionicons/icons';
 import './IA.css';
 import Navegacion from '../../components/Navegation';
+import { IAChat } from '../../Services/IAService'; // Importamos el servicio
+
+// Interfaz para manejar la respuesta de la API
+interface ConversIA {
+    id: string;
+    message: string;
+    response: string;
+    images?: string[];
+    timestamp: Date;
+}
 
 // Definir interfaces para una escritura TypeScript adecuada
 interface Message {
-    id: number;
+    id: number | string;
     text: string;
     sender: 'user' | 'ai';
     timestamp: Date;
     image?: string;
+    images?: string[];
     isCopied?: boolean;
 }
 
@@ -55,9 +67,9 @@ const AIChatPage: React.FC = () => {
     ]);
     const [inputText, setInputText] = useState<string>('');
     const [isTyping, setIsTyping] = useState<boolean>(false);
-    const [selectedImage, setSelectedImage] = useState<File | null>(null);
-    const [previewImage, setPreviewImage] = useState<string | null>(null);
-    const [showOptions, setShowOptions] = useState<{ open: boolean, id: number | null }>({ open: false, id: null });
+    const [selectedImages, setSelectedImages] = useState<File[]>([]);
+    const [previewImages, setPreviewImages] = useState<string[]>([]);
+    const [showOptions, setShowOptions] = useState<{ open: boolean, id: number | string | null }>({ open: false, id: null });
     const [suggestedPrompts] = useState<string[]>([
         "¿Puedes analizar esta imagen?",
         "Cuéntame sobre la IA generativa",
@@ -66,6 +78,9 @@ const AIChatPage: React.FC = () => {
     ]);
     const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768);
     const [darkMode, setDarkMode] = useState<boolean>(true); // Por defecto en modo oscuro
+    const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+    const [productId, setProductId] = useState<string | null>(null);
+    const [presentToast] = useIonToast();
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const contentRef = useRef<HTMLIonContentElement>(null);
@@ -116,62 +131,70 @@ const AIChatPage: React.FC = () => {
         }, 500);
     }, []);
 
-    const handleSend = (): void => {
-        if (inputText.trim() === '' && !selectedImage) return;
+    const handleSend = async (): Promise<void> => {
+        if (inputText.trim() === '' && selectedImages.length === 0) return;
 
-        // Add user message
-        const userMessage: Message = {
-            id: Date.now(),
-            text: inputText,
-            sender: "user",
-            timestamp: new Date(),
-            ...(previewImage && { image: previewImage })
-        };
-
-        setMessages(prevMessages => [...prevMessages, userMessage]);
-        setInputText('');
-        setSelectedImage(null);
-        setPreviewImage(null);
-
-        // Simulate AI typing
-        setIsTyping(true);
-
-        // Simulate AI response after a delay
-        setTimeout(() => {
-            const aiResponse: Message = {
-                id: Date.now() + 1,
-                text: userMessage.image
-                    ? "He analizado tu imagen. Parece ser una fotografía interesante. ¿Quieres que te dé más detalles sobre lo que veo en ella?"
-                    : generateAIResponse(inputText),
-                sender: "ai",
-                timestamp: new Date()
+        try {
+            // Add user message to UI
+            const userMessage: Message = {
+                id: Date.now(),
+                text: inputText,
+                sender: "user",
+                timestamp: new Date(),
+                images: previewImages.length > 0 ? previewImages : undefined
             };
 
-            setMessages(prevMessages => [...prevMessages, aiResponse]);
+            setMessages(prevMessages => [...prevMessages, userMessage]);
+            setIsTyping(true);
+
+            // Prepare for API call
+            const files = selectedImages;
+            const message = inputText;
+
+            // Reset UI state
+            setInputText('');
+            setSelectedImages([]);
+            setPreviewImages([]);
+
+            // Call API with service function
+            const response = await IAChat(
+                files,
+                message,
+                currentChatId || undefined,
+                productId || undefined
+            );
+
+            // Process response from API
+            if (response) {
+                // Save chat ID for continued conversation
+                setCurrentChatId(response.id);
+
+                // Show AI response
+                const aiResponse: Message = {
+                    id: response.id,
+                    text: response.response,
+                    sender: "ai",
+                    timestamp: new Date(response.timestamp),
+                    images: response.images
+                };
+
+                setMessages(prevMessages => [...prevMessages, aiResponse]);
+            }
+        } catch (error) {
+            console.error("Error sending message:", error);
+            presentToast({
+                message: 'Error al enviar el mensaje. Inténtalo de nuevo.',
+                duration: 3000,
+                color: 'danger'
+            });
+        } finally {
             setIsTyping(false);
-        }, Math.random() * 1000 + 1000); // Random delay between 1-2 seconds for more realistic feel
+        }
     };
 
     // Cambiar entre modo oscuro y claro
     const toggleDarkMode = (): void => {
         setDarkMode(prevMode => !prevMode);
-    };
-
-    // Generate more natural AI responses based on input
-    const generateAIResponse = (input: string): string => {
-        const lowercaseInput = input.toLowerCase();
-
-        if (lowercaseInput.includes('hola') || lowercaseInput.includes('saludos') || lowercaseInput.includes('buenos días')) {
-            return "¡Hola! Es un placer saludarte. ¿En qué puedo ayudarte hoy?";
-        } else if (lowercaseInput.includes('código') || lowercaseInput.includes('programación') || lowercaseInput.includes('desarrollar')) {
-            return "Entiendo que necesitas ayuda con código o desarrollo. Puedo ayudarte con sugerencias, revisión de código o explicación de conceptos. ¿Qué lenguaje o framework estás utilizando?";
-        } else if (lowercaseInput.includes('gracias') || lowercaseInput.includes('agradezco')) {
-            return "¡No hay de qué! Estoy aquí para ayudarte. Si tienes más preguntas en el futuro, no dudes en consultarme.";
-        } else if (lowercaseInput.includes('imagen') || lowercaseInput.includes('foto')) {
-            return "Para analizar una imagen, puedes usar el botón de cámara en la parte inferior de la pantalla para cargar una foto. Una vez cargada, podré analizarla y proporcionarte información sobre ella.";
-        } else {
-            return `He procesado tu mensaje sobre "${input}". ¿Puedo ofrecerte más información o ayudarte de alguna otra manera con este tema?`;
-        }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent): void => {
@@ -189,25 +212,28 @@ const AIChatPage: React.FC = () => {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const files = e.target.files;
-        if (files && files[0]) {
-            const file = files[0];
-            setSelectedImage(file);
+        if (files && files.length > 0) {
+            // Convert FileList to array for easier handling
+            const fileArray = Array.from(files);
+            setSelectedImages(prev => [...prev, ...fileArray]);
 
-            // Create preview URL
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const result = reader.result;
-                if (typeof result === 'string') {
-                    setPreviewImage(result);
-                }
-            };
-            reader.readAsDataURL(file);
+            // Create preview URLs for all selected images
+            fileArray.forEach(file => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const result = reader.result;
+                    if (typeof result === 'string') {
+                        setPreviewImages(prev => [...prev, result]);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
         }
     };
 
-    const handleClearImage = (): void => {
-        setSelectedImage(null);
-        setPreviewImage(null);
+    const handleClearImages = (): void => {
+        setSelectedImages([]);
+        setPreviewImages([]);
     };
 
     const handleSuggestedPrompt = (prompt: string): void => {
@@ -217,7 +243,7 @@ const AIChatPage: React.FC = () => {
         }
     };
 
-    const handleCopyMessage = (id: number): void => {
+    const handleCopyMessage = (id: number | string): void => {
         const message = messages.find(m => m.id === id);
         if (message) {
             navigator.clipboard.writeText(message.text);
@@ -237,7 +263,7 @@ const AIChatPage: React.FC = () => {
         setShowOptions({ open: false, id: null });
     };
 
-    const handleDeleteMessage = (id: number): void => {
+    const handleDeleteMessage = (id: number | string): void => {
         setMessages(messages.filter(m => m.id !== id));
         setShowOptions({ open: false, id: null });
     };
@@ -250,6 +276,9 @@ const AIChatPage: React.FC = () => {
         setMessages([
             { id: Date.now(), text: "Chat reiniciado. ¿En qué puedo ayudarte?", sender: "ai", timestamp: new Date() }
         ]);
+        // Reset conversation state
+        setCurrentChatId(null);
+        setProductId(null);
     };
 
     return (
@@ -293,9 +322,16 @@ const AIChatPage: React.FC = () => {
                                     )}
                                 </div>
                                 <div className="message-bubble">
-                                    {message.image && (
-                                        <div className="message-image-container">
-                                            <img src={message.image} alt="Imagen compartida" className="message-image" />
+                                    {message.images && message.images.length > 0 && (
+                                        <div className="message-images-container">
+                                            {message.images.map((img, index) => (
+                                                <img
+                                                    key={index}
+                                                    src={img}
+                                                    alt={`Imagen ${index + 1}`}
+                                                    className="message-image"
+                                                />
+                                            ))}
                                         </div>
                                     )}
                                     <div className="message-text">{message.text}</div>
@@ -349,7 +385,7 @@ const AIChatPage: React.FC = () => {
                     </div>
                 </IonContent>
 
-                {suggestedPrompts.length > 0 && !selectedImage && (
+                {suggestedPrompts.length > 0 && selectedImages.length === 0 && (
                     <div className="suggested-prompts">
                         {suggestedPrompts.map((prompt, index) => (
                             <IonChip
@@ -363,18 +399,34 @@ const AIChatPage: React.FC = () => {
                     </div>
                 )}
 
-                {previewImage && (
+                {previewImages.length > 0 && (
                     <div className="preview-container">
-                        <div className="preview-image-wrapper">
-                            <img src={previewImage} alt="Vista previa" className="preview-image" />
+                        <div className="preview-images-wrapper">
+                            {previewImages.map((previewImage, index) => (
+                                <div key={index} className="preview-image-item">
+                                    <img src={previewImage} alt={`Vista previa ${index + 1}`} className="preview-image" />
+                                    <IonButton
+                                        fill="clear"
+                                        className="clear-image-btn single-image"
+                                        onClick={() => {
+                                            setPreviewImages(previewImages.filter((_, i) => i !== index));
+                                            setSelectedImages(selectedImages.filter((_, i) => i !== index));
+                                        }}
+                                    >
+                                        <IonIcon icon={closeCircle} />
+                                    </IonButton>
+                                </div>
+                            ))}
+                        </div>
+                        {previewImages.length > 1 && (
                             <IonButton
                                 fill="clear"
-                                className="clear-image-btn"
-                                onClick={handleClearImage}
+                                className="clear-all-images-btn"
+                                onClick={handleClearImages}
                             >
-                                <IonIcon icon={closeCircle} />
+                                Borrar todas
                             </IonButton>
-                        </div>
+                        )}
                     </div>
                 )}
 
@@ -398,6 +450,7 @@ const AIChatPage: React.FC = () => {
                             <input
                                 type="file"
                                 accept="image/*"
+                                multiple
                                 ref={fileInputRef}
                                 style={{ display: 'none' }}
                                 onChange={handleFileChange}
@@ -413,7 +466,7 @@ const AIChatPage: React.FC = () => {
 
                             <IonButton
                                 className="send-button"
-                                disabled={inputText.trim() === '' && !selectedImage}
+                                disabled={inputText.trim() === '' && selectedImages.length === 0}
                                 onClick={handleSend}
                             >
                                 <IonIcon icon={arrowUp} />

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     IonMenu,
     IonHeader,
@@ -12,29 +12,58 @@ import {
     IonFooter,
     IonTabBar,
     IonTabButton,
+    IonBadge,
 } from '@ionic/react';
 import {
     homeOutline,
     heartOutline,
     addOutline,
     mailOutline,
-    settingsOutline, medicalOutline
+    settingsOutline,
+    medicalOutline,
+    sunnyOutline,
+    moonOutline
 } from 'ionicons/icons';
+import './Navegation.css';
 
 const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDesktop, isChatView = false }) => {
+    // Estado para el modo oscuro/claro
+    const [darkMode, setDarkMode] = useState(true);
+
     // Siempre mostramos el menú hamburguesa para todas las pantallas en vistas de chat
     // En otras vistas, seguimos la lógica original basada en el tamaño de pantalla
     const showHamburgerMenu = isDesktop || isChatView;
     const showTabBar = !isDesktop && !isChatView;
 
+    // Cambiar modo claro/oscuro
+    const toggleTheme = () => {
+        setDarkMode(!darkMode);
+    };
+
+    // Efecto para aplicar la clase al body para tema claro/oscuro global
+    useEffect(() => {
+        document.body.classList.toggle('light-mode', !darkMode);
+        return () => {
+            document.body.classList.remove('light-mode');
+        };
+    }, [darkMode]);
+
     return (
-        <>
+        <div className={`navegacion-container ${darkMode ? '' : 'light-mode'}`}>
             {/* Menú hamburguesa (siempre en vistas de chat, o cuando es escritorio en otras vistas) */}
             {showHamburgerMenu && (
                 <IonMenu contentId="main-content">
                     <IonHeader>
                         <IonToolbar color="primary">
-                            <IonLabel style={{margin: '20px'}}>Swapify Menu</IonLabel>
+                            <div className="menu-header">
+                                <div className="menu-title">
+                                    <span className="menu-logo">Swapify</span>
+                                    <IonLabel>Menu</IonLabel>
+                                </div>
+                                <button className="theme-toggle" onClick={toggleTheme}>
+                                    <IonIcon icon={darkMode ? sunnyOutline : moonOutline} />
+                                </button>
+                            </div>
                         </IonToolbar>
                     </IonHeader>
                     <IonContent>
@@ -61,6 +90,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 <IonItem button routerLink="/IA">
                                     <IonIcon slot="start" icon={mailOutline} />
                                     <IonLabel>IA</IonLabel>
+                                    <IonBadge color="primary" slot="end">2</IonBadge>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle>
@@ -95,6 +125,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                         </IonTabButton>
                         <IonTabButton tab="ia" href="/IA">
                             <IonIcon icon={mailOutline} />
+                            <IonBadge color="primary">2</IonBadge>
                         </IonTabButton>
                         <IonTabButton tab="premium" href="/premiumSuscribe">
                             <IonIcon icon={medicalOutline} />
@@ -102,7 +133,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                     </IonTabBar>
                 </IonFooter>
             )}
-        </>
+        </div>
     );
 };
 

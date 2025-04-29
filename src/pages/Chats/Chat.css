@@ -650,3 +650,36 @@
 .chat-item.active:hover {
     background-color: rgba(58, 118, 220, 0.15);
 }
+
+/* Contenedor para la navegación del footer en modo móvil */
+.chat-mobile-footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    left: 0;
+    z-index: 100;
+}
+
+/* Ajustes para evitar que el contenido se oculte detrás del footer en móvil */
+@media (max-width: 768px) {
+    .chats-list {
+        padding-bottom: 56px; /* Altura del TabBar */
+    }
+
+    /* Cuando se está en la vista de chat, ocultamos completamente el footer */
+    .chat-view .shown-mobile + .chat-mobile-footer {
+        display: none;
+    }
+}
+
+/* Estilos para la navegación dentro del chat */
+.chat-view .navegacion-container {
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Aseguramos que el pie de página de navegación solo aparezca en móvil */
+@media (min-width: 769px) {
+    .chat-mobile-footer {
+        display: none;
+    }
+}
