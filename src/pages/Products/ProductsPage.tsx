@@ -26,10 +26,10 @@ import './ProductsPage.css';
 import {useHistory, useLocation} from "react-router-dom";
 
 
-
 interface CustomLocationState {
   token?: string;
 }
+
 const ProductsPage = () => {
     const history = useHistory();
     const location = useLocation<CustomLocationState>();

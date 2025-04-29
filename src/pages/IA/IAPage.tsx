@@ -182,7 +182,7 @@ const AIChatPage: React.FC = () => {
                 // Show AI response
                 const aiResponse: Message = {
                     id: response.id,
-                    text: response.response || 'No se recibió respuesta de texto',
+                    text: response.messagesIA[response.messagesIA.length - 1].message || 'No se recibió respuesta de texto',
                     sender: "ai",
                     timestamp: new Date(response.timestamp),
                     images: response.images

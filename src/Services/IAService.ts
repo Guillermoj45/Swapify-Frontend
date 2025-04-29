@@ -2,6 +2,7 @@ import API from './api';
 
 // Interfaz para tipificar la respuesta
 interface IAChatResponse {
+    messagesIA: any;
     id: string;
     message: string;
     response: string;
@@ -46,8 +47,7 @@ export const IAChat = async (
                 ...(token && { Authorization: `Bearer ${token}` })
             }
         });
-
-        console.log('Respuesta recibida:', response.data);
+        console.log('Respuesta recibida:', response.data.messagesIA[response.data.messagesIA.length - 1].message);
         return response.data;
     } catch (error) {
         console.error('Error en petición IAChat:', error);
