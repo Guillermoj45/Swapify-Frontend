@@ -15,6 +15,7 @@ import {
     IonImg,
     IonButton,
     IonIcon,
+    IonChip,
 } from '@ionic/react';
 import {
     informationCircle,
@@ -26,7 +27,9 @@ import {
     cloudUploadOutline,
     statsChartOutline,
     eyeOutline,
-    arrowForward
+    arrowForward,
+    closeCircle,
+    sparkles
 } from 'ionicons/icons';
 import { useHistory } from "react-router-dom";
 import './SuscripcionPage.css';
@@ -73,7 +76,13 @@ const SuscripcionPage: React.FC = () => {
         <IonPage>
             <IonHeader>
                 <IonToolbar color="primary" className="main-toolbar">
-                    <IonTitle>Suscripción</IonTitle>
+                    <IonTitle className="toolbar-title">
+                        <span className="title-text">Suscripción</span>
+                        <IonChip className="upgrade-chip">
+                            <IonIcon icon={sparkles} />
+                            <IonLabel>Mejora tu experiencia</IonLabel>
+                        </IonChip>
+                    </IonTitle>
                     <IonButton
                         fill="clear"
                         slot="end"
@@ -85,6 +94,14 @@ const SuscripcionPage: React.FC = () => {
                 </IonToolbar>
             </IonHeader>
             <IonContent className="ion-padding subscription-content">
+                {/* Premium banner */}
+                <div className="premium-banner">
+                    <div className="premium-badge">
+                        <IonIcon icon={sparkles} className="badge-icon" />
+                        <span>PREMIUM</span>
+                    </div>
+                </div>
+
                 {/* Top section with phone image */}
                 <IonGrid className="hero-section">
                     <IonRow>
@@ -98,8 +115,10 @@ const SuscripcionPage: React.FC = () => {
                             <IonList lines="none" className="features-list">
                                 {premiumFeatures.map((feature, index) => (
                                     <IonItem key={index} className="feature-item">
-                                        <IonIcon icon={feature.icon} slot="start" className="feature-icon" />
-                                        <IonLabel>{feature.text}</IonLabel>
+                                        <div className="feature-icon-container">
+                                            <IonIcon icon={feature.icon} className="feature-icon" />
+                                        </div>
+                                        <IonLabel style={{ color: 'var(--feature-text-color)' }}>{feature.text}</IonLabel>
                                     </IonItem>
                                 ))}
                             </IonList>
@@ -107,12 +126,14 @@ const SuscripcionPage: React.FC = () => {
 
                         <IonCol size="12" sizeMd="5" className="ion-text-center">
                             <div className="phone-container">
+                                <div className="phone-background"></div>
                                 <IonImg
                                     src="/image 78.png"
                                     alt="Phone mockup"
                                     className="phone-image"
                                 />
                                 <div className="glow-effect"></div>
+                                <div className="pulse-circle"></div>
                             </div>
                         </IonCol>
                     </IonRow>
@@ -127,35 +148,42 @@ const SuscripcionPage: React.FC = () => {
 
                     <div className="plans-container">
                         {/* Premium plan card */}
-                        <IonCard className="plan-card premium-card">
+                        <IonCard className="plan-card free-card">
                             <IonCardContent>
                                 <div className="plan-header">
                                     <h3>PLAN PREMIUM</h3>
-                                    <div className="plan-price">
-                                        <span className="price">9,99€</span>
-                                        <span className="period">/mes</span>
-                                    </div>
+                                    <div className="free-badge">9.99€/mes</div>
                                 </div>
 
                                 <ul className="plan-features">
                                     <li>
-                                        <IonIcon icon={checkmarkCircle} className="limited-icon" />
+                                        <div className="check-container free-check">
+                                            <IonIcon icon={checkmarkCircle} className="check-icon" />
+                                        </div>
                                         Prioridad de visibilidad de productos
                                     </li>
                                     <li>
-                                        <IonIcon icon={checkmarkCircle} className="limited-icon" />
+                                        <div className="check-container free-check">
+                                            <IonIcon icon={checkmarkCircle} className="check-icon" />
+                                        </div>
                                         Alertas prioritarias
                                     </li>
                                     <li>
-                                        <IonIcon icon={checkmarkCircle} className="limited-icon" />
+                                        <div className="check-container free-check">
+                                            <IonIcon icon={checkmarkCircle} className="check-icon" />
+                                        </div>
                                         Productos ilimitados para subir
                                     </li>
                                     <li>
-                                        <IonIcon icon={checkmarkCircle} className="limited-icon" />
+                                        <div className="check-container free-check">
+                                            <IonIcon icon={checkmarkCircle} className="check-icon" />
+                                        </div>
                                         +20 puntos al precio evaluado
                                     </li>
                                     <li>
-                                        <IonIcon icon={checkmarkCircle} className="limited-icon" />
+                                        <div className="check-container free-check">
+                                            <IonIcon icon={checkmarkCircle} className="check-icon" />
+                                        </div>
                                         Acceso a todos los productos sin restricción
                                     </li>
                                 </ul>
@@ -181,37 +209,53 @@ const SuscripcionPage: React.FC = () => {
 
                                 <ul className="plan-features">
                                     <li>
-                                        <IonIcon icon={checkmarkCircle} />
+                                        <div className="check-container free-check">
+                                            <IonIcon icon={checkmarkCircle} className="check-icon" />
+                                        </div>
                                         Visibilidad estándar de productos
                                     </li>
                                     <li>
-                                        <IonIcon icon={checkmarkCircle} />
+                                        <div className="check-container free-check">
+                                            <IonIcon icon={checkmarkCircle} className="check-icon" />
+                                        </div>
                                         Alertas básicas
                                     </li>
                                     <li>
-                                        <IonIcon icon={checkmarkCircle} />
+                                        <div className="check-container free-check">
+                                            <IonIcon icon={checkmarkCircle} className="check-icon" />
+                                        </div>
                                         Máximo 5 productos para subir
                                     </li>
                                     <li>
-                                        <IonIcon icon={checkmarkCircle} />
+                                        <div className="check-container limited-check">
+                                            <IonIcon icon={closeCircle} className="limited-icon" />
+                                        </div>
                                         Sin bonus al precio evaluado
                                     </li>
                                     <li>
-                                        <IonIcon icon={checkmarkCircle} />
+                                        <div className="check-container limited-check">
+                                            <IonIcon icon={closeCircle} className="limited-icon" />
+                                        </div>
                                         Acceso limitado a productos
                                     </li>
                                 </ul>
 
                                 <IonButton
                                     expand="block"
-                                    className="free-button"
-                                    fill="outline"
-                                    onClick={() => history.push('/products')}
+                                    className="premium-button"
+                                    onClick={() => history.push('/paymentGateway')}
                                 >
-                                    Seguir en plan normal
+                                    Seguir con plan normal
+                                    <IonIcon icon={arrowForward} slot="end" />
                                 </IonButton>
                             </IonCardContent>
                         </IonCard>
+                    </div>
+
+                    <div className="testimonial-section">
+                        <div className="quote-mark"></div>
+                        <p className="testimonial-text">La suscripción premium mejoró totalmente mi experiencia. Los productos se venden mucho más rápido.</p>
+                        <div className="testimonial-author">- María G., Cliente Premium</div>
                     </div>
                 </div>
             </IonContent>
