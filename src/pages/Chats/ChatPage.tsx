@@ -16,6 +16,7 @@ import {
     micOutline,
     chatbubblesOutline
 } from 'ionicons/icons';
+import Navegacion from '../../components/Navegation';
 
 interface Message {
     id: string;
@@ -140,8 +141,21 @@ const ChatView: React.FC = () => {
     // Estado para mostrar/ocultar panel de chat en móvil
     const [showChatPanel, setShowChatPanel] = useState(false);
 
+    // Detectar si está en móvil
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
     // Ref para el contenedor de mensajes
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Efecto para detectar el tamaño de la pantalla
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Formato de fecha para los mensajes
     const formatMessageTime = (date: Date) => {
@@ -236,6 +250,10 @@ const ChatView: React.FC = () => {
         setDarkMode(!darkMode);
     };
 
+    // Determinar si debemos mostrar el TabBar
+    // Solo se muestra en móvil cuando estamos en la vista de lista de chats (no en un chat específico)
+    const shouldShowNavigation = isMobile && !showChatPanel;
+
     // Scroll al último mensaje
     useEffect(() => {
         if (messagesEndRef.current) {
@@ -296,6 +314,13 @@ const ChatView: React.FC = () => {
                         </div>
                     ))}
                 </div>
+
+                {/* Navegación de pie de página solo para móvil y solo en la vista de lista de chats */}
+                {shouldShowNavigation && (
+                    <div className="chat-mobile-footer">
+                        <Navegacion isDesktop={false} isChatView={false} />
+                    </div>
+                )}
             </div>
 
             <div className={`chat-main ${showChatPanel ? 'shown-mobile' : ''}`}>
