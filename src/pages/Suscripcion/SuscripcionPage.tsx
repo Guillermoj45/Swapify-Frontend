@@ -243,7 +243,7 @@ const SuscripcionPage: React.FC = () => {
                                 <IonButton
                                     expand="block"
                                     className="premium-button"
-                                    onClick={() => history.push('/paymentGateway')}
+                                    onClick={() => history.push('/products')}
                                 >
                                     Seguir con plan normal
                                     <IonIcon icon={arrowForward} slot="end" />

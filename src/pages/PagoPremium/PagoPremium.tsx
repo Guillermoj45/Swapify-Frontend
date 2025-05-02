@@ -20,12 +20,12 @@ import {
     IonLoading,
     IonToast
 } from '@ionic/react';
-import { lockClosedOutline, checkmarkCircleOutline } from 'ionicons/icons';
+import { lockClosedOutline, checkmarkCircleOutline, closeCircleOutline, homeOutline } from 'ionicons/icons';
 import { FaApplePay } from "react-icons/fa";
 import { FaCcPaypal } from "react-icons/fa";
 import PagoService from '../../Services/PagoService';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { loadStripe, StripeCardElement } from '@stripe/stripe-js';
 import {
     CardElement,
@@ -35,24 +35,71 @@ import {
 } from '@stripe/react-stripe-js';
 import './PagoPremium.css';
 import UIverseCard from "../../components/UIVerseCard/UIverseCard";
+import { useHistory } from 'react-router-dom';
 
 // Define types
 type PaymentMethod = 'card' | 'paypal' | 'applepay';
+type PaymentStatus = 'pending' | 'success' | 'error';
 
 interface StripeError {
     message?: string;
 }
 
+// Payment Result Component
+const PaymentResult: React.FC<{
+    status: PaymentStatus;
+    message: string;
+    countdown: number;
+    onRedirect: () => void;
+}> = ({ status, message, countdown, onRedirect }) => {
+    return (
+        <IonGrid className="payment-result-container">
+            <IonRow className="ion-justify-content-center">
+                <IonCol size="12" sizeMd="8" className="ion-text-center">
+                    <div className={`result-icon ${status}`}>
+                        {status === 'success' ? (
+                            <IonIcon icon={checkmarkCircleOutline} className="success-icon" />
+                        ) : (
+                            <IonIcon icon={closeCircleOutline} className="error-icon" />
+                        )}
+                    </div>
+                    <h2 className={`result-title ${status}`}>
+                        {status === 'success' ? '¡Pago Completado!' : 'Error en el Pago'}
+                    </h2>
+                    <p className="result-message">{message}</p>
+                    {status === 'success' && (
+                        <div className="countdown-container">
+                            <p>Devolviendo al menú principal en: <span className="countdown">{countdown}</span></p>
+                            <div className="progress-bar">
+                                <div
+                                    className="progress"
+                                    style={{ width: `${(countdown / 5) * 100}%` }}
+                                ></div>
+                            </div>
+                        </div>
+                    )}
+                    <IonButton
+                        expand="block"
+                        className="redirect-button"
+                        onClick={onRedirect}
+                    >
+                        <IonIcon icon={homeOutline} slot="start" />
+                        {status === 'success' ? 'Ir al Menú Principal' : 'Volver a Intentar'}
+                    </IonButton>
+                </IonCol>
+            </IonRow>
+        </IonGrid>
+    );
+};
+
 // Initialize Stripe with your publishable key
 const stripePromise = loadStripe('pk_test_51RKFEVQBTir074R6Acu86WcAsYYkYgN7Yrjz8CcCvUoQVeQdG2PL8lGHe4RKT0JdMSjNX88YOtdub71zB8flH8Al00BXPeO515');
-
-// Define the price in cents for consistency with Stripe
-const SUBSCRIPTION_PRICE = 999; // 9.99€ in cents
 
 // Checkout Form Component (separated to use Stripe hooks inside Elements provider)
 const CheckoutForm: React.FC = () => {
     const stripe = useStripe();
     const elements = useElements();
+    const history = useHistory();
 
     // Form state
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
@@ -66,24 +113,71 @@ const CheckoutForm: React.FC = () => {
     const [message, setMessage] = useState('');
     const [isSuccess, setIsSuccess] = useState(false);
     const [showToast, setShowToast] = useState(false);
+    const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending');
+    const [countdown, setCountdown] = useState(5);
 
     // Stripe payment intent client secret
-    const [clientSecret, setClientSecret] = useState('');
+    const [clientSecret] = useState('');
 
+    // Handle countdown for success redirect
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+
+        if (paymentStatus === 'success' && countdown > 0) {
+            timer = setTimeout(() => {
+                setCountdown(countdown - 1);
+            }, 1000);
+
+            if (countdown === 1) {
+                handleRedirect();
+            }
+        }
+
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    }, [paymentStatus, countdown]);
+
+    const handleRedirect = () => {
+        // Redirect to home or payment page based on status
+        if (paymentStatus === 'success') {
+            history.push('/home'); // Change to your main menu route
+        } else {
+            // Reset the payment form
+            setPaymentStatus('pending');
+        }
+    };
 
     const createPaymentIntent = async (): Promise<void> => {
         try {
-            const data = await PagoService.createPaymentIntent(SUBSCRIPTION_PRICE);
+            setLoading(true);
 
-            if (data.clientSecret) {
-                setClientSecret(data.clientSecret);
+            const data = await PagoService.createPaymentIntent({
+                priceId: 'price_1RKFLoQBTir074R6yJjLZDKf',
+                quantity: 1
+            });
+
+            if (data.success) {
+                // Redirigir al usuario a la página de pago de Stripe
+                window.location.href = "/products"; // Corrección: usar data.url en lugar de una ruta fija
             } else {
-                throw new Error('Failed to obtain client secret from server');
+                setPaymentStatus('error');
+                setMessage(data.error || 'No se recibió la URL de pago. Por favor, inténtalo más tarde.');
+                setIsSuccess(false);
+                setLoading(false);
             }
-        } catch (error) {
-            console.error('Error creating payment intent:', error);
-            setMessage('No se pudo inicializar el pago. Inténtalo de nuevo más tarde.');
-            setShowToast(true);
+        } catch (error: unknown) {
+            console.error('Error al crear el intent de pago:', error);
+            setPaymentStatus('error');
+
+            // Manejo seguro del error cuando es de tipo unknown
+            const errorMessage = error instanceof Error
+                ? error.message
+                : 'No se pudo inicializar el pago. Por favor, inténtalo de nuevo más tarde.';
+
+            setMessage(errorMessage);
+            setIsSuccess(false);
+            setLoading(false);
         }
     };
 
@@ -190,7 +284,7 @@ const CheckoutForm: React.FC = () => {
                 if (error) {
                     throw new Error(error.message || 'Error procesando el pago');
                 } else if (paymentIntent.status === 'succeeded') {
-                    setIsSuccess(true);
+                    setPaymentStatus('success');
                     setMessage('¡Pago completado con éxito! Tu cuenta premium está activa.');
                 }
             } else if (paymentMethod === 'paypal') {
@@ -198,26 +292,38 @@ const CheckoutForm: React.FC = () => {
                 setMessage('Redirigiendo a PayPal...');
                 // Simulate success for demo purposes
                 setTimeout(() => {
-                    setIsSuccess(true);
+                    setPaymentStatus('success');
                     setMessage('¡Pago completado con éxito! Tu cuenta premium está activa.');
                 }, 2000);
             } else if (paymentMethod === 'applepay') {
                 setMessage('Iniciando Apple Pay...');
                 // Actual Apple Pay integration would go here
                 setTimeout(() => {
-                    setIsSuccess(true);
+                    setPaymentStatus('success');
                     setMessage('¡Pago completado con éxito! Tu cuenta premium está activa.');
                 }, 2000);
             }
         } catch (error) {
             const stripeError = error as StripeError;
             console.error('Payment error:', error);
+            setPaymentStatus('error');
             setMessage(stripeError.message || 'Error al procesar el pago. Inténtalo de nuevo.');
         } finally {
             setLoading(false);
-            setShowToast(true);
         }
     };
+
+    // If payment status is not pending, show result screen
+    if (paymentStatus !== 'pending') {
+        return (
+            <PaymentResult
+                status={paymentStatus}
+                message={message}
+                countdown={countdown}
+                onRedirect={handleRedirect}
+            />
+        );
+    }
 
     return (
         <>
