@@ -592,3 +592,126 @@ body.dark-theme {
     background-size: 800px 104px;
     animation: shimmer 1.5s infinite linear;
 }
+
+/* Estilos para el contenedor de carga */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+}
+
+.loading-container ion-spinner {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 1rem;
+}
+
+/* Estilos para el contenedor de error */
+.error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+}
+
+/* Estilos para la imagen del producto */
+.product-image-placeholder {
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Estilos para la tarjeta de producto */
+.product-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.product-info {
+    padding: 12px;
+}
+
+.product-name {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.product-points {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+.product-description {
+    margin: 0;
+    font-size: 12px;
+    color: #888;
+    line-height: 1.4;
+    height: 50px;
+    overflow: hidden;
+}
+
+/* Mensaje cuando no hay productos */
+.no-products-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 2rem;
+    color: #999;
+    font-style: italic;
+}
+
+/* Ajustes para el modo oscuro */
+.dark-theme .product-card {
+    background-color: #2a2a2a;
+    color: #f4f4f4;
+}
+
+.dark-theme .product-info {
+    background-color: #1e1e1e;
+}
+
+.dark-theme .product-name {
+    color: #f4f4f4;
+}
+
+.dark-theme .product-points {
+    color: #aaa;
+}
+
+.dark-theme .loading-container,
+.dark-theme .error-container,
+.dark-theme .no-products-message {
+    color: #f4f4f4;
+}
+
+/* Estilos responsivos */
+@media (max-width: 576px) {
+    .items-scroll-container {
+        padding: 0 10px;
+    }
+
+    .product-card {
+        min-width: 140px;
+        margin-right: 8px;
+    }
+}

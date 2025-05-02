@@ -1,0 +1,327 @@
+/* ProductDetailPage.css */
+
+.product-detail-page {
+    --background: var(--background-color);
+    font-family: 'SF Pro Display', 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Contenedor principal */
+.product-detail-container {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Imagen del producto */
+.product-detail-image-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.product-detail-image {
+    width: 100%;
+    height: 300px;
+    background-color: var(--searchbar-bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.product-detail-favorite {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 2;
+}
+
+.favorite-button {
+    width: 42px;
+    height: 42px;
+    --background: rgba(255, 255, 255, 0.8);
+    --border-radius: 50%;
+    --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --color: #bbb;
+    transition: all 0.3s ease;
+}
+
+.dark-theme .favorite-button {
+    --background: rgba(20, 20, 20, 0.8);
+    --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.favorite-button.is-favorite {
+    --color: #ff4556;
+}
+
+.favorite-button:hover {
+    --background: rgba(255, 255, 255, 0.9);
+    transform: scale(1.1);
+}
+
+.dark-theme .favorite-button:hover {
+    --background: rgba(30, 30, 30, 0.9);
+}
+
+/* Información del producto */
+.product-detail-info {
+    background-color: var(--card-background);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.dark-theme .product-detail-info {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    border: 1px solid #2c2c2c;
+}
+
+.product-detail-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: var(--text-color);
+}
+
+.product-detail-meta {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.product-detail-rating {
+    margin-right: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.product-detail-time {
+    display: flex;
+    align-items: center;
+}
+
+.product-detail-time ion-icon {
+    margin-right: 4px;
+}
+
+/* Categorías */
+.product-detail-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.product-detail-categories ion-chip {
+    --background: var(--accent-color);
+    --color: white;
+    font-size: 12px;
+    height: 28px;
+}
+
+.dark-theme .product-detail-categories ion-chip {
+    --background: #5c8fee;
+}
+
+/* Descripción */
+.product-detail-description {
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 16px;
+}
+
+.product-detail-description h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 8px;
+}
+
+.product-detail-description p {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    white-space: pre-line;
+}
+
+/* Usuario */
+.product-detail-user {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 12px;
+    background-color: var(--searchbar-bg);
+    border-radius: 8px;
+}
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--accent-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+}
+
+.user-avatar ion-icon {
+    font-size: 28px;
+    color: white;
+}
+
+.user-info h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    color: var(--text-color);
+}
+
+.user-info p {
+    font-size: 14px;
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+/* Ubicación */
+.product-detail-location {
+    display: flex;
+    align-items: center;
+    margin-bottom: 24px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.product-detail-location ion-icon {
+    margin-right: 8px;
+    font-size: 18px;
+}
+
+/* Botones de acción */
+.product-detail-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.main-action-button {
+    --background: var(--accent-color);
+    --color: white;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 10px rgba(58, 118, 220, 0.3);
+    font-weight: 600;
+    height: 48px;
+    margin: 0;
+    transition: all 0.2s ease;
+}
+
+.dark-theme .main-action-button {
+    --background: #5c8fee;
+    --box-shadow: 0 4px 15px rgba(92, 143, 238, 0.4);
+}
+
+.main-action-button:hover {
+    --background: var(--hover-color);
+    transform: translateY(-2px);
+    --box-shadow: 0 6px 12px rgba(58, 118, 220, 0.4);
+}
+
+.secondary-action-button {
+    --border-color: var(--accent-color);
+    --color: var(--accent-color);
+    --border-radius: 8px;
+    font-weight: 500;
+    height: 48px;
+    margin: 0;
+}
+
+.dark-theme .secondary-action-button {
+    --border-color: #5c8fee;
+    --color: #5c8fee;
+}
+
+/* Productos relacionados */
+.related-products {
+    background-color: var(--card-background);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.dark-theme .related-products {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    border: 1px solid #2c2c2c;
+}
+
+.related-products h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    color: var(--text-color);
+}
+
+/* Contenedores para loading y error */
+.loading-container, .error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    text-align: center;
+    padding: 20px;
+}
+
+.loading-container ion-spinner {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+}
+
+/* Diseño responsivo */
+@media (min-width: 768px) {
+    .product-detail-image {
+        height: 400px;
+    }
+
+    .product-detail-title {
+        font-size: 28px;
+    }
+
+    .product-detail-meta {
+        font-size: 16px;
+    }
+
+    .product-detail-actions {
+        flex-direction: row;
+    }
+
+    .main-action-button, .secondary-action-button {
+        flex: 1;
+    }
+}
+
+@media (min-width: 992px) {
+    .product-detail-image {
+        height: 500px;
+    }
+
+    .product-detail-container {
+        padding: 20px;
+    }
+
+    .product-detail-info {
+        padding: 24px;
+    }
+
+    .related-products {
+        padding: 24px;
+    }
+}

@@ -41,6 +41,7 @@ import IA from "./pages/IA/IAPage";
 import ChatPage from "./pages/Chats/ChatPage";
 import SuscripcionPage from "./pages/Suscripcion/SuscripcionPage";
 import PagoPremium from "./pages/PagoPremium/PagoPremium";
+import ProductDetailPage from "./pages/ProductDetail/ProductDetailPage";
 
 setupIonicReact();
 
@@ -80,6 +81,9 @@ const App: React.FC = () => (
                 </Route>
                 <Route exact path="/Chat">
                     <ChatPage/>
+                </Route>
+                <Route exact path="/product/:id">
+                    <ProductDetailPage/>
                 </Route>
             </IonRouterOutlet>
         </IonReactRouter>

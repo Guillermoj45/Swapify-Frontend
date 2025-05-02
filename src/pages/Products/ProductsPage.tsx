@@ -10,7 +10,9 @@ import {
     IonButtons,
     IonMenuButton,
     IonIcon,
-    IonButton
+    IonButton,
+    IonSpinner,
+    IonToast
 } from '@ionic/react';
 import {
     chevronForward,
@@ -23,16 +25,29 @@ import {
 } from 'ionicons/icons';
 import Navegation from "../../components/Navegation";
 import './ProductsPage.css';
-import {useHistory, useLocation} from "react-router-dom";
-
+import { useHistory, useLocation } from "react-router-dom";
+import { ProductService, RecommendDTO, Product } from '../../Services/ProductService';
 
 interface CustomLocationState {
-  token?: string;
+    token?: string;
 }
 
 const ProductsPage = () => {
     const history = useHistory();
     const location = useLocation<CustomLocationState>();
+
+    const [searchText, setSearchText] = useState('');
+    const [selectedFilter, setSelectedFilter] = useState('Hogar');
+    const [isDesktop, setIsDesktop] = useState(false);
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [darkMode, setDarkMode] = useState(false);
+    const sliderRef = useRef<HTMLDivElement | null>(null);
+
+    // Estado para almacenar los datos del backend
+    const [recommendedData, setRecommendedData] = useState<RecommendDTO | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [showToast, setShowToast] = useState<boolean>(false);
 
     useEffect(() => {
         const mensaje = new URLSearchParams(location.search).get('token');
@@ -46,12 +61,28 @@ const ProductsPage = () => {
         }
     }, [history, location]);
 
-    const [searchText, setSearchText] = useState('');
-    const [selectedFilter, setSelectedFilter] = useState('Hogar');
-    const [isDesktop, setIsDesktop] = useState(false);
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const [darkMode, setDarkMode] = useState(false);
-    const sliderRef = useRef<HTMLDivElement | null>(null);
+    // Cargar datos recomendados del backend
+    useEffect(() => {
+        const fetchRecommendedProducts = async () => {
+            try {
+                setLoading(true);
+                const data = await ProductService.getRecommendedProducts();
+
+                // Log para depuración - revisemos la estructura de los datos
+                console.log("Datos recibidos del backend:", data);
+
+                setRecommendedData(data);
+                setLoading(false);
+            } catch (error) {
+                console.error('Error al cargar productos recomendados:', error);
+                setError('No se pudieron cargar los productos recomendados');
+                setLoading(false);
+                setShowToast(true);
+            }
+        };
+
+        fetchRecommendedProducts();
+    }, []);
 
     // Comprobar el ancho de la pantalla
     useEffect(() => {
@@ -83,7 +114,9 @@ const ProductsPage = () => {
     // Auto-scroll del slider
     useEffect(() => {
         const timer = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % sliderItems.length);
+            if (sliderItems.length > 0) {
+                setCurrentSlide((prev) => (prev + 1) % sliderItems.length);
+            }
         }, 5000);
         return () => clearInterval(timer);
     }, []);
@@ -147,47 +180,26 @@ const ProductsPage = () => {
         }
     ];
 
-    // Categorías de productos
-    const categories = [
-        {
-            title: "Lo que necesitas para tu jardín",
-            items: [
-                { id: 1, name: 'Sofá de jardín', points: '5.200 anuncios', image: 'sofa.jpg' },
-                { id: 2, name: 'Mesa de jardín', points: '29.177 anuncios', image: 'mesa.jpg' },
-                { id: 3, name: 'Sillón de jardín', points: '5.104 anuncios', image: 'sillon.jpg' },
-                { id: 4, name: 'Conjunto de jardín', points: '4.586 anuncios', image: 'conjunto.jpg' },
-                { id: 5, name: 'Pérgola', points: '1.711 anuncios', image: 'pergola.jpg' },
-                { id: 6, name: 'Sofá de jardín', points: '5.200 anuncios', image: 'sofa.jpg' },
-                { id: 7, name: 'Mesa de jardín', points: '29.177 anuncios', image: 'mesa.jpg' },
-                { id: 8, name: 'Sillón de jardín', points: '5.104 anuncios', image: 'sillon.jpg' },
-                { id: 9, name: 'Conjunto de jardín', points: '4.586 anuncios', image: 'conjunto.jpg' },
-                { id: 10, name: 'Pérgola', points: '1.711 anuncios', image: 'pergola.jpg' }
-            ]
-        },
-        {
-            title: "¡Bienvenida temporada de Barbacoas!",
-            items: [
-                { id: 6, name: 'Barbacoa Eléctrica', points: '4.235 anuncios', image: 'bbq_electrica.jpg' },
-                { id: 7, name: 'Barbacoa de carbón', points: '1.444 anuncios', image: 'bbq_carbon.jpg' },
-                { id: 8, name: 'Barbacoa sin humo', points: '274 anuncios', image: 'bbq_sinhumo.jpg' },
-                { id: 9, name: 'Barbacoa de gas', points: '4.676 anuncios', image: 'bbq_gas.jpg' },
-                { id: 10, name: 'Barbacoa de obra', points: '3.048 anuncios', image: 'bbq_obra.jpg' }
-            ]
-        },
-        {
-            title: "Renueva tu rutina",
-            items: [
-                { id: 11, name: 'Cinta de correr', points: '2.354 anuncios', image: 'cinta.jpg' },
-                { id: 12, name: 'Bicicleta estática', points: '3.750 anuncios', image: 'bici.jpg' },
-                { id: 13, name: 'Elíptica', points: '1.829 anuncios', image: 'eliptica.jpg' },
-                { id: 14, name: 'Pesas', points: '6.235 anuncios', image: 'pesas.jpg' },
-                { id: 15, name: 'Accesorios fitness', points: '8.120 anuncios', image: 'accesorios.jpg' }
-            ]
-        }
-    ];
-
     // Filtros disponibles
     const filters = ['Hogar', 'Tecnología', 'Deporte', 'Jardín', 'Muebles'];
+
+    // Función para formatear los puntos como "X anuncios"
+    const formatPoints = (points: number): string => {
+        if (points < 0) return "Sin valoración";
+        return `${points} puntos`;
+    };
+
+    // Función para truncar y formatear la descripción
+    const truncateDescription = (description: string, maxLength: number = 85): string => {
+        if (!description) return '';
+        if (description.length <= maxLength) return description;
+
+        // Truncar en el último espacio antes del límite para no cortar palabras
+        const truncated = description.substring(0, maxLength);
+        const lastSpace = truncated.lastIndexOf(' ');
+
+        return lastSpace === -1 ? `${truncated}...` : `${truncated.substring(0, lastSpace)}...`;
+    };
 
     return (
         <IonPage className={`shopify-page ${darkMode ? 'dark-theme' : 'light-theme'}`} id="main-content">
@@ -222,6 +234,16 @@ const ProductsPage = () => {
             </IonHeader>
 
             <IonContent className="wallapop-content">
+                {/* Toast para errores */}
+                <IonToast
+                    isOpen={showToast}
+                    onDidDismiss={() => setShowToast(false)}
+                    message={error || "Ocurrió un error"}
+                    duration={3000}
+                    position="bottom"
+                    color="danger"
+                />
+
                 {/* Banner Slider */}
                 <div className="slider-container">
                     <div
@@ -278,35 +300,79 @@ const ProductsPage = () => {
                     ))}
                 </div>
 
-                {/* Secciones de categorías */}
-                {categories.map((category, index) => (
-                    <div key={index} className="category-section">
-                        <div className="category-header">
-                            <h2 className="section-title">{category.title}</h2>
-                            <IonButton fill="clear" className="view-all-button">
-                                Ver todo <IonIcon icon={chevronForward} />
-                            </IonButton>
-                        </div>
-
-                        {/* Contenedor horizontal con scroll */}
-                        <div className="items-scroll-container">
-                            {category.items.map((item) => (
-                                <div key={item.id} className="product-card">
-                                    <div className="product-image">
-                                        {/* Placeholder for real images */}
-                                        <div className="favorite-button">
-                                            <IonIcon icon={heart} />
-                                        </div>
-                                    </div>
-                                    <div className="product-info">
-                                        <h3 className="product-name">{item.name}</h3>
-                                        <p className="product-points">{item.points}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                {/* Contenido dinámico desde la API */}
+                {loading ? (
+                    <div className="loading-container">
+                        <IonSpinner name="circular" />
+                        <p>Cargando productos recomendados...</p>
                     </div>
-                ))}
+                ) : error ? (
+                    <div className="error-container">
+                        <p>No se pudieron cargar los productos. Inténtalo de nuevo más tarde.</p>
+                        <IonButton onClick={() => window.location.reload()}>Reintentar</IonButton>
+                    </div>
+                ) : (
+                    recommendedData && recommendedData.titles.map((title, categoryIndex) => {
+                        // Obtener los productos específicos para esta categoría
+                        const categoryProducts = recommendedData.products[categoryIndex] || [];
+
+                        // Log para depuración
+                        console.log(`Categoría: ${title}, Índice: ${categoryIndex}`);
+                        console.log(`Productos para esta categoría:`, categoryProducts);
+
+                        // Solo mostrar categorías que tengan productos
+                        if (!categoryProducts || categoryProducts.length === 0) {
+                            console.log(`La categoría ${title} no tiene productos, no se mostrará.`);
+                            return null;
+                        }
+
+                        return (
+                            <div key={categoryIndex} className="category-section">
+                                <div className="category-header">
+                                    <h2 className="section-title">{title}</h2>
+                                    <IonButton fill="clear" className="view-all-button">
+                                        Ver todo <IonIcon icon={chevronForward} />
+                                    </IonButton>
+                                </div>
+
+                                {/* Contenedor horizontal con scroll */}
+                                <div className="items-scroll-container">
+                                    {categoryProducts.map((product: Product) => (
+                                        <div key={product.id} className="product-card" onClick={() => {
+                                            console.log('Producto seleccionado:', product);
+                                        }}>
+                                            <div className="product-image">
+                                                <div
+                                                    className="product-image-placeholder"
+                                                    style={{
+                                                        backgroundColor: `#${product.id.substring(0, 6)}`,
+                                                        minHeight: '150px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: '#fff',
+                                                        fontSize: '1.5rem',
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                >
+                                                    {product.name.charAt(0)}
+                                                </div>
+                                                <div className="favorite-button">
+                                                    <IonIcon icon={heart} />
+                                                </div>
+                                            </div>
+                                            <div className="product-info">
+                                                <h3 className="product-name">{product.name}</h3>
+                                                <p className="product-points">{formatPoints(product.points)}</p>
+                                                <p className="product-description">{truncateDescription(product.description)}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
             </IonContent>
             <Navegation isDesktop={isDesktop} />
         </IonPage>

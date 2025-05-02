@@ -41,15 +41,6 @@ import './IA.css';
 import Navegacion from '../../components/Navegation';
 import { IAChat } from '../../Services/IAService'; // Importamos el servicio
 
-// Interfaz para manejar la respuesta de la API
-interface ConversIA {
-    id: string;
-    message: string;
-    response: string;
-    images?: string[];
-    timestamp: Date;
-}
-
 // Definir interfaces para una escritura TypeScript adecuada
 interface Message {
     id: number | string;
@@ -135,10 +126,10 @@ const AIChatPage: React.FC = () => {
         if (inputText.trim() === '' && selectedImages.length === 0) return;
 
         try {
-            // Add user message to UI
+            // Crear mensaje de usuario para la UI
             const userMessage: Message = {
                 id: Date.now(),
-                text: inputText,
+                text: inputText || (selectedImages.length > 0 ? 'Análisis de imagen' : ''),
                 sender: "user",
                 timestamp: new Date(),
                 images: previewImages.length > 0 ? previewImages : undefined
@@ -147,22 +138,42 @@ const AIChatPage: React.FC = () => {
             setMessages(prevMessages => [...prevMessages, userMessage]);
             setIsTyping(true);
 
-            // Prepare for API call
-            const files = selectedImages;
-            const message = inputText;
+            // Verificación adicional de imágenes
+            if (selectedImages.length > 0) {
+                console.log('Verificación de imágenes antes de enviar:');
+                selectedImages.forEach((file, index) => {
+                    console.log(`Imagen ${index + 1}: ${file.size} bytes, tipo: ${file.type}`);
+                    // Verificar que la imagen sea válida
+                    if (file.size === 0) {
+                        throw new Error(`La imagen ${file.name} parece estar vacía`);
+                    }
+                });
+            }
 
-            // Debug before sending
+            // Preparar para la llamada a la API
+            const files = selectedImages;
+            const message = inputText || "Analiza esta imagen";  // Mensaje por defecto si solo hay imágenes
+
+            // Debug antes de enviar
             console.log('Enviando mensaje a la IA:');
             console.log('- Texto:', message);
             console.log('- Número de imágenes:', files.length);
             console.log('- ID de chat actual:', currentChatId || 'nuevo chat');
 
-            // Reset UI state
+            // Información detallada sobre archivos
+            if (files.length > 0) {
+                console.log('Detalles de archivos:');
+                files.forEach((file, index) => {
+                    console.log(`Archivo ${index + 1}: ${file.name} (${file.type}, ${Math.round(file.size / 1024)}KB)`);
+                });
+            }
+
+            // Reiniciar estado de UI
             setInputText('');
             setSelectedImages([]);
             setPreviewImages([]);
 
-            // Call API with service function
+            // Llamar a la API con la función de servicio
             const response = await IAChat(
                 files,
                 message,
@@ -170,34 +181,56 @@ const AIChatPage: React.FC = () => {
                 productId || undefined
             );
 
-            // Debug response
+            // Debug respuesta
             console.log('Respuesta recibida de la IA:');
             console.log(response);
 
-            // Process response from API
+            // Procesar respuesta de la API
             if (response) {
-                // Save chat ID for continued conversation
+                // Guardar ID de chat para continuar la conversación
                 setCurrentChatId(response.id);
 
-                // Show AI response
-                const aiResponse: Message = {
-                    id: response.id,
-                    text: response.messagesIA[response.messagesIA.length - 1].message || 'No se recibió respuesta de texto',
-                    sender: "ai",
-                    timestamp: new Date(response.timestamp),
-                    images: response.images
-                };
+                // Si hay un producto en la respuesta, guardar su ID
+                if (response.product) {
+                    setProductId(response.product.id);
+                }
 
-                // Verificar si el mensaje original se mantiene
-                console.log('Mensaje original enviado:', message);
-                console.log('Mensaje devuelto por API:', response.message);
+                // Obtener el último mensaje de la IA
+                const lastAIMessage = response.messagesIA.find(msg => !msg.user);
+
+                if (!lastAIMessage) {
+                    throw new Error('No se encontró respuesta de la IA en los mensajes');
+                }
+
+                // Obtener imágenes del último mensaje si están disponibles
+                const messageImages = lastAIMessage?.images || [];
+
+                // Mostrar respuesta de la IA
+                const aiResponse: Message = {
+                    id: lastAIMessage.id || response.id,
+                    text: lastAIMessage.message || 'No se recibió respuesta de texto',
+                    sender: "ai",
+                    timestamp: new Date(lastAIMessage.createdAt || response.createdAt || Date.now()),
+                    images: messageImages.length > 0 ? messageImages : undefined
+                };
 
                 setMessages(prevMessages => [...prevMessages, aiResponse]);
             }
         } catch (error) {
             console.error("Error sending message:", error);
+
+            // Añadir mensaje de error a la conversación
+            const errorMessage: Message = {
+                id: Date.now(),
+                text: "Lo siento, ocurrió un error al procesar tu mensaje. Por favor, intenta nuevamente.",
+                sender: "ai",
+                timestamp: new Date()
+            };
+
+            setMessages(prevMessages => [...prevMessages, errorMessage]);
+
             presentToast({
-                message: 'Error al enviar el mensaje. Inténtalo de nuevo.',
+                message: 'Error al enviar el mensaje. Intenta con un archivo más pequeño o diferente formato.',
                 duration: 3000,
                 color: 'danger'
             });
@@ -227,21 +260,61 @@ const AIChatPage: React.FC = () => {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const files = e.target.files;
         if (files && files.length > 0) {
-            // Convert FileList to array for easier handling
-            const fileArray = Array.from(files);
-            setSelectedImages(prev => [...prev, ...fileArray]);
+            // Verificar el tamaño de los archivos (máximo 5MB por archivo)
+            const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+            const fileArray: File[] = [];
+            let sizeExceeded = false;
 
-            // Create preview URLs for all selected images
-            fileArray.forEach(file => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const result = reader.result;
-                    if (typeof result === 'string') {
-                        setPreviewImages(prev => [...prev, result]);
-                    }
-                };
-                reader.readAsDataURL(file);
-            });
+            // Convertir FileList a array para un manejo más fácil
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+
+                // Verificar tamaño
+                if (file.size > MAX_FILE_SIZE) {
+                    sizeExceeded = true;
+                    presentToast({
+                        message: `El archivo ${file.name} excede el tamaño máximo de 5MB`,
+                        duration: 3000,
+                        color: 'warning'
+                    });
+                    continue;
+                }
+
+                // Verificar tipo de archivo
+                if (!file.type.startsWith('image/')) {
+                    presentToast({
+                        message: `El archivo ${file.name} no es una imagen válida`,
+                        duration: 3000,
+                        color: 'warning'
+                    });
+                    continue;
+                }
+
+                fileArray.push(file);
+            }
+
+            if (fileArray.length > 0) {
+                setSelectedImages(prev => [...prev, ...fileArray]);
+
+                // Crear vistas previas para todas las imágenes seleccionadas
+                fileArray.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const result = reader.result;
+                        if (typeof result === 'string') {
+                            setPreviewImages(prev => [...prev, result]);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                console.log(`${fileArray.length} archivos añadidos correctamente`);
+            }
+
+            // Limpiar el input para permitir seleccionar el mismo archivo nuevamente
+            if (e.target) {
+                e.target.value = '';
+            }
         }
     };
 
