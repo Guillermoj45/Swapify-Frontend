@@ -1,9 +1,13 @@
 import React from 'react';
 import '../UIVerseCard/UIverseCard.css';
 
-const UiverseCard: React.FC = () => {
+interface UiverseCardProps {
+    onClick?: () => void; // Add the onClick prop
+}
+
+const UiverseCard: React.FC<UiverseCardProps> = ({ onClick }) => {
     return (
-        <div className="container">
+        <div className="container" onClick={onClick}> {/* Attach the onClick handler */}
             <div className="left-side">
                 <div className="card">
                     <div className="card-line"></div>
