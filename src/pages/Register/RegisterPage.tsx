@@ -108,6 +108,13 @@ const RegisterPage: React.FC = () => {
             return;
         }
 
+        if(password.length < 8) {
+            setToastMessage("La contraseña debe tener al menos 8 caracteres.");
+            setToastColor("danger");
+            setShowToast(true);
+            return;
+        }
+
 
         setIsLoading(true);
 
