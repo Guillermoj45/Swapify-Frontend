@@ -563,6 +563,7 @@ const ProductsPage = () => {
                             {filteredProducts.map((product) => (
                                 <div key={product.id} className="product-card" onClick={() => {
                                     console.log('Producto seleccionado:', product);
+                                    history.push(`/product/${product.id}`);
                                 }}>
                                     <div className="product-image">
                                         <div
@@ -581,7 +582,7 @@ const ProductsPage = () => {
                                             {product.name.charAt(0)}
                                         </div>
                                         <div className="favorite-button">
-                                            <IonIcon icon={heart} />
+                                            <IonIcon icon={heart}/>
                                         </div>
                                     </div>
                                     <div className="product-info">
@@ -635,6 +636,7 @@ const ProductsPage = () => {
                                     {categoryProducts.map((product: Product) => (
                                         <div key={product.id} className="product-card" onClick={() => {
                                             console.log('Producto seleccionado:', product);
+                                            history.push(`/product/${product.id}`);
                                         }}>
                                             <div className="product-image">
                                                 <div
