@@ -38,13 +38,6 @@ export const IAChat = async (
 
     // Luego agregamos los archivos, si hay alguno
     if (files && files.length > 0) {
-        // Log para verificar los archivos antes de enviarlos
-        console.log('Archivos a enviar:', files.map(f => ({
-            name: f.name,
-            type: f.type,
-            size: f.size,
-            lastModified: new Date(f.lastModified).toISOString()
-        })));
 
         // IMPORTANTE: El backend espera una lista con el nombre "file", no "files" o "images"
         files.forEach((file) => {
@@ -61,7 +54,6 @@ export const IAChat = async (
                 }
             }
 
-            console.log(`Añadiendo archivo: ${fileToUpload.name} (${fileToUpload.type})`);
             formData.append('file', fileToUpload);
         });
     }
@@ -70,39 +62,15 @@ export const IAChat = async (
     if (chatID) formData.append('chatID', chatID);
     if (productId) formData.append('productId', productId);
 
-    // Log para depuración
-    console.log('Enviando IA Chat:');
-    console.log('- Mensaje:', message);
-    console.log('- ChatID:', chatID || 'nuevo chat');
-    console.log('- ProductID:', productId || 'N/A');
-    console.log('- Archivos:', files.length);
-
-    // Para depuración: Mostrar el contenido del FormData (esto es solo para logging)
-    console.log('Contenido del FormData:');
-    for (const pair of (formData as any).entries()) {
-        if (pair[1] instanceof File) {
-            console.log(pair[0], ':', pair[1].name, '(', pair[1].type, '-', Math.round(pair[1].size / 1024), 'KB )');
-        } else {
-            console.log(pair[0], ':', pair[1]);
-        }
-    }
 
     try {
-        // Verificar que haya un token de autorización en las headers predeterminadas de API
-        // Este es un punto crítico que debe comprobarse
-        console.log('Headers de API predeterminadas:', API.defaults.headers);
-
         // Importante: Para FormData, debemos dejar que Axios establezca el Content-Type automáticamente
         const response = await API.post('/ia/producto', formData, {
             headers: {
-                // No establecer Content-Type aquí - Axios lo hará automáticamente para FormData
-                // 'Content-Type': 'multipart/form-data', // Esto lo maneja Axios automáticamente
-            },
-            // Añadir timeout más largo para permitir subida de archivos grandes
-            timeout: 60000
+                'Content-Type': 'multipart/form-data'
+            }
         });
 
-        console.log('Respuesta recibida del servidor:', response.data);
 
         // Verificamos si la respuesta tiene la estructura esperada
         if (!response.data.messagesIA || response.data.messagesIA.length === 0) {
