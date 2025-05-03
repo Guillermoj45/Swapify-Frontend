@@ -1,28 +1,10 @@
-/* ProductsPage.css */
-
-/* Estilos generales */
-.shopify-page {
-    --background: #f5f6f8;
-    font-family: 'SF Pro Display', 'Segoe UI', 'Roboto', sans-serif;
+/*** VARIABLES Y TEMAS ***/
+:root {
+    /* Variables globales */
+    --transition-standard: all 0.3s ease;
 }
 
-/* Dark Theme Variables - Más contrastado y visual */
-.dark-theme {
-    --background-color: #0a0a0a;
-    --card-background: #141414;
-    --text-color: #ffffff;
-    --text-secondary: #b0b0b0;
-    --border-color: #2c2c2c;
-    --header-bg: #000000;
-    --searchbar-bg: #1c1c1c;
-    --chip-bg: #202020;
-    --chip-color: #e0e0e0;
-    --accent-color: #3a76dc; /* Changed to blue */
-    --hover-color: #2760c0; /* Darker blue for hover */
-    --shadow-color: rgba(0, 0, 0, 0.4);
-}
-
-/* Light Theme Variables */
+/* Variables tema claro y oscuro */
 .light-theme {
     --background-color: #f5f6f8;
     --card-background: #ffffff;
@@ -33,17 +15,38 @@
     --searchbar-bg: #f5f6f8;
     --chip-bg: #f5f6f8;
     --chip-color: #555555;
-    --accent-color: #3a76dc; /* Changed to blue */
-    --hover-color: #2760c0; /* Darker blue for hover */
+    --accent-color: #3a76dc;
+    --hover-color: #2760c0;
     --shadow-color: rgba(0, 0, 0, 0.08);
 }
 
-/* Apply theme to body */
+.dark-theme {
+    --background-color: #0a0a0a;
+    --card-background: #141414;
+    --text-color: #ffffff;
+    --text-secondary: #b0b0b0;
+    --border-color: #2c2c2c;
+    --header-bg: #000000;
+    --searchbar-bg: #1c1c1c;
+    --chip-bg: #202020;
+    --chip-color: #e0e0e0;
+    --accent-color: #3a76dc;
+    --hover-color: #2760c0;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Aplicar tema al cuerpo y página */
 body.dark-theme {
     background-color: var(--background-color);
     color: var(--text-color);
 }
 
+.shopify-page {
+    --background: var(--background-color);
+    font-family: 'SF Pro Display', 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/*** HEADER Y NAVEGACIÓN ***/
 .shopify-header {
     position: fixed;
     top: 0;
@@ -60,20 +63,20 @@ body.dark-theme {
     box-shadow: 0 2px 8px var(--shadow-color);
 }
 
-/* Specific styles for dark toolbar */
 .dark-toolbar {
     --background: #000000 !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
+/* Búsqueda y contenedor de búsqueda */
 .search-container {
+    position: relative;
     display: flex;
     align-items: center;
     width: 100%;
     padding: 0 8px;
 }
 
-/* Searchbar */
 .shopify-searchbar {
     --background: var(--searchbar-bg);
     --border-radius: 50px;
@@ -87,48 +90,56 @@ body.dark-theme {
     margin: 0;
 }
 
-/* Dark theme specific searchbar */
 .dark-searchbar {
     --background: #1c1c1c !important;
     --placeholder-color: #888888 !important;
     --color: #ffffff !important;
 }
 
+/* Botones en el header */
 .header-buttons {
     margin-left: 8px;
 }
 
-.notifications-button, .options-button, .theme-toggle-button {
-    --color: var(--accent-color);
+.notifications-button,
+.options-button,
+.theme-toggle-button {
     --padding-start: 8px;
     --padding-end: 8px;
 }
 
-/* Fixed button icon colors for light mode to make them visible */
 .light-theme .notifications-button,
 .light-theme .options-button {
-    --color: #3a76dc; /* Blue color to ensure visibility */
+    --color: #3a76dc;
 }
 
-.light-theme .theme-toggle-button{
+.light-theme .theme-toggle-button {
     --color: #1e1e1e;
 }
 
-/* Mejorar visibilidad de los botones en modo oscuro */
 .dark-theme .theme-toggle-button {
-    --color: #ffcc00; /* Amarillo/dorado para el botón de sol */
+    --color: #ffcc00;
 }
 
 .dark-theme .notifications-button,
 .dark-theme .options-button {
-    --color: #5c8fee; /* Blue más brillante en modo oscuro */
+    --color: #5c8fee;
 }
 
-/* Slider Banner */
+/* Animación para cambio de tema */
+.theme-toggle-button {
+    transition: transform 0.5s ease;
+}
+
+.theme-toggle-button:active {
+    transform: rotate(360deg);
+}
+
+/*** SLIDER ***/
 .slider-container {
     width: 100%;
     position: relative;
-    margin-top: 60px; /* Para dejar espacio para el header fijo */
+    margin-top: 60px;
     overflow: hidden;
 }
 
@@ -139,6 +150,8 @@ body.dark-theme {
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth; /* Asegurar desplazamiento suave */
+    -ms-overflow-style: none; /* Para IE y Edge */
 }
 
 .slider-track::-webkit-scrollbar {
@@ -193,11 +206,19 @@ body.dark-theme {
     font-weight: 500;
     cursor: pointer;
     width: fit-content;
-    transition: all 0.2s;
+    transition: var(--transition-standard);
 }
 
 .slider-button:hover {
     opacity: 0.9;
+}
+
+.dark-theme .slider-button {
+    box-shadow: 0 0 15px rgba(58, 118, 220, 0.4);
+}
+
+.dark-theme .slider-button:hover {
+    box-shadow: 0 0 20px rgba(58, 118, 220, 0.6);
 }
 
 .button-icon {
@@ -206,12 +227,12 @@ body.dark-theme {
 
 .slider-image {
     flex: 1;
-    /* Para casos donde no hay imagen real */
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
 }
 
+/* Indicadores del slider */
 .slider-indicators {
     position: absolute;
     bottom: 16px;
@@ -219,6 +240,7 @@ body.dark-theme {
     transform: translateX(-50%);
     display: flex;
     gap: 8px;
+    z-index: 5; /* Asegurar que estén encima del contenido */
 }
 
 .slider-indicator {
@@ -227,16 +249,40 @@ body.dark-theme {
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+}
+
+.slider-indicator:hover {
+    transform: scale(1.2);
+    opacity: 1;
 }
 
 .slider-indicator.active {
     background-color: var(--accent-color);
     width: 24px;
     border-radius: 4px;
+    opacity: 1;
 }
 
-/* Mejorar contraste en modo oscuro */
+.slider-item {
+    flex: 0 0 100%;
+    width: 100%;
+    min-width: 100%;
+    height: 260px;
+    scroll-snap-align: start;
+    position: relative;
+    transition: opacity 0.3s ease;
+}
+
+.slider-track.paused {
+    cursor: grab;
+}
+
+.slider-track.paused:active {
+    cursor: grabbing;
+}
+
 .dark-theme .slider-indicator {
     background-color: rgba(255, 255, 255, 0.3);
 }
@@ -245,24 +291,35 @@ body.dark-theme {
     background-color: #5c8fee;
 }
 
-/* Filtros */
+/*** FILTROS Y CATEGORÍAS ***/
 .filters-container {
     display: flex;
     overflow-x: auto;
     white-space: nowrap;
     width: 100%;
     padding: 16px 8px 10px;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
     background-color: var(--card-background);
+    position: sticky;
+    top: 60px;
+    z-index: 5;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+    max-height: none;
+    overflow-y: visible;
 }
 
 .filters-container::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Edge */
+    display: none;
 }
 
 .filter-chip {
     flex: 0 0 auto;
     margin-right: 8px;
+    margin-bottom: 8px;
     --background: var(--chip-bg);
     --color: var(--chip-color);
     --border-radius: 20px;
@@ -271,7 +328,9 @@ body.dark-theme {
     height: 32px;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: var(--transition-standard);
+    display: flex;
+    align-items: center;
 }
 
 .filter-chip::after {
@@ -283,7 +342,7 @@ body.dark-theme {
     left: 0;
     background-color: transparent;
     border-radius: 20px;
-    transition: all 0.3s ease;
+    transition: var(--transition-standard);
 }
 
 .filter-chip:not(.selected):hover::after {
@@ -294,16 +353,22 @@ body.dark-theme {
     --background: var(--accent-color);
     --color: white;
     box-shadow: 0 2px 8px rgba(58, 118, 220, 0.3);
+    padding-left: 8px;
+    transform: scale(1.05);
 }
 
-/* Mejorar la visualización en modo oscuro */
 .dark-theme .filter-chip.selected {
     --background: #5c8fee;
     --color: #ffffff;
     box-shadow: 0 2px 12px rgba(92, 143, 238, 0.4);
 }
 
-/* Categorías */
+.category-selected-icon {
+    margin-right: 4px;
+    color: #ffffff;
+}
+
+/*** CATEGORÍAS ***/
 .category-section {
     width: 100%;
     padding: 16px 0;
@@ -346,7 +411,7 @@ body.dark-theme {
     --color: #5c8fee;
 }
 
-/* Contenedor de productos */
+/*** CONTENEDOR DE PRODUCTOS ***/
 .items-scroll-container {
     display: flex;
     overflow-x: auto;
@@ -354,16 +419,16 @@ body.dark-theme {
     padding: 8px 16px;
     width: 100%;
     box-sizing: border-box;
-    scrollbar-width: none; /* Firefox */
-    -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
     gap: 12px;
 }
 
 .items-scroll-container::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Edge */
+    display: none;
 }
 
-/* Cards de productos */
+/*** TARJETAS DE PRODUCTOS ***/
 .product-card {
     flex: 0 0 auto;
     width: 180px;
@@ -373,7 +438,8 @@ body.dark-theme {
     box-shadow: 0 3px 10px var(--shadow-color);
     scroll-snap-align: start;
     position: relative;
-    transition: all 0.3s ease;
+    transition: var(--transition-standard);
+    cursor: pointer;
 }
 
 .product-card:hover {
@@ -401,7 +467,12 @@ body.dark-theme {
     overflow: hidden;
 }
 
-/* Image placeholder for when real images are missing */
+.product-image-placeholder {
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+    position: relative;
+}
+
 .image-placeholder {
     width: 70px;
     height: 70px;
@@ -434,7 +505,7 @@ body.dark-theme {
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--transition-standard);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     z-index: 2;
 }
@@ -447,7 +518,7 @@ body.dark-theme {
 .favorite-button ion-icon {
     color: #bbb;
     font-size: 18px;
-    transition: all 0.3s ease;
+    transition: var(--transition-standard);
 }
 
 .favorite-button:hover {
@@ -491,30 +562,162 @@ body.dark-theme {
     font-weight: 500;
 }
 
-/* Animation for theme toggle */
-.theme-toggle-button {
-    transition: transform 0.5s ease;
+.product-description {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    height: 50px;
+    overflow: hidden;
 }
 
-.theme-toggle-button:active {
-    transform: rotate(360deg);
+/*** BÚSQUEDA Y RESULTADOS ***/
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--card-background);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px var(--shadow-color);
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 8px;
+    border: 1px solid var(--border-color);
 }
 
-/* Efecto de neón en modo oscuro */
-.dark-theme .slider-button {
-    box-shadow: 0 0 15px rgba(58, 118, 220, 0.4);
+.search-suggestions ion-item {
+    --background: var(--card-background);
+    --color: var(--text-color);
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --min-height: 48px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
-.dark-theme .slider-button:hover {
-    box-shadow: 0 0 20px rgba(58, 118, 220, 0.6);
+.search-suggestions ion-item:hover {
+    --background: rgba(58, 118, 220, 0.1);
 }
 
-.dark-theme .product-card:hover::before {
-    opacity: 0.4;
-    transform: scale(1);
+.dark-theme .search-suggestions ion-item:hover {
+    --background: rgba(92, 143, 238, 0.15);
 }
 
-/* Ajustes responsive */
+.search-suggestions ion-icon {
+    margin-right: 12px;
+    color: var(--accent-color);
+}
+
+.search-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    margin-top: 60px;
+    background-color: var(--card-background);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.search-results-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    padding: 16px;
+}
+
+/*** ESTADOS DE CARGA, ERROR Y SIN RESULTADOS ***/
+@keyframes shimmer {
+    0% { background-position: -468px 0; }
+    100% { background-position: 468px 0; }
+}
+
+.skeleton {
+    background: linear-gradient(to right, #f6f7f8 8%, #edeef1 18%, #f6f7f8 33%);
+    background-size: 800px 104px;
+    animation: shimmer 1.5s infinite linear;
+}
+
+.dark-theme .skeleton {
+    background: linear-gradient(to right, #2a2a2a 8%, #333333 18%, #2a2a2a 33%);
+    background-size: 800px 104px;
+    animation: shimmer 1.5s infinite linear;
+}
+
+.loading-container,
+.error-container,
+.no-results {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    text-align: center;
+}
+
+.loading-container ion-spinner {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 1rem;
+}
+
+.loading-container p {
+    margin-top: 16px;
+    color: var(--text-secondary);
+}
+
+.error-container p {
+    margin-bottom: 24px;
+    color: var(--ion-color-danger, #eb445a);
+}
+
+.no-results {
+    background-color: var(--card-background);
+    border-radius: 8px;
+    margin: 16px;
+    box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+.no-results p {
+    margin-bottom: 24px;
+    color: var(--text-secondary);
+    font-size: 16px;
+}
+
+/*** MEDIA QUERIES ***/
+@media (max-width: 576px) {
+    .items-scroll-container {
+        padding: 0 10px;
+    }
+
+    .product-card {
+        min-width: 140px;
+        margin-right: 8px;
+    }
+
+    .filters-container {
+        padding: 12px 8px 8px;
+    }
+
+    .filter-chip {
+        margin-right: 6px;
+        font-size: 13px;
+        height: 30px;
+    }
+
+    .search-results-header h2 {
+        font-size: 14px;
+    }
+}
+
 @media (min-width: 768px) {
     .slider-item {
         height: 300px;
@@ -538,6 +741,17 @@ body.dark-theme {
 
     .section-title {
         font-size: 22px;
+    }
+
+    .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 24px;
+        padding: 24px;
+    }
+
+    .filters-container {
+        justify-content: center;
+        padding: 16px 24px 12px;
     }
 }
 
@@ -568,150 +782,5 @@ body.dark-theme {
 
     .product-image {
         height: 220px;
-    }
-}
-
-/* Skeletons for loading state */
-@keyframes shimmer {
-    0% {
-        background-position: -468px 0;
-    }
-    100% {
-        background-position: 468px 0;
-    }
-}
-
-.skeleton {
-    background: linear-gradient(to right, #f6f7f8 8%, #edeef1 18%, #f6f7f8 33%);
-    background-size: 800px 104px;
-    animation: shimmer 1.5s infinite linear;
-}
-
-.dark-theme .skeleton {
-    background: linear-gradient(to right, #2a2a2a 8%, #333333 18%, #2a2a2a 33%);
-    background-size: 800px 104px;
-    animation: shimmer 1.5s infinite linear;
-}
-
-/* Estilos para el contenedor de carga */
-.loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    text-align: center;
-}
-
-.loading-container ion-spinner {
-    width: 50px;
-    height: 50px;
-    margin-bottom: 1rem;
-}
-
-/* Estilos para el contenedor de error */
-.error-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    text-align: center;
-}
-
-/* Estilos para la imagen del producto */
-.product-image-placeholder {
-    border-radius: 8px 8px 0 0;
-    overflow: hidden;
-    position: relative;
-}
-
-/* Estilos para la tarjeta de producto */
-.product-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    cursor: pointer;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-}
-
-.product-info {
-    padding: 12px;
-}
-
-.product-name {
-    margin: 0 0 5px 0;
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.product-points {
-    margin: 0 0 5px 0;
-    font-size: 14px;
-    color: #666;
-    font-weight: 500;
-}
-
-.product-description {
-    margin: 0;
-    font-size: 12px;
-    color: #888;
-    line-height: 1.4;
-    height: 50px;
-    overflow: hidden;
-}
-
-/* Mensaje cuando no hay productos */
-.no-products-message {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 2rem;
-    color: #999;
-    font-style: italic;
-}
-
-/* Ajustes para el modo oscuro */
-.dark-theme .product-card {
-    background-color: #2a2a2a;
-    color: #f4f4f4;
-}
-
-.dark-theme .product-info {
-    background-color: #1e1e1e;
-}
-
-.dark-theme .product-name {
-    color: #f4f4f4;
-}
-
-.dark-theme .product-points {
-    color: #aaa;
-}
-
-.dark-theme .loading-container,
-.dark-theme .error-container,
-.dark-theme .no-products-message {
-    color: #f4f4f4;
-}
-
-/* Estilos responsivos */
-@media (max-width: 576px) {
-    .items-scroll-container {
-        padding: 0 10px;
-    }
-
-    .product-card {
-        min-width: 140px;
-        margin-right: 8px;
     }
 }
