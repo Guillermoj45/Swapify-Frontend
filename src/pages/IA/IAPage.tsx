@@ -196,7 +196,7 @@ const AIChatPage: React.FC = () => {
                 }
 
                 // Obtener el último mensaje de la IA
-                const lastAIMessage = response.messagesIA.find(msg => !msg.user);
+                const lastAIMessage = response.messagesIA[response.messagesIA.length - 1];
 
                 if (!lastAIMessage) {
                     throw new Error('No se encontró respuesta de la IA en los mensajes');
@@ -396,7 +396,6 @@ const AIChatPage: React.FC = () => {
                     <div className="chat-container">
                         {messages.map((message) => (
                             <div
-                                key={message.id}
                                 className={`message-container ${message.sender === 'user' ? 'user-message' : 'ai-message'}`}
                             >
                                 <div className="message-avatar">
