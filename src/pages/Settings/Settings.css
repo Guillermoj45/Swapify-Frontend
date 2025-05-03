@@ -1,0 +1,284 @@
+/* Settings.css */
+
+/* General styles */
+.settings-content {
+    --background: var(--ion-color-light-shade, #f4f5f8);
+    --padding-top: 0;
+    --padding-bottom: 32px;
+    font-family: var(--ion-font-family, inherit);
+}
+
+/* Dark mode styles */
+body.dark-theme {
+    --ion-background-color: #121212;
+    --ion-text-color: #ffffff;
+    --ion-border-color: #333333;
+    --ion-item-background: #1e1e1e;
+    --ion-toolbar-background: #1e1e1e;
+}
+
+/* User profile section */
+.user-profile-section {
+    background: var(--ion-color-primary, #3880ff);
+    background: linear-gradient(135deg, var(--ion-color-primary, #3880ff) 0%, var(--ion-color-primary-shade, #3171e0) 100%);
+    color: #ffffff;
+    padding: 32px 16px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.user-avatar {
+    position: relative;
+    margin-right: 16px;
+}
+
+.user-avatar ion-avatar {
+    width: 80px;
+    height: 80px;
+    border: 3px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.edit-badge {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    background-color: var(--ion-color-light, #f4f5f8);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ion-color-primary, #3880ff);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.edit-badge ion-icon {
+    font-size: 16px;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.user-info h2 {
+    margin: 0 0 4px 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.user-info p {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* Section headers */
+.section-header {
+    margin-top: 16px;
+    padding-bottom: 0;
+    font-weight: 700;
+    color: var(--ion-color-primary, #3880ff);
+    border-bottom: none;
+}
+
+/* Settings lists */
+.settings-list {
+    margin-bottom: 16px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background-color: var(--ion-item-background, #ffffff);
+}
+
+.settings-list ion-item {
+    --padding-start: 16px;
+    --inner-padding-end: 16px;
+    --min-height: 56px;
+}
+
+.settings-icon {
+    font-size: 20px;
+    margin-right: 8px;
+    color: var(--ion-color-medium, #92949c);
+}
+
+ion-item ion-label h2 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+ion-item ion-label p {
+    font-size: 13px;
+    color: var(--ion-color-medium, #92949c);
+}
+
+/* Toggle customization */
+ion-toggle {
+    --background: #ddd;
+    --background-checked: var(--ion-color-primary-shade, #3171e0);
+    --handle-background: #fff;
+    --handle-background-checked: #fff;
+}
+
+/* Language selector */
+.language-select {
+    max-width: 120px;
+}
+
+/* Danger zone */
+.danger-zone {
+    margin: 24px 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.danger-zone ion-card-header {
+    padding: 16px;
+}
+
+.danger-zone-title {
+    color: var(--ion-color-danger, #eb445a);
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.danger-zone ion-card-content {
+    padding: 16px;
+}
+
+.logout-button {
+    margin-bottom: 12px;
+    --border-radius: 8px;
+    --background: var(--ion-color-light, #f4f5f8);
+    --color: var(--ion-color-dark, #222428);
+    font-weight: 500;
+}
+
+.delete-account-button {
+    --border-radius: 8px;
+    font-weight: 500;
+}
+
+.danger-button {
+    color: var(--ion-color-danger, #eb445a);
+}
+
+/* App version */
+.app-version {
+    text-align: center;
+    margin-top: 32px;
+    padding: 0 16px;
+    color: var(--ion-color-medium, #92949c);
+    font-size: 12px;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+    .settings-content {
+        --padding-start: 10%;
+        --padding-end: 10%;
+    }
+
+    .user-profile-section {
+        border-radius: 12px;
+        margin: 16px;
+    }
+
+    .settings-list {
+        margin-left: 16px;
+        margin-right: 16px;
+    }
+
+    .section-header {
+        padding-left: 16px;
+    }
+}
+
+@media (min-width: 992px) {
+    .settings-content {
+        --padding-start: 20%;
+        --padding-end: 20%;
+    }
+}
+
+/* Animation for toggles */
+ion-toggle {
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+ion-toggle:active {
+    transform: scale(0.95);
+}
+
+/* Hover effects */
+ion-item {
+    transition: background-color 0.2s;
+}
+
+ion-item:hover {
+    --background: var(--ion-color-light-shade, #e0e0e0);
+    cursor: pointer;
+}
+
+.logout-button:hover, .delete-account-button:hover {
+    opacity: 0.9;
+}
+
+/* Custom switch styles for specific toggles */
+ion-item:has(ion-toggle[checked]) .settings-icon {
+    color: var(--ion-color-primary, #3880ff);
+}
+
+/* Fancy toggles for critical settings */
+ion-item:has(.settings-icon[name="fingerprint-outline"]) ion-toggle {
+    --handle-width: 20px;
+    --handle-height: 20px;
+    --handle-border-radius: 50%;
+}
+
+ion-item:has(.settings-icon[name="color-palette-outline"]) ion-toggle {
+    --handle-width: 20px;
+    --handle-height: 20px;
+}
+
+/* Transition for dark mode */
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+ion-content, ion-toolbar, ion-item {
+    transition: --background 0.3s ease, --ion-background-color 0.3s ease;
+}
+
+/* Estilos para el formulario de perfil */
+.profile-section-card {
+    margin: 16px;
+    border-radius: 10px;
+}
+
+.profile-form-content {
+    padding: 16px;
+}
+
+.profile-form-list {
+    padding: 8px 0;
+}
+
+.profile-form-list ion-item {
+    --padding-start: 0;
+    --padding-end: 0;
+    --inner-padding-end: 0;
+    margin-bottom: 16px;
+}
+
+.profile-form-list ion-input {
+    margin-top: 8px;
+}
