@@ -285,6 +285,131 @@
     margin-bottom: 16px;
 }
 
+/* Navegación de imágenes */
+.image-navigation {
+    position: absolute;
+    bottom: 16px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    z-index: 2;
+}
+
+.nav-button {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dark-theme .nav-button {
+    background-color: rgba(20, 20, 20, 0.8);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.nav-button:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+    transform: scale(1.1);
+}
+
+.dark-theme .nav-button:hover {
+    background-color: rgba(30, 30, 30, 0.9);
+}
+
+.image-indicators {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-grow: 1;
+}
+
+.indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dark-theme .indicator {
+    background-color: rgba(150, 150, 150, 0.5);
+}
+
+.indicator.active {
+    background-color: white;
+    width: 16px;
+    border-radius: 4px;
+}
+
+.dark-theme .indicator.active {
+    background-color: #5c8fee;
+}
+
+/* Mejoras para el contenedor de imágenes */
+.product-detail-image-container {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Animación para transición de imágenes */
+.product-detail-image {
+    transition: transform 0.3s ease;
+}
+
+/* Estilo adicional para pantallas pequeñas */
+@media (max-width: 480px) {
+    .nav-button {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+
+    .indicator {
+        width: 6px;
+        height: 6px;
+    }
+
+    .indicator.active {
+        width: 12px;
+    }
+}
+
+/* Estilo adicional para pantallas grandes */
+@media (min-width: 992px) {
+    .nav-button {
+        width: 42px;
+        height: 42px;
+        font-size: 22px;
+    }
+
+    .image-indicators {
+        gap: 10px;
+    }
+
+    .indicator {
+        width: 10px;
+        height: 10px;
+    }
+
+    .indicator.active {
+        width: 20px;
+    }
+}
+
 /* Diseño responsivo */
 @media (min-width: 768px) {
     .product-detail-image {

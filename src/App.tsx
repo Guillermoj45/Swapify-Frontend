@@ -83,7 +83,7 @@ const App: React.FC = () => (
                 <Route exact path="/Chat">
                     <ChatPage/>
                 </Route>
-                <Route exact path="/product/:id">
+                <Route exact path="/product/:id/:profileId">
                     <ProductDetailPage/>
                 </Route>
                 <Route exact path="/settings">

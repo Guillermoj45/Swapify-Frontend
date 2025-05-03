@@ -1,5 +1,19 @@
 // src/Services/ProductService.ts
 
+export interface Profile {
+    id: string;
+    nickname: string;
+    avatar: string;
+    banAt: boolean;
+    premium: string;
+    newUser: boolean;
+}
+
+export interface Category {
+    name: string;
+    description: string;
+}
+
 export interface Product {
     id: string;
     name: string;
@@ -7,18 +21,21 @@ export interface Product {
     points: number;
     createdAt: string;
     updatedAt: string;
+    imagenes: string[]; // Array of image URLs
+    profile: Profile;
+    categories: Category[];
 }
 
 export interface RecommendDTO {
     titles: string[];
-    products: Product[][]; // Array de arrays de productos, donde cada array interno corresponde a una categoría
+    products: Product[][]; // Array of arrays of products, where each array corresponds to a category
 }
 
 export class ProductService {
-    private static baseUrl = 'http://localhost:8080'; // Ajusta esto a la URL de tu backend
+    private static baseUrl = 'http://localhost:8080'; // Adjust this to your backend URL
 
     /**
-     * Obtiene los productos recomendados desde el backend
+     * Get recommended products from the backend
      */
     static async getRecommendedProducts(): Promise<RecommendDTO> {
         try {
@@ -26,7 +43,7 @@ export class ProductService {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${sessionStorage.getItem('token')}` // Incluye el token de autenticación
+                    'Authorization': `Bearer ${sessionStorage.getItem('token')}` // Include auth token
                 }
             });
 
@@ -34,26 +51,26 @@ export class ProductService {
                 throw new Error(`Error: ${response.status}`);
             }
 
-            // Obtener la respuesta y loguear para depurar
+            // Get response and log for debugging
             const data = await response.json();
-            console.log("Datos crudos recibidos del backend:", data);
+            console.log("Raw data received from backend:", data);
 
-            // Verificar que la estructura sea la esperada
+            // Verify the expected structure
             if (!data.titles || !data.products || !Array.isArray(data.titles) || !Array.isArray(data.products)) {
-                console.error("La estructura de datos recibida no es válida:", data);
-                throw new Error("La estructura de datos recibida no es válida");
+                console.error("The received data structure is invalid:", data);
+                throw new Error("The received data structure is invalid");
             }
 
-            // Verificar que cada categoría tenga su array de productos correspondiente
+            // Verify that each category has its corresponding product array
             if (data.titles.length !== data.products.length) {
-                console.error("El número de títulos no coincide con el número de arrays de productos:",
+                console.error("The number of titles doesn't match the number of product arrays:",
                     { titlesLength: data.titles.length, productsLength: data.products.length });
 
-                // Rellenar con arrays vacíos si faltan productos
+                // Fill with empty arrays if products are missing
                 while (data.products.length < data.titles.length) {
                     data.products.push([]);
                 }
-                // O recortar si hay más arrays de productos que títulos
+                // Or trim if there are more product arrays than titles
                 if (data.products.length > data.titles.length) {
                     data.products = data.products.slice(0, data.titles.length);
                 }
@@ -62,6 +79,31 @@ export class ProductService {
             return data;
         } catch (error) {
             console.error('Error fetching recommended products:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get a specific product by ID
+     */
+    static async getProductById(productId: string, profileId: string): Promise<Product> {
+        try {
+            const response = await fetch(`${this.baseUrl}/product/get?idProduct=${productId}&IdProfileProduct=${profileId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error(`Error fetching product with ID ${productId}:`, error);
             throw error;
         }
     }

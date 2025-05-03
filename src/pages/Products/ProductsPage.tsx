@@ -14,7 +14,8 @@ import {
     IonSpinner,
     IonToast,
     IonList,
-    IonItem
+    IonItem,
+    IonBadge
 } from '@ionic/react';
 import {
     chevronForward,
@@ -25,7 +26,11 @@ import {
     sunny,
     moon,
     search,
-    checkmarkCircle
+    checkmarkCircle,
+    arrowForward,
+    arrowBack,
+    star,
+    starOutline
 } from 'ionicons/icons';
 import Navegation from "../../components/Navegation";
 import './ProductsPage.css';
@@ -34,6 +39,30 @@ import { ProductService, RecommendDTO, Product } from '../../Services/ProductSer
 
 interface CustomLocationState {
     token?: string;
+}
+
+// Define types for slider items
+interface SliderItem {
+    id: number;
+    title: string;
+    description: string;
+    buttonText: string;
+    backgroundColor: string;
+    textColor: string;
+    buttonColor: string;
+}
+
+// Define types for slider ref
+interface SliderRef extends HTMLDivElement {
+    dataset: {
+        touchStartX?: string;
+        touchStartScrollX?: string;
+    }
+}
+
+// Define type for image indexes
+interface ImageIndexes {
+    [key: string]: number;
 }
 
 const ProductsPage = () => {
@@ -49,24 +78,27 @@ const ProductsPage = () => {
     const [isDesktop, setIsDesktop] = useState(false);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [darkMode, setDarkMode] = useState(false);
-    const sliderRef = useRef<HTMLDivElement | null>(null);
+    const sliderRef = useRef<SliderRef | null>(null);
     const searchContainerRef = useRef<HTMLDivElement | null>(null);
     const searchInputRef = useRef<HTMLIonSearchbarElement | null>(null);
 
-    // Estado para almacenar los datos del backend
+    // State to store backend data
     const [recommendedData, setRecommendedData] = useState<RecommendDTO | null>(null);
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [showToast, setShowToast] = useState<boolean>(false);
 
-    // Estado para almacenar las categorías disponibles
+    // State to store available categories
     const [availableCategories, setAvailableCategories] = useState<string[]>([]);
 
-    // Agregar este estado para controlar si el slider está en pausa
+    // State to track current image for each product
+    const [currentImages, setCurrentImages] = useState<ImageIndexes>({});
+
+    // Add this state to control if the slider is paused
     const [sliderPaused, setSliderPaused] = useState(false);
 
-// Funciones para pausar/reanudar el slider cuando el usuario interactúa
+    // Functions to pause/resume the slider when the user interacts
     const pauseSlider = () => {
         setSliderPaused(true);
     };
@@ -92,6 +124,49 @@ const ProductsPage = () => {
         setTimeout(resumeSlider, 5000); // Resume auto-sliding after 5 seconds
     };
 
+    // Function to handle image navigation
+    const navigateProductImage = (
+        productId: string,
+        direction: 'next' | 'prev',
+        totalImages: number,
+        e: React.MouseEvent
+    ) => {
+        // Stop event from bubbling to parent elements
+        e.stopPropagation();
+
+        setCurrentImages(prev => {
+            const currentIndex = prev[productId] || 0;
+            let newIndex;
+
+            if (direction === 'next') {
+                newIndex = (currentIndex + 1) % totalImages;
+            } else {
+                newIndex = (currentIndex - 1 + totalImages) % totalImages;
+            }
+
+            return {
+                ...prev,
+                [productId]: newIndex
+            };
+        });
+
+        // Pause slider temporarily when user interacts with product images
+        pauseSlider();
+        setTimeout(resumeSlider, 5000);
+    };
+
+    // Function to get the Cloudinary URL for an image
+    const getImageUrl = (imagePath: string | null): string | null => {
+        if (!imagePath) return null;
+
+        try {
+            // Replace with your Cloudinary configuration
+            return `https://res.cloudinary.com/your-cloud-name/image/upload/${imagePath}`;
+        } catch (error) {
+            console.error("Error generating image URL:", error);
+            return null;
+        }
+    };
 
     useEffect(() => {
         const mensaje = new URLSearchParams(location.search).get('token');
@@ -105,24 +180,24 @@ const ProductsPage = () => {
         }
     }, [history, location]);
 
-    // Cargar datos recomendados del backend
+    // Load recommended data from backend
     useEffect(() => {
         const fetchRecommendedProducts = async () => {
             try {
                 setLoading(true);
                 const data = await ProductService.getRecommendedProducts();
 
-                // Log para depuración - revisemos la estructura de los datos
-                console.log("Datos recibidos del backend:", data);
+                // Debug log - check data structure
+                console.log("Data received from backend:", data);
 
                 setRecommendedData(data);
 
-                // Extraer categorías únicas de los productos
-                const categories = new Set<string>(); // Fixed: changed 'let' to 'const'
+                // Extract unique categories
+                const categories = new Set<string>();
 
-                // Combinar todos los productos en un solo array para la búsqueda
+                // Combine all products into a single array for search
                 if (data && data.products) {
-                    // Extraer categorías de los títulos
+                    // Extract categories from titles
                     data.titles.forEach(title => {
                         categories.add(title);
                     });
@@ -130,16 +205,20 @@ const ProductsPage = () => {
                     const combinedProducts = data.products.flat();
                     setAllProducts(combinedProducts);
 
-                    // Nota: No accedemos a product.category ya que no existe en el tipo Product
-                    // En lugar de eso, podemos usar los títulos como categorías como ya se hace arriba
+                    // Initialize current image index for each product
+                    const initialImageIndexes: ImageIndexes = {};
+                    combinedProducts.forEach(product => {
+                        initialImageIndexes[product.id] = 0;
+                    });
+                    setCurrentImages(initialImageIndexes);
 
                     setAvailableCategories(Array.from(categories));
                 }
 
                 setLoading(false);
-            } catch (error) {
-                console.error('Error al cargar productos recomendados:', error);
-                setError('No se pudieron cargar los productos recomendados');
+            } catch (err) {
+                console.error('Error loading recommended products:', err);
+                setError('Could not load recommended products');
                 setLoading(false);
                 setShowToast(true);
             }
@@ -148,7 +227,7 @@ const ProductsPage = () => {
         fetchRecommendedProducts();
     }, []);
 
-    // Función para buscar productos mientras se escribe
+    // Function to search products while typing
     const searchProducts = (query: string) => {
         if (!query.trim()) {
             setSearchResults([]);
@@ -160,17 +239,17 @@ const ProductsPage = () => {
             product.name.toLowerCase().includes(normalizedQuery)
         );
 
-        setSearchResults(results.slice(0, 5)); // Limitamos a 5 resultados para las sugerencias
+        setSearchResults(results.slice(0, 5)); // Limit to 5 results for suggestions
     };
 
-    // Actualizar resultados de búsqueda mientras se escribe
+    // Update search results while typing
     useEffect(() => {
         searchProducts(searchText);
-        // Solo mostrar sugerencias si hay texto y resultados
+        // Only show suggestions if there is text and results
         setShowSearchResults(!!searchText && searchResults.length > 0);
     }, [searchText, allProducts, searchResults.length]);
 
-    // Función para manejar la búsqueda completa
+    // Function to handle complete search
     const handleSearch = (query: string) => {
         setIsSearching(true);
         const normalizedQuery = query.toLowerCase().trim();
@@ -186,30 +265,41 @@ const ProductsPage = () => {
         );
 
         setFilteredProducts(filtered);
-        setShowSearchResults(false); // Ocultar sugerencias después de buscar
+        setShowSearchResults(false); // Hide suggestions after search
     };
 
-    // Función para manejar el evento Enter en la búsqueda
+    const handleProductImageClick = (
+        productId: string,
+        totalImages: number,
+        e: React.MouseEvent
+    ) => {
+        // Only navigate image if clicking directly on the image container, not on the nav buttons
+        if (!(e.target as Element).closest('.image-nav-button')) {
+            navigateProductImage(productId, 'next', totalImages, e);
+        }
+    };
+
+    // Function to handle Enter key press in search
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             handleSearch(searchText);
         }
     };
 
-    // Función para seleccionar una sugerencia
+    // Function to select a suggestion
     const handleSelectSuggestion = (product: Product) => {
         setSearchText(product.name);
         handleSearch(product.name);
         setShowSearchResults(false);
     };
 
-    // Manejador para cambios en el texto de búsqueda
+    // Handler for search text changes
     const handleSearchChange = (e: CustomEvent) => {
         const value = e.detail.value || '';
         setSearchText(value);
     };
 
-    // Función para cerrar las sugerencias cuando se hace clic fuera
+    // Function to close suggestions when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
@@ -223,7 +313,7 @@ const ProductsPage = () => {
         };
     }, []);
 
-    // Comprobar el ancho de la pantalla
+    // Check screen width
     useEffect(() => {
         const mediaQuery = window.matchMedia('(min-width: 768px)');
         const handleResize = (e: MediaQueryListEvent) => {
@@ -250,49 +340,49 @@ const ProductsPage = () => {
         document.body.classList.toggle('dark-theme', darkMode);
     }, [darkMode]);
 
-    // Elementos del slider
-    const sliderItems = [
+    // Slider items
+    const sliderItems: SliderItem[] = [
         {
             id: 1,
-            title: 'Compra y vende artículos de segunda mano.',
-            description: 'Encuentra productos únicos a precios increíbles.',
-            buttonText: 'Vender ahora',
+            title: 'Buy and sell second-hand items.',
+            description: 'Find unique products at incredible prices.',
+            buttonText: 'Sell now',
             backgroundColor: darkMode ? '#0d1f15' : '#f1ffe8',
             textColor: darkMode ? '#64ffa9' : '#0e5741',
             buttonColor: darkMode ? '#12b687' : '#0e5741'
         },
         {
             id: 2,
-            title: 'Descubre ofertas especiales',
-            description: 'Miles de productos con grandes descuentos.',
-            buttonText: 'Ver ofertas',
+            title: 'Discover special offers',
+            description: 'Thousands of products with great discounts.',
+            buttonText: 'View offers',
             backgroundColor: darkMode ? '#0d1b30' : '#e8f0ff',
             textColor: darkMode ? '#64aaff' : '#1a56a5',
             buttonColor: darkMode ? '#1a56a5' : '#1a56a5'
         },
         {
             id: 3,
-            title: 'Vende lo que ya no usas',
-            description: 'Dale una segunda vida a tus objetos y gana dinero extra.',
-            buttonText: 'Publicar ahora',
+            title: 'Sell what you no longer use',
+            description: 'Give your objects a second life and earn extra money.',
+            buttonText: 'Post now',
             backgroundColor: darkMode ? '#301a0d' : '#fff0e8',
             textColor: darkMode ? '#ffa964' : '#a54c1a',
             buttonColor: darkMode ? '#a54c1a' : '#a54c1a'
         }
     ];
 
-    // Efecto para configurar el auto-scroll del slider
+    // Effect to set up auto-scroll of slider
     useEffect(() => {
-        let timer = null;
+        let timer: number | null = null;
 
-        // Solo configurar el temporizador si no está en modo de búsqueda y no está pausado
+        // Only set up the timer if not in search mode and not paused
         if (!isSearching && !sliderPaused) {
-            timer = setInterval(() => {
+            timer = window.setInterval(() => {
                 if (sliderItems.length > 0) {
                     setCurrentSlide((prev) => {
                         const nextSlide = (prev + 1) % sliderItems.length;
 
-                        // Asegurarnos de desplazar el slider cuando cambia el currentSlide
+                        // Make sure to scroll the slider when currentSlide changes
                         if (sliderRef.current) {
                             const scrollAmount = sliderRef.current.offsetWidth * nextSlide;
                             sliderRef.current.scrollTo({
@@ -318,9 +408,45 @@ const ProductsPage = () => {
             const scrollPosition = sliderRef.current.scrollLeft;
             const slideWidth = sliderRef.current.offsetWidth;
             const newSlide = Math.round(scrollPosition / slideWidth);
-            if (newSlide !== currentSlide) {
+
+            if (newSlide !== currentSlide && newSlide >= 0 && newSlide < sliderItems.length) {
                 setCurrentSlide(newSlide);
+
+                // Pause slider temporarily when user manually scrolls
+                pauseSlider();
+                setTimeout(resumeSlider, 5000);
             }
+        }
+    };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        pauseSlider();
+
+        // Store the initial touch position
+        if (sliderRef.current) {
+            sliderRef.current.dataset.touchStartX = e.touches[0].clientX.toString();
+            sliderRef.current.dataset.touchStartScrollX = sliderRef.current.scrollLeft.toString();
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (sliderRef.current && sliderRef.current.dataset.touchStartX) {
+            const touchStartX = parseFloat(sliderRef.current.dataset.touchStartX);
+            const touchStartScrollX = parseFloat(sliderRef.current.dataset.touchStartScrollX || '0');
+            const touchDiff = touchStartX - e.touches[0].clientX;
+
+            // Set scroll position directly for smoother swiping
+            sliderRef.current.scrollLeft = touchStartScrollX + touchDiff;
+        }
+    };
+
+    const handleTouchEnd = () => {
+        setTimeout(resumeSlider, 5000);
+
+        // Clean up touch data
+        if (sliderRef.current) {
+            delete sliderRef.current.dataset.touchStartX;
+            delete sliderRef.current.dataset.touchStartScrollX;
         }
     };
 
@@ -329,7 +455,7 @@ const ProductsPage = () => {
         setDarkMode(prev => !prev);
     };
 
-    // Limpiar búsqueda y volver a mostrar los productos recomendados
+    // Clear search and show recommended products again
     const clearSearch = () => {
         setSearchText('');
         setFilteredProducts([]);
@@ -337,23 +463,23 @@ const ProductsPage = () => {
         setShowSearchResults(false);
     };
 
-    // Función para manejar selección/deselección de categorías
+    // Function to handle category selection/deselection
     const toggleCategoryFilter = (category: string) => {
         setSelectedCategories(prevSelected => {
             if (prevSelected.includes(category)) {
-                // Si ya está seleccionada, quitarla
+                // If already selected, remove it
                 return prevSelected.filter(cat => cat !== category);
             } else {
-                // Si no está seleccionada, añadirla
+                // If not selected, add it
                 return [...prevSelected, category];
             }
         });
     };
 
-    // Filtrar productos por categorías seleccionadas
+    // Filter products by selected categories
     useEffect(() => {
         if (selectedCategories.length === 0) {
-            // Si no hay categorías seleccionadas, no aplicamos filtro
+            // If no categories selected, don't apply filter
             setIsSearching(false);
             setFilteredProducts([]);
             return;
@@ -361,8 +487,7 @@ const ProductsPage = () => {
 
         setIsSearching(true);
 
-        // Filtrar productos que pertenezcan a las categorías seleccionadas
-        // Asumiendo que los productos están organizados por categorías en recommendedData
+        // Filter products that belong to selected categories
         let filtered: Product[] = [];
 
         if (recommendedData && recommendedData.titles && recommendedData.products) {
@@ -376,22 +501,186 @@ const ProductsPage = () => {
         setFilteredProducts(filtered);
     }, [selectedCategories, recommendedData]);
 
-    // Función para formatear los puntos como "X anuncios"
+    // Function to format points
     const formatPoints = (points: number): string => {
-        if (points < 0) return "Sin valoración";
+        if (points < 0) return "No evaluado";
         return `${points} puntos`;
     };
 
-    // Función para truncar y formatear la descripción
-    const truncateDescription = (description: string, maxLength: number = 85): string => {
+    // Function to truncate and format description
+    const truncateDescription = (description: string | undefined, maxLength: number = 85): string => {
         if (!description) return '';
         if (description.length <= maxLength) return description;
 
-        // Truncar en el último espacio antes del límite para no cortar palabras
+        // Truncate at the last space before the limit to avoid cutting words
         const truncated = description.substring(0, maxLength);
         const lastSpace = truncated.lastIndexOf(' ');
 
         return lastSpace === -1 ? `${truncated}...` : `${truncated.substring(0, lastSpace)}...`;
+    };
+
+    // Function to format date
+    const formatDate = (dateString: string): string => {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        } catch {
+            return 'Invalid date';
+        }
+    };
+
+    // Function to render premium badge if applicable
+    const renderPremiumBadge = (premium: string | undefined) => {
+        if (premium === 'PREMIUN') {
+            return (
+                <IonBadge color="warning" className="premium-badge">
+                    <IonIcon icon={star} /> Premium
+                </IonBadge>
+            );
+        }
+        return null;
+    };
+
+    // Function to render star rating
+    const renderStarRating = (points: number) => {
+        // Normalize points to a 5-star scale
+        // Assuming points are on a scale of 0-1000
+        const normalizedRating = Math.min(Math.max(points / 200, 0), 5);
+        const fullStars = Math.floor(normalizedRating);
+        const hasHalfStar = normalizedRating - fullStars >= 0.5;
+
+        return (
+            <div className="star-rating">
+                {[...Array(5)].map((_, i) => (
+                    <IonIcon
+                        key={i}
+                        icon={i < fullStars || (i === fullStars && hasHalfStar) ? star : starOutline}
+                        className={i < fullStars ? "star-filled" : "star-empty"}
+                    />
+                ))}
+            </div>
+        );
+    };
+
+    // Function to render a product card with image navigation
+    const renderProductCard = (product: Product, isHorizontalScroll: boolean = false) => {
+        const currentImageIndex = currentImages[product.id] || 0;
+        const hasMultipleImages = product.imagenes && product.imagenes.length > 1;
+
+        return (
+            <div
+                key={product.id}
+                className={`product-card ${isHorizontalScroll ? 'horizontal-card' : ''}`}
+                onClick={(e) => {
+                    // Only navigate to product detail if not clicking on the navigation arrows
+                    if (!(e.target as Element).closest('.image-nav-button')) {
+                        console.log('Product selected:', product);
+                        history.push(`/product/${product.id}/${product.profile.id}`);
+                    }
+                }}
+            >
+                <div className="product-image-container"
+                     onClick={(e: React.MouseEvent) => handleProductImageClick(product.id, product.imagenes?.length || 0, e)}>
+                    <div className="product-image">
+                        {product.imagenes && product.imagenes.length > 0 ? (
+                            <img
+                                src={getImageUrl(product.imagenes[currentImageIndex]) || ''}
+                                alt={product.name}
+                                className="product-img"
+                                onError={(e) => {
+                                    // Fallback if image fails to load
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23cccccc"/%3E%3Ctext x="50" y="50" font-family="Arial" font-size="20" text-anchor="middle" dominant-baseline="middle" fill="%23ffffff"%3E' + product.name.charAt(0) + '%3C/text%3E%3C/svg%3E';
+                                }}
+                            />
+                        ) : (
+                            <div
+                                className="product-image-placeholder"
+                                style={{
+                                    backgroundColor: `#${product.id.substring(0, 6)}`,
+                                    minHeight: '150px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#fff',
+                                    fontSize: '1.5rem',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                {product.name.charAt(0)}
+                            </div>
+                        )}
+
+                        {hasMultipleImages && (
+                            <>
+                                <button
+                                    className="image-nav-button image-nav-prev"
+                                    onClick={(e) => navigateProductImage(product.id, 'prev', product.imagenes?.length || 0, e)}
+                                    aria-label="Previous image"
+                                >
+                                    <IonIcon icon={arrowBack}/>
+                                </button>
+                                <button
+                                    className="image-nav-button image-nav-next"
+                                    onClick={(e) => navigateProductImage(product.id, 'next', product.imagenes?.length || 0, e)}
+                                    aria-label="Next image"
+                                >
+                                    <IonIcon icon={arrowForward}/>
+                                </button>
+                                <div className="image-indicators">
+                                    {product.imagenes?.map((_, idx) => (
+                                        <span
+                                            key={idx}
+                                            className={`image-indicator ${idx === currentImageIndex ? 'active' : ''}`}
+                                        />
+                                    ))}
+                                </div>
+                            </>
+                        )}
+
+                        <div className="favorite-button">
+                            <IonIcon icon={heart}/>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="product-info">
+                    <div className="product-header">
+                        <h3 className="product-name">{product.name}</h3>
+                        {product.profile && renderPremiumBadge(product.profile.premium)}
+                    </div>
+
+                    <div className="product-rating">
+                        {renderStarRating(product.points)}
+                        <span className="product-points">{formatPoints(product.points)}</span>
+                    </div>
+
+                    <p className="product-description">{truncateDescription(product.description)}</p>
+
+                    <div className="product-meta">
+                        <div className="product-profile">
+                            {product.profile && (
+                                <div className="seller-info">
+                                    <span className="seller-name">{product.profile.nickname}</span>
+                                    {product.profile.newUser && <span className="new-user-badge">New</span>}
+                                </div>
+                            )}
+                        </div>
+                        <div className="product-date">
+                            Publicado: {formatDate(product.createdAt)}
+                        </div>
+                    </div>
+
+                    <div className="product-categories">
+                        {product.categories && product.categories.map((category, idx) => (
+                            <span key={idx} className="category-tag">
+                                {category.name}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -400,7 +689,7 @@ const ProductsPage = () => {
                 <IonToolbar className={`shopify-toolbar ${darkMode ? 'dark-toolbar' : ''}`}>
                     {isDesktop && (
                         <IonButtons slot="start">
-                            <IonMenuButton />
+                            <IonMenuButton/>
                         </IonButtons>
                     )}
                     <div className="search-container" ref={searchContainerRef}>
@@ -409,7 +698,7 @@ const ProductsPage = () => {
                             value={searchText}
                             onIonInput={handleSearchChange}
                             onKeyPress={handleKeyPress}
-                            placeholder="Buscar productos"
+                            placeholder="Búsqueda de productos"
                             showCancelButton="focus"
                             onIonCancel={clearSearch}
                             onIonClear={clearSearch}
@@ -420,7 +709,7 @@ const ProductsPage = () => {
                                 <IonList>
                                     {searchResults.map((product) => (
                                         <IonItem key={product.id} onClick={() => handleSelectSuggestion(product)}>
-                                            <IonIcon icon={search} slot="start" />
+                                            <IonIcon icon={search} slot="start"/>
                                             <IonLabel>{product.name}</IonLabel>
                                         </IonItem>
                                     ))}
@@ -429,13 +718,13 @@ const ProductsPage = () => {
                         )}
                         <IonButtons slot="end" className="header-buttons">
                             <IonButton className="theme-toggle-button" onClick={toggleDarkMode}>
-                                <IonIcon icon={darkMode ? sunny : moon} />
+                                <IonIcon icon={darkMode ? sunny : moon}/>
                             </IonButton>
                             <IonButton className="notifications-button">
-                                <IonIcon icon={notificationsOutline} />
+                                <IonIcon icon={notificationsOutline}/>
                             </IonButton>
                             <IonButton className="options-button">
-                                <IonIcon icon={options} />
+                                <IonIcon icon={options}/>
                             </IonButton>
                         </IonButtons>
                     </div>
@@ -443,11 +732,11 @@ const ProductsPage = () => {
             </IonHeader>
 
             <IonContent className="wallapop-content">
-                {/* Toast para errores */}
+                {/* Toast for errors */}
                 <IonToast
                     isOpen={showToast}
                     onDidDismiss={() => setShowToast(false)}
-                    message={error || "Ocurrió un error"}
+                    message={error || "An error occurred"}
                     duration={3000}
                     position="bottom"
                     color="danger"
@@ -455,16 +744,16 @@ const ProductsPage = () => {
 
                 {isSearching && searchText && (
                     <div className="search-results-header">
-                        <h2>Resultados para "{searchText}"</h2>
+                        <h2>Results for "{searchText}"</h2>
                         <IonButton fill="clear" onClick={clearSearch}>
-                            Volver
+                            Back
                         </IonButton>
                     </div>
                 )}
 
                 {isSearching && selectedCategories.length > 0 && !searchText && (
                     <div className="search-results-header">
-                        <h2>Filtrado por categorías: {selectedCategories.join(', ')}</h2>
+                        <h2>Filtered by categories: {selectedCategories.join(', ')}</h2>
                         <IonButton fill="clear" onClick={() => setSelectedCategories([])}>
                             Limpiar filtros
                         </IonButton>
@@ -473,22 +762,23 @@ const ProductsPage = () => {
 
                 {!isSearching && (
                     <>
-                        {/* Banner Slider - Solo mostrar si no estamos buscando */}
+                        {/* Banner Slider - Only show if not searching */}
                         <div className="slider-container">
                             <div
-                                className="slider-track"
+                                className={`slider-track ${sliderPaused ? 'paused' : ''}`}
                                 ref={sliderRef}
                                 onScroll={handleScroll}
                                 onMouseEnter={pauseSlider}
                                 onMouseLeave={resumeSlider}
-                                onTouchStart={pauseSlider}
-                                onTouchEnd={resumeSlider}
+                                onTouchStart={handleTouchStart}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
                             >
                                 {sliderItems.map((item) => (
                                     <div
                                         key={item.id}
                                         className="slider-item"
-                                        style={{ backgroundColor: item.backgroundColor }}
+                                        style={{backgroundColor: item.backgroundColor}}
                                     >
                                         <div className="slider-content">
                                             <div className="slider-text" style={{color: item.textColor}}>
@@ -497,13 +787,18 @@ const ProductsPage = () => {
                                                 <button
                                                     className="slider-button"
                                                     style={{backgroundColor: item.buttonColor}}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        // Add navigation or action for this button
+                                                        console.log(`Button clicked: ${item.buttonText}`);
+                                                    }}
                                                 >
                                                     <IonIcon icon={add} className="button-icon"/>
                                                     {item.buttonText}
                                                 </button>
                                             </div>
                                             <div className="slider-image">
-                                                {/* Placeholder para imagen */}
+                                                {/* Here you could add a dynamic image for each slide */}
                                             </div>
                                         </div>
                                     </div>
@@ -522,12 +817,12 @@ const ProductsPage = () => {
                     </>
                 )}
 
-                {/* Chips de filtros - Mostrar siempre para permitir filtrado */}
+                {/* Filter chips - Show always to allow filtering */}
                 <div className="filters-container">
                     {loading ? (
                         <IonChip disabled>
-                            <IonSpinner name="crescent" />
-                            <IonLabel>Cargando categorías...</IonLabel>
+                            <IonSpinner name="crescent"/>
+                            <IonLabel>Loading categories...</IonLabel>
                         </IonChip>
                     ) : (
                         availableCategories.map((category) => (
@@ -537,7 +832,7 @@ const ProductsPage = () => {
                                 className={`filter-chip ${selectedCategories.includes(category) ? 'selected' : ''}`}
                             >
                                 {selectedCategories.includes(category) && (
-                                    <IonIcon icon={checkmarkCircle} className="category-selected-icon" />
+                                    <IonIcon icon={checkmarkCircle} className="category-selected-icon"/>
                                 )}
                                 <IonLabel>{category}</IonLabel>
                             </IonChip>
@@ -545,62 +840,33 @@ const ProductsPage = () => {
                     )}
                 </div>
 
-                {/* Contenido dinámico basado en la búsqueda o los datos recomendados */}
+                {/* Dynamic content based on search or recommended data */}
                 {loading ? (
                     <div className="loading-container">
-                        <IonSpinner name="circular" />
-                        <p>Cargando productos...</p>
+                        <IonSpinner name="circular"/>
+                        <p>Loading products...</p>
                     </div>
                 ) : error ? (
                     <div className="error-container">
-                        <p>No se pudieron cargar los productos. Inténtalo de nuevo más tarde.</p>
-                        <IonButton onClick={() => window.location.reload()}>Reintentar</IonButton>
+                        <p>Could not load products. Please try again later.</p>
+                        <IonButton onClick={() => window.location.reload()}>Retry</IonButton>
                     </div>
                 ) : isSearching && filteredProducts.length > 0 ? (
-                    // Mostrar resultados de búsqueda
+                    // Show search results
                     <div className="search-results">
                         <div className="products-grid">
                             {filteredProducts.map((product) => (
-                                <div key={product.id} className="product-card" onClick={() => {
-                                    console.log('Producto seleccionado:', product);
-                                    history.push(`/product/${product.id}`);
-                                }}>
-                                    <div className="product-image">
-                                        <div
-                                            className="product-image-placeholder"
-                                            style={{
-                                                backgroundColor: `#${product.id.substring(0, 6)}`,
-                                                minHeight: '150px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: '#fff',
-                                                fontSize: '1.5rem',
-                                                fontWeight: 'bold'
-                                            }}
-                                        >
-                                            {product.name.charAt(0)}
-                                        </div>
-                                        <div className="favorite-button">
-                                            <IonIcon icon={heart}/>
-                                        </div>
-                                    </div>
-                                    <div className="product-info">
-                                        <h3 className="product-name">{product.name}</h3>
-                                        <p className="product-points">{formatPoints(product.points)}</p>
-                                        <p className="product-description">{truncateDescription(product.description)}</p>
-                                    </div>
-                                </div>
+                                renderProductCard(product, false)
                             ))}
                         </div>
                     </div>
                 ) : isSearching && filteredProducts.length === 0 ? (
-                    // Mostrar mensaje cuando no hay resultados
+                    // Show message when there are no results
                     <div className="no-results">
                         {searchText ? (
-                            <p>No se encontraron productos que coincidan con "{searchText}"</p>
+                            <p>No products found matching "{searchText}"</p>
                         ) : (
-                            <p>No se encontraron productos en las categorías seleccionadas</p>
+                            <p>No products found in the selected categories</p>
                         )}
                         <IonButton onClick={() => {
                             clearSearch();
@@ -608,12 +874,12 @@ const ProductsPage = () => {
                         }}>Ver todos los productos</IonButton>
                     </div>
                 ) : (
-                    // Mostrar productos recomendados
+                    // Show recommended products
                     recommendedData && recommendedData.titles.map((title, categoryIndex) => {
-                        // Obtener los productos específicos para esta categoría
+                        // Get specific products for this category
                         const categoryProducts = recommendedData.products[categoryIndex] || [];
 
-                        // Solo mostrar categorías que tengan productos
+                        // Only show categories that have products
                         if (!categoryProducts || categoryProducts.length === 0) {
                             return null;
                         }
@@ -627,43 +893,14 @@ const ProductsPage = () => {
                                         className="view-all-button"
                                         onClick={() => toggleCategoryFilter(title)}
                                     >
-                                        Ver todo <IonIcon icon={chevronForward} />
+                                        Ver todos <IonIcon icon={chevronForward} />
                                     </IonButton>
                                 </div>
 
-                                {/* Contenedor horizontal con scroll */}
+                                {/* Horizontal scroll container */}
                                 <div className="items-scroll-container">
                                     {categoryProducts.map((product: Product) => (
-                                        <div key={product.id} className="product-card" onClick={() => {
-                                            console.log('Producto seleccionado:', product);
-                                            history.push(`/product/${product.id}`);
-                                        }}>
-                                            <div className="product-image">
-                                                <div
-                                                    className="product-image-placeholder"
-                                                    style={{
-                                                        backgroundColor: `#${product.id.substring(0, 6)}`,
-                                                        minHeight: '150px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        color: '#fff',
-                                                        fontSize: '1.5rem',
-                                                        fontWeight: 'bold'
-                                                    }}
-                                                >
-                                                    {product.name.charAt(0)}
-                                                </div>
-                                                <div className="favorite-button">
-                                                    <IonIcon icon={heart} />
-                                                </div>
-                                            </div>
-                                            <div className="product-info">
-                                                <h3 className="product-name">{product.name}</h3>
-                                                <p className="product-points">{formatPoints(product.points)}</p>
-                                                <p className="product-description">{truncateDescription(product.description)}</p>
-                                            </div>
-                                        </div>
+                                        renderProductCard(product, true)
                                     ))}
                                 </div>
                             </div>
