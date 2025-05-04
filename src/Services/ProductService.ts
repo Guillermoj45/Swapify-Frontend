@@ -1,5 +1,8 @@
 // src/Services/ProductService.ts
 
+import cloudinaryImage from "./CloudinaryService";
+import api from "./api";
+
 export interface Profile {
     id: string;
     nickname: string;
@@ -32,7 +35,8 @@ export interface RecommendDTO {
 }
 
 export class ProductService {
-    private static baseUrl = 'http://localhost:8080'; // Adjust this to your backend URL
+    private static baseUrl = api.getUri(); // Adjust this to your backend URL
+
 
     /**
      * Get recommended products from the backend
@@ -75,7 +79,11 @@ export class ProductService {
                     data.products = data.products.slice(0, data.titles.length);
                 }
             }
-
+            data.products.map((category: Product[]) => {
+                category.map((product: Product) => {
+                    product.imagenes = product.imagenes.map((image => cloudinaryImage(image)));
+                });
+            })
             return data;
         } catch (error) {
             console.error('Error fetching recommended products:', error);

@@ -16,8 +16,6 @@ import {
     IonList,
     IonItem,
     IonBadge,
-    IonMenu,
-    IonSplitPane
 } from '@ionic/react';
 import {
     chevronForward,
@@ -160,7 +158,7 @@ const ProductsPage = () => {
 
         try {
             // Replace with your Cloudinary configuration
-            return `https://res.cloudinary.com/your-cloud-name/image/upload/${imagePath}`;
+            return imagePath;
         } catch (error) {
             console.error("Error generating image URL:", error);
             return null;
