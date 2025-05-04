@@ -52,7 +52,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
         <div className={`navegacion-container ${darkMode ? '' : 'light-mode'}`}>
             {/* Menú hamburguesa (siempre en vistas de chat, o cuando es escritorio en otras vistas) */}
             {showHamburgerMenu && (
-                <IonMenu contentId="main-content">
+                <IonMenu contentId="main-content" side="start">
                     <IonHeader>
                         <IonToolbar color="primary">
                             <div className="menu-header">
@@ -68,38 +68,38 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                     </IonHeader>
                     <IonContent>
                         <IonList>
-                            <IonMenuToggle>
+                            <IonMenuToggle autoHide={false}>
                                 <IonItem button routerLink="/home">
                                     <IonIcon slot="start" icon={homeOutline} />
                                     <IonLabel>Inicio</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
-                            <IonMenuToggle>
+                            <IonMenuToggle autoHide={false}>
                                 <IonItem button routerLink="/products">
                                     <IonIcon slot="start" icon={heartOutline} />
                                     <IonLabel>Productos</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
-                            <IonMenuToggle>
+                            <IonMenuToggle autoHide={false}>
                                 <IonItem button routerLink="/profile">
                                     <IonIcon slot="start" icon={addOutline} />
                                     <IonLabel>Perfil</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
-                            <IonMenuToggle>
+                            <IonMenuToggle autoHide={false}>
                                 <IonItem button routerLink="/IA">
                                     <IonIcon slot="start" icon={mailOutline} />
                                     <IonLabel>IA</IonLabel>
                                     <IonBadge color="primary" slot="end">2</IonBadge>
                                 </IonItem>
                             </IonMenuToggle>
-                            <IonMenuToggle>
+                            <IonMenuToggle autoHide={false}>
                                 <IonItem button routerLink="/login">
                                     <IonIcon slot="start" icon={settingsOutline} />
                                     <IonLabel>Login</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
-                            <IonMenuToggle>
+                            <IonMenuToggle autoHide={false}>
                                 <IonItem button routerLink="/premiumSuscribe">
                                     <IonIcon slot="start" icon={medicalOutline} />
                                     <IonLabel>Suscripción</IonLabel>

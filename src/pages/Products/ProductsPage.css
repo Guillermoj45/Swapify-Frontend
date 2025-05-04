@@ -101,16 +101,9 @@ body.dark-theme {
     margin-left: 8px;
 }
 
-.notifications-button,
-.options-button,
 .theme-toggle-button {
     --padding-start: 8px;
     --padding-end: 8px;
-}
-
-.light-theme .notifications-button,
-.light-theme .options-button {
-    --color: #3a76dc;
 }
 
 .light-theme .theme-toggle-button {
@@ -121,19 +114,12 @@ body.dark-theme {
     --color: #ffcc00;
 }
 
-.dark-theme .notifications-button,
-.dark-theme .options-button {
-    --color: #5c8fee;
-}
-
 /* Animación para cambio de tema */
 .theme-toggle-button {
     transition: transform 0.5s ease;
 }
 
-.theme-toggle-button:active {
-    transform: rotate(360deg);
-}
+
 
 /*** SLIDER ***/
 .slider-container {

@@ -1,5 +1,63 @@
 /* ProductDetailPage.css */
 
+/* Variables para ambos temas */
+:root {
+    --background-color: #f5f7fa;
+    --card-background: #ffffff;
+    --text-color: #333333;
+    --text-secondary: #666666;
+    --accent-color: #4a90e2;
+    --hover-color: #3a76dc;
+    --border-color: #e0e4e8;
+    --shadow-color: rgba(0, 0, 0, 0.08);
+    --searchbar-bg: #f0f3f8;
+    --toolbar-bg: #ffffff;
+    --toolbar-text: #333333;
+    --toolbar-border: #e0e4e8;
+}
+
+/* Variables para el tema oscuro */
+.dark-theme {
+    --background-color: #121212;
+    --card-background: #1e1e1e;
+    --text-color: #f0f0f0;
+    --text-secondary: #b0b0b0;
+    --accent-color: #5c8fee;
+    --hover-color: #4a7ed8;
+    --border-color: #2c2c2c;
+    --shadow-color: rgba(0, 0, 0, 0.2);
+    --searchbar-bg: #252525;
+    --toolbar-bg: #1a1a1a;
+    --toolbar-text: #f0f0f0;
+    --toolbar-border: #2c2c2c;
+}
+
+/* Estilos del toolbar mejorados */
+.shopify-toolbar {
+    --background: var(--toolbar-bg);
+    --color: var(--toolbar-text);
+    --border-color: var(--toolbar-border);
+    border-bottom: 1px solid var(--toolbar-border);
+}
+
+.shopify-toolbar ion-title {
+    color: var(--toolbar-text);
+    font-weight: 600;
+}
+
+.shopify-toolbar ion-icon {
+    color: var(--toolbar-text);
+}
+
+.shopify-toolbar ion-back-button {
+    --color: var(--toolbar-text);
+}
+
+.dark-toolbar {
+    --background: var(--toolbar-bg);
+    --color: var(--toolbar-text);
+}
+
 .product-detail-page {
     --background: var(--background-color);
     font-family: 'SF Pro Display', 'Segoe UI', 'Roboto', sans-serif;
@@ -29,6 +87,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    object-fit: cover; /* Asegura que las imágenes mantengan su proporción */
     overflow: hidden;
 }
 
@@ -45,7 +104,7 @@
     --background: rgba(255, 255, 255, 0.8);
     --border-radius: 50%;
     --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    --color: #bbb;
+    --color: #777;
     transition: all 0.3s ease;
 }
 
@@ -151,7 +210,7 @@
     white-space: pre-line;
 }
 
-/* Usuario */
+/* Usuario - Mejoras en la foto de perfil */
 .product-detail-user {
     display: flex;
     align-items: center;
@@ -170,11 +229,24 @@
     align-items: center;
     justify-content: center;
     margin-right: 12px;
+    overflow: hidden; /* Evita que la imagen se desborde */
 }
 
 .user-avatar ion-icon {
     font-size: 28px;
     color: white;
+}
+
+/* Garantizar que la imagen de avatar mantenga su proporción */
+.user-avatar ion-avatar {
+    width: 48px;
+    height: 48px;
+}
+
+.user-avatar ion-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Mantiene la proporción de la imagen */
 }
 
 .user-info h3 {
@@ -188,6 +260,33 @@
     font-size: 14px;
     margin: 0;
     color: var(--text-secondary);
+}
+
+/* Arreglos para la insignia PREMIUM */
+.user-info ion-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Color específico para la insignia PREMIUM */
+ion-badge[color="warning"] {
+    --ion-color-warning: #f5b729;
+    --ion-color-warning-rgb: 245, 183, 41;
+    --ion-color-warning-contrast: #333333;
+    --ion-color-warning-contrast-rgb: 51, 51, 51;
+    background-color: var(--ion-color-warning);
+    color: var(--ion-color-warning-contrast);
+    max-width: 120px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 /* Ubicación */

@@ -15,16 +15,14 @@ import {
     IonToast,
     IonList,
     IonItem,
-    IonBadge
+    IonBadge,
+    IonMenu,
+    IonSplitPane
 } from '@ionic/react';
 import {
     chevronForward,
     heart,
-    options,
-    notificationsOutline,
     add,
-    sunny,
-    moon,
     search,
     checkmarkCircle,
     arrowForward,
@@ -36,6 +34,7 @@ import Navegation from "../../components/Navegation";
 import './ProductsPage.css';
 import { useHistory, useLocation } from "react-router-dom";
 import { ProductService, RecommendDTO, Product } from '../../Services/ProductService';
+import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
 
 interface CustomLocationState {
     token?: string;
@@ -340,6 +339,11 @@ const ProductsPage = () => {
         document.body.classList.toggle('dark-theme', darkMode);
     }, [darkMode]);
 
+    // Toggle dark mode
+    const toggleDarkMode = () => {
+        setDarkMode(prev => !prev);
+    };
+
     // Slider items
     const sliderItems: SliderItem[] = [
         {
@@ -448,11 +452,6 @@ const ProductsPage = () => {
             delete sliderRef.current.dataset.touchStartX;
             delete sliderRef.current.dataset.touchStartScrollX;
         }
-    };
-
-    // Toggle dark mode
-    const toggleDarkMode = () => {
-        setDarkMode(prev => !prev);
     };
 
     // Clear search and show recommended products again
@@ -717,14 +716,8 @@ const ProductsPage = () => {
                             </div>
                         )}
                         <IonButtons slot="end" className="header-buttons">
-                            <IonButton className="theme-toggle-button" onClick={toggleDarkMode}>
-                                <IonIcon icon={darkMode ? sunny : moon}/>
-                            </IonButton>
-                            <IonButton className="notifications-button">
-                                <IonIcon icon={notificationsOutline}/>
-                            </IonButton>
-                            <IonButton className="options-button">
-                                <IonIcon icon={options}/>
+                            <IonButton className="theme-toggle-button">
+                                <SwitchDark darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
                             </IonButton>
                         </IonButtons>
                     </div>
