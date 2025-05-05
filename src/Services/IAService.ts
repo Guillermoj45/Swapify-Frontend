@@ -40,22 +40,36 @@ export const IAChat = async (
     if (files && files.length > 0) {
 
         // IMPORTANTE: El backend espera una lista con el nombre "file", no "files" o "images"
-        files.forEach((file) => {
+        for (const file of files) {
+
             // Si el tipo MIME no está definido explícitamente, intentamos asignarlo
             let fileToUpload = file;
-            if (!file.type || file.type === '') {
-                // Intentar inferir el tipo MIME de la extensión
-                const fileExtension = file.name.split('.').pop()?.toLowerCase();
-                if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
-                    // Crear un nuevo File con el tipo MIME correcto
-                    fileToUpload = new File([file], file.name, { type: 'image/jpeg' });
-                } else if (fileExtension === 'png') {
-                    fileToUpload = new File([file], file.name, { type: 'image/png' });
+
+            console.log('Archivo a subir:', file.type);
+            // Intentar inferir el tipo MIME de la extensión
+            const fileExtension = file.name.split('.').pop()?.toLowerCase();
+            if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
+                console.log('Tipo jpg no reconocido, intentando convertir a PNG');
+
+                // Crear un nuevo File con el tipo MIME correcto
+                fileToUpload = new File([file], file.name, { type: 'image/jpeg' });
+            } else if (fileExtension === 'png') {
+                console.log('Tipo png no reconocido, intentando convertir a PNG');
+
+                fileToUpload = new File([file], file.name, { type: 'image/png' });
+            } else {
+                console.log('Tipo MIME no reconocido, intentando convertir a PNG');
+                try {
+                    // Convertir a PNG si no es jpg/jpeg/png
+                    fileToUpload = await convertImageToPNG(file);
+                } catch (error) {
+                    console.error('Error al convertir la imagen:', error);
+                    continue; // Saltamos este archivo y continuamos con el siguiente
                 }
             }
 
             formData.append('file', fileToUpload);
-        });
+        }
     }
 
     // Agregamos los demás parámetros
@@ -101,4 +115,37 @@ export const IAChat = async (
 
         throw error;
     }
+};
+
+const convertImageToPNG = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                reject(new Error('No se pudo crear el contexto 2D'));
+                return;
+            }
+
+            ctx.drawImage(img, 0, 0);
+
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    const convertedFile = new File([blob], file.name.split('.')[0] + '.png', {
+                        type: 'image/png'
+                    });
+                    resolve(convertedFile);
+                } else {
+                    reject(new Error('Error al convertir la imagen'));
+                }
+            }, 'image/png');
+        };
+
+        img.onerror = () => reject(new Error('Error al cargar la imagen'));
+        img.src = URL.createObjectURL(file);
+    });
 };

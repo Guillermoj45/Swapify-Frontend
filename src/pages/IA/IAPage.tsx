@@ -138,35 +138,11 @@ const AIChatPage: React.FC = () => {
             setMessages(prevMessages => [...prevMessages, userMessage]);
             setIsTyping(true);
 
-            // Verificación adicional de imágenes
-            if (selectedImages.length > 0) {
-                console.log('Verificación de imágenes antes de enviar:');
-                selectedImages.forEach((file, index) => {
-                    console.log(`Imagen ${index + 1}: ${file.size} bytes, tipo: ${file.type}`);
-                    // Verificar que la imagen sea válida
-                    if (file.size === 0) {
-                        throw new Error(`La imagen ${file.name} parece estar vacía`);
-                    }
-                });
-            }
 
             // Preparar para la llamada a la API
             const files = selectedImages;
             const message = inputText || "Analiza esta imagen";  // Mensaje por defecto si solo hay imágenes
 
-            // Debug antes de enviar
-            console.log('Enviando mensaje a la IA:');
-            console.log('- Texto:', message);
-            console.log('- Número de imágenes:', files.length);
-            console.log('- ID de chat actual:', currentChatId || 'nuevo chat');
-
-            // Información detallada sobre archivos
-            if (files.length > 0) {
-                console.log('Detalles de archivos:');
-                files.forEach((file, index) => {
-                    console.log(`Archivo ${index + 1}: ${file.name} (${file.type}, ${Math.round(file.size / 1024)}KB)`);
-                });
-            }
 
             // Reiniciar estado de UI
             setInputText('');
@@ -181,9 +157,6 @@ const AIChatPage: React.FC = () => {
                 productId || undefined
             );
 
-            // Debug respuesta
-            console.log('Respuesta recibida de la IA:');
-            console.log(response);
 
             // Procesar respuesta de la API
             if (response) {
@@ -308,7 +281,6 @@ const AIChatPage: React.FC = () => {
                     reader.readAsDataURL(file);
                 });
 
-                console.log(`${fileArray.length} archivos añadidos correctamente`);
             }
 
             // Limpiar el input para permitir seleccionar el mismo archivo nuevamente
