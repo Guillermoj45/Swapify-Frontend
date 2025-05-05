@@ -223,11 +223,6 @@ ion-item {
     transition: background-color 0.2s;
 }
 
-ion-item:hover {
-    --background: var(--ion-color-light-shade, #e0e0e0);
-    cursor: pointer;
-}
-
 .logout-button:hover, .delete-account-button:hover {
     opacity: 0.9;
 }

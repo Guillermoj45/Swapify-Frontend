@@ -39,33 +39,41 @@ import {
     notificationsOutline,
 } from 'ionicons/icons';
 import './Settings.css';
+import { Settings as SettingsService } from '../../Services/SettingsService';
+import {ProfileSettings} from "../../Models/ProfileSettings";
+import cloudinaryImage from "../../Services/CloudinaryService";
 
 const Settings: React.FC = () => {
-
-    const [avatarUrl, setAvatarUrl] = useState('');
     const history = useHistory();
-    // Settings state
-    const [settings, setSettings] = useState({
-        notifications: true,
-        darkMode: false,
-        language: 'español',
-        dataSync: true,
-        biometricLogin: false,
-        dataSaver: false,
-        analytics: true
-    });
 
     // UI states
-    const [showLogoutAlert, setShowLogoutAlert] = useState(false);
-    const [showDeleteAccountAlert, setShowDeleteAccountAlert] = useState(false);
+    const [activeSection, setActiveSection] = useState<string | null>(null);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
+
+    // Alert states
+    const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+    const [showDeleteAccountAlert, setShowDeleteAccountAlert] = useState(false);
+    const [showAboutAlert, setShowAboutAlert] = useState(false);
+
+    // Action sheet state
     const [showActionSheet, setShowActionSheet] = useState(false);
     const [actionSheetTitle] = useState('');
-    const [showAboutAlert, setShowAboutAlert] = useState(false);
-    const [activeSection, setActiveSection] = useState<string | null>(null);
 
-    // General options
+    // Profile state
+    // Estado inicial del perfil
+    const [profile, setProfile] = useState<ProfileSettings>({
+        nickname: '',
+        email: '',
+        avatar: '',
+        premium: '',
+        preferencias: {
+            notifications: true,
+            darkMode: false,
+        },
+    });
+
+    // Navigation options
     const accountOptions = [
         {
             label: 'Perfil',
@@ -78,37 +86,6 @@ const Settings: React.FC = () => {
             action: 'openSecurity'
         },
     ];
-
-    useEffect(() => {
-        // Load saved settings (this could be from localStorage or an API)
-        loadSavedSettings();
-    }, []);
-
-    const loadSavedSettings = () => {
-        // Placeholder for loading settings from storage or API
-        console.log('Loading saved settings...');
-        // Typically would use localStorage, a state manager or API call here
-    };
-
-    const toggleSetting = (setting: string, checked: boolean) => {
-        setSettings(prevSettings => ({
-            ...prevSettings,
-            [setting]: checked
-        }));
-
-        // Save setting (could use a service instead)
-        console.log(`Setting ${setting} changed to ${checked}`);
-
-        // Show feedback toast for major settings
-        if (setting === 'darkMode') {
-            document.body.classList.toggle('dark-theme', checked);
-            displayToast(`Modo oscuro ${checked ? 'activado' : 'desactivado'}`);
-        }
-
-        if (setting === 'biometricLogin') {
-            displayToast(`Acceso biométrico ${checked ? 'activado' : 'desactivado'}`);
-        }
-    };
 
     const openAccountOption = (action: string) => {
         console.log(`Opening ${action}`);
@@ -142,8 +119,46 @@ const Settings: React.FC = () => {
         history.push('/login');
     };
 
-    // Componente para la sección de Perfil
+    const loadSettings = async () => {
+        try {
+            const profileSettings = await SettingsService.getProfileSettings();
+
+            const avatarUrl = profileSettings.avatar
+                ? cloudinaryImage(profileSettings.avatar)
+                : '';
+
+            setProfile({
+                nickname: profileSettings.nickname || '',
+                email: profileSettings.email || '',
+                avatar: avatarUrl,
+                premium: profileSettings.premium === 'PREMIUM' ? 'Sí' : 'No',
+                preferencias: {
+                    notifications: profileSettings.preferencias?.notifications ?? true,
+                    darkMode: profileSettings.preferencias?.darkMode ?? false,
+                },
+            });
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            setToastMessage('Error al cargar configuraciones');
+            setShowToast(true);
+        }
+    };
+
+    // Load profile settings on component mount
+    useEffect(() => {
+        loadSettings();
+    }, []);
+
+
     const ProfileSection: React.FC<{onClose: () => void}> = ({ onClose }) => {
+        const handleInputChange = (e: CustomEvent, field: keyof ProfileSettings) => {
+            const value = e.detail.value || '';
+            setProfile(prevProfile => ({
+                ...prevProfile,
+                [field]: value
+            }));
+        };
+
         return (
             <IonCard className="profile-section-card">
                 <IonCardHeader>
@@ -159,28 +174,28 @@ const Settings: React.FC = () => {
                 <IonCardContent className="profile-form-content">
                     <IonList className="profile-form-list">
                         <IonItem className="ion-margin-bottom">
-                            <IonLabel position="floating">Nombre</IonLabel>
-                            <IonInput value="" />
-                        </IonItem>
-
-                        <IonItem className="ion-margin-bottom">
                             <IonLabel position="floating">Nickname</IonLabel>
-                            <IonInput value="" />
+                            <IonInput
+                                value={profile.nickname}
+                                onIonChange={(e) => handleInputChange(e, 'nickname')}
+                            />
                         </IonItem>
 
                         <IonItem className="ion-margin-bottom">
                             <IonLabel position="floating">Email</IonLabel>
-                            <IonInput value="" type="email" />
-                        </IonItem>
-
-                        <IonItem className="ion-margin-bottom">
-                            <IonLabel position="floating">Teléfono</IonLabel>
-                            <IonInput value="" type="tel" />
+                            <IonInput
+                                value={profile.email}
+                                type="email"
+                                onIonChange={(e) => handleInputChange(e, 'email')}
+                            />
                         </IonItem>
 
                         <IonItem className="ion-margin-bottom">
                             <IonLabel position="floating">Premium</IonLabel>
-                            <IonInput value="" readonly/>
+                            <IonInput
+                                value={profile.premium}
+                                readonly
+                            />
                         </IonItem>
 
                         <div className="ion-padding-top">
@@ -298,7 +313,7 @@ const Settings: React.FC = () => {
                 <div className="user-profile-section">
                     <div className="user-avatar" onClick={() => document.getElementById('fileInput')?.click()}>
                         <IonAvatar>
-                            <img src={avatarUrl} alt="User profile" />
+                            <img src={profile.avatar} alt="User profile" />
                         </IonAvatar>
                         <div className="edit-badge">
                             <IonIcon icon={camera} />
@@ -315,7 +330,7 @@ const Settings: React.FC = () => {
                                 const reader = new FileReader();
                                 reader.onload = () => {
                                     if (reader.result) {
-                                        setAvatarUrl(reader.result.toString());
+
                                         setActiveSection('profile');
                                     }
                                 };
@@ -364,8 +379,8 @@ const Settings: React.FC = () => {
                         <IonIcon icon={notificationsOutline} slot="start" className="settings-icon" />
                         <IonLabel>Notificaciones</IonLabel>
                         <IonToggle
-                            checked={settings.notifications}
-                            onIonChange={e => toggleSetting('notifications', e.detail.checked)}
+
+
                         />
                     </IonItem>
 
@@ -373,8 +388,7 @@ const Settings: React.FC = () => {
                         <IonIcon icon={colorPaletteOutline} slot="start" className="settings-icon" />
                         <IonLabel>Modo oscuro</IonLabel>
                         <IonToggle
-                            checked={settings.darkMode}
-                            onIonChange={e => toggleSetting('darkMode', e.detail.checked)}
+
                         />
                     </IonItem>
                 </IonList>

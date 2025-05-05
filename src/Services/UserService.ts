@@ -10,6 +10,7 @@ class UserService {
                     'Content-Type': 'application/json'
                 }
             });
+
             return response.data;
         } catch (error) {
             console.error("Error registering user:", error);
