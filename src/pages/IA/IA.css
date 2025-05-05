@@ -407,6 +407,256 @@
     box-shadow: 0 0 20px rgba(58, 118, 220, 0.6);
 }
 
+/* Estilos para la barra lateral personalizada */
+.custom-side-content {
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 100%;
+    background-color: var(--card-background);
+    box-shadow: 2px 0px 10px var(--shadow-color);
+    transition: transform 0.3s ease-in-out;
+    overflow-y: auto;
+    transform: translateX(-100%);
+}
+
+.custom-side-content.visible {
+    transform: translateX(0);
+}
+
+/* Ocultar barra de desplazamiento pero mantener funcionalidad */
+.custom-side-content {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-color) transparent;
+}
+
+.custom-side-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-side-content::-webkit-scrollbar-thumb {
+    background-color: var(--accent-color);
+    border-radius: 4px;
+}
+
+.custom-side-content::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+/* Estilos para el encabezado de la barra lateral */
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    background-color: var(--card-background);
+    z-index: 10;
+}
+
+.sidebar-header ion-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.close-sidebar-btn {
+    --color: var(--text-color);
+}
+
+/* Estilos para la barra de búsqueda */
+.sidebar-search {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 56px;
+    background-color: var(--card-background);
+    z-index: 9;
+}
+
+.chat-search {
+    --background: var(--searchbar-bg);
+    --color: var(--text-color);
+    --placeholder-color: var(--text-secondary);
+    --icon-color: var(--text-secondary);
+    --clear-button-color: var(--text-secondary);
+    --border-radius: 8px;
+    font-size: 14px;
+    padding: 0;
+    margin: 0;
+}
+
+/* Botón para nueva conversación */
+.new-chat-button-wrapper {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.new-chat-button {
+    --background: var(--accent-color);
+    --color: white;
+    --border-radius: 8px;
+    --box-shadow: 0 2px 6px rgba(58, 118, 220, 0.3);
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Lista de chats */
+.chat-list {
+    padding: 12px 0;
+}
+
+.chat-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    position: relative;
+}
+
+.chat-item:hover {
+    background-color: var(--searchbar-bg);
+}
+
+.chat-item.active {
+    background-color: rgba(58, 118, 220, 0.1);
+    border-left: 3px solid var(--accent-color);
+}
+
+.chat-item-avatar {
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.chat-item-content {
+    flex: 1;
+    min-width: 0; /* Permite truncamiento de texto */
+}
+
+.chat-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.chat-item-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+.chat-item-time {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.chat-item-message {
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Botones de acción para cada chat */
+.chat-item-actions {
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.chat-item:hover .chat-item-actions {
+    opacity: 1;
+}
+
+.chat-item-actions ion-button {
+    --color: var(--text-secondary);
+    --background: transparent;
+    --background-hover: var(--searchbar-bg);
+    --border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    margin: 0;
+    --padding-start: 8px;
+    --padding-end: 8px;
+}
+
+/* Ajustes adicionales para iconos más grandes */
+.chat-item-actions ion-icon {
+    font-size: 24px;
+}
+
+/* Badge para notificaciones */
+.unread-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    --background: var(--accent-color);
+    --color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+/* Mensaje cuando no hay conversaciones */
+.no-chats-message {
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Ajustes responsivos para la barra lateral */
+@media (min-width: 768px) {
+    .custom-side-content {
+        transform: translateX(0);
+        width: 320px;
+    }
+
+    .custom-side-content.collapsed {
+        transform: translateX(-100%);
+    }
+
+    .ai-chat-page {
+        padding-left: 320px;
+        transition: padding-left 0.3s ease;
+    }
+
+    .ai-chat-page.sidebar-hidden {
+        padding-left: 0;
+    }
+
+    .close-sidebar-btn {
+        display: none;
+    }
+}
+
+/* Ajuste para ion-page cuando la barra lateral está activa en móvil */
+@media (max-width: 767px) {
+    .chats-sidebar.visible + ion-page {
+        transform: translateX(300px);
+    }
+
+    /* Mejora la visibilidad del botón de chat sidebar en móvil */
+    .chat-sidebar-toggle {
+        --background: var(--searchbar-bg);
+        --border-radius: 50%;
+        margin-right: 8px;
+    }
+}
+
 /* Animación para los puntos de carga */
 @keyframes pulse {
     0% { opacity: 0.4; }

@@ -25,11 +25,13 @@ import {
     timeOutline,
     locationOutline,
     personOutline,
-    sunny,
-    moon,
-    starOutline
+    starOutline,
+    star,
+    arrowBack,
+    arrowForward
 } from 'ionicons/icons';
 import { ProductService, Product } from '../../Services/ProductService';
+import cloudinaryImage from '../../Services/CloudinaryService';
 import './ProductDetailPage.css';
 
 interface ProductDetailPageParams {
@@ -44,6 +46,8 @@ const ProductDetailPage: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [showToast, setShowToast] = useState<boolean>(false);
+    const [toastMessage, setToastMessage] = useState<string>("");
+    const [toastColor, setToastColor] = useState<string>("danger");
     const [isFavorite, setIsFavorite] = useState<boolean>(false);
     const [darkMode, setDarkMode] = useState<boolean>(false);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -116,14 +120,37 @@ const ProductDetailPage: React.FC = () => {
         fetchProductDetail();
     }, [id, profileId]);
 
-    // Toggle dark mode
-    const toggleDarkMode = () => {
-        setDarkMode(prev => !prev);
-    };
-
     // Toggle favorite state
     const toggleFavorite = () => {
         setIsFavorite(prev => !prev);
+    };
+
+    // Share product function - Copy product URL to clipboard
+    const shareProduct = () => {
+        try {
+            // Create the shareable URL
+            const productUrl = `${window.location.origin}/product/${id}/${profileId}`;
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(productUrl)
+                .then(() => {
+                    // Show success toast
+                    setToastMessage("¡Enlace copiado al portapapeles!");
+                    setToastColor("success");
+                    setShowToast(true);
+                })
+                .catch((err) => {
+                    console.error("Error al copiar al portapapeles:", err);
+                    setToastMessage("No se pudo copiar el enlace");
+                    setToastColor("danger");
+                    setShowToast(true);
+                });
+        } catch (err) {
+            console.error("Error al compartir el producto:", err);
+            setToastMessage("Error al compartir el producto");
+            setToastColor("danger");
+            setShowToast(true);
+        }
     };
 
     // Format date to a readable string
@@ -164,10 +191,16 @@ const ProductDetailPage: React.FC = () => {
         return `Hace ${years} ${years === 1 ? 'año' : 'años'}`;
     };
 
-    // Function to get the Cloudinary URL
-    const getImageUrl = (cloudinaryId: string): string => {
-        // Replace with your actual Cloudinary configuration
-        return `https://res.cloudinary.com/yourcloudname/image/upload/${cloudinaryId}`;
+    // Function to get the image URL using Cloudinary service
+    const getImageUrl = (imagePath: string | null): string | null => {
+        if (!imagePath) return null;
+
+        try {
+            return cloudinaryImage(imagePath);
+        } catch (error) {
+            console.error("Error generating image URL:", error);
+            return null;
+        }
     };
 
     // Handle image navigation
@@ -183,6 +216,27 @@ const ProductDetailPage: React.FC = () => {
         }
     };
 
+    // Function to render star rating
+    const renderStarRating = (points: number) => {
+        // Normalize points to a 5-star scale
+        // Assuming points are on a scale of 0-1000
+        const normalizedRating = Math.min(Math.max(points / 200, 0), 5);
+        const fullStars = Math.floor(normalizedRating);
+        const hasHalfStar = normalizedRating - fullStars >= 0.5;
+
+        return (
+            <div className="star-rating">
+                {[...Array(5)].map((_, i) => (
+                    <IonIcon
+                        key={i}
+                        icon={i < fullStars || (i === fullStars && hasHalfStar) ? star : starOutline}
+                        className={i < fullStars ? "star-filled" : "star-empty"}
+                    />
+                ))}
+            </div>
+        );
+    };
+
     return (
         <IonPage className={`product-detail-page ${darkMode ? 'dark-theme' : 'light-theme'}`}>
             <IonHeader>
@@ -192,10 +246,7 @@ const ProductDetailPage: React.FC = () => {
                     </IonButtons>
                     <IonTitle>Detalles del producto</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton className="theme-toggle-button" onClick={toggleDarkMode}>
-                            <IonIcon icon={darkMode ? sunny : moon} />
-                        </IonButton>
-                        <IonButton>
+                        <IonButton onClick={shareProduct}>
                             <IonIcon icon={shareOutline} />
                         </IonButton>
                     </IonButtons>
@@ -203,14 +254,14 @@ const ProductDetailPage: React.FC = () => {
             </IonHeader>
 
             <IonContent className="ion-padding">
-                {/* Toast para errores */}
+                {/* Toast para errores y notificaciones */}
                 <IonToast
                     isOpen={showToast}
                     onDidDismiss={() => setShowToast(false)}
-                    message={error || "Ocurrió un error"}
+                    message={error || toastMessage || "Ocurrió un error"}
                     duration={3000}
                     position="bottom"
-                    color="danger"
+                    color={toastColor}
                 />
 
                 {loading ? (
@@ -230,30 +281,41 @@ const ProductDetailPage: React.FC = () => {
                             {product.imagenes && product.imagenes.length > 0 ? (
                                 <>
                                     <img
-                                        src={getImageUrl(product.imagenes[currentImageIndex])}
+                                        src={getImageUrl(product.imagenes[currentImageIndex]) || ''}
                                         alt={product.name}
                                         className="product-detail-image"
                                         onError={(e) => {
                                             // Fallback si la imagen no carga
                                             const target = e.target as HTMLImageElement;
-                                            target.onerror = null;
-                                            target.src = `https://via.placeholder.com/400x300/${product.id.substring(0, 6)}/FFFFFF?text=${product.name.charAt(0)}`;
+                                            target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23cccccc"/%3E%3Ctext x="50" y="50" font-family="Arial" font-size="20" text-anchor="middle" dominant-baseline="middle" fill="%23ffffff"%3E' + product.name.charAt(0) + '%3C/text%3E%3C/svg%3E';
                                         }}
                                     />
                                     {product.imagenes.length > 1 && (
-                                        <div className="image-navigation">
-                                            <button onClick={prevImage} className="nav-button prev">&lt;</button>
+                                        <>
+                                            <button
+                                                className="image-nav-button image-nav-prev"
+                                                onClick={prevImage}
+                                                aria-label="Previous image"
+                                            >
+                                                <IonIcon icon={arrowBack}/>
+                                            </button>
+                                            <button
+                                                className="image-nav-button image-nav-next"
+                                                onClick={nextImage}
+                                                aria-label="Next image"
+                                            >
+                                                <IonIcon icon={arrowForward}/>
+                                            </button>
                                             <div className="image-indicators">
                                                 {product.imagenes.map((_, idx) => (
                                                     <span
                                                         key={idx}
-                                                        className={`indicator ${idx === currentImageIndex ? 'active' : ''}`}
+                                                        className={`image-indicator ${idx === currentImageIndex ? 'active' : ''}`}
                                                         onClick={() => setCurrentImageIndex(idx)}
-                                                    ></span>
+                                                    />
                                                 ))}
                                             </div>
-                                            <button onClick={nextImage} className="nav-button next">&gt;</button>
-                                        </div>
+                                        </>
                                     )}
                                 </>
                             ) : (
@@ -289,7 +351,7 @@ const ProductDetailPage: React.FC = () => {
                             <h1 className="product-detail-title">{product.name}</h1>
                             <div className="product-detail-meta">
                                 <div className="product-detail-rating">
-                                    <IonIcon icon={starOutline} />
+                                    {renderStarRating(product.points)}
                                     <span>{formatPoints(product.points)}</span>
                                 </div>
                                 <div className="product-detail-time">
@@ -341,12 +403,11 @@ const ProductDetailPage: React.FC = () => {
                                             {product.profile.avatar ? (
                                                 <IonAvatar>
                                                     <img
-                                                        src={getImageUrl(product.profile.avatar)}
+                                                        src={getImageUrl(product.profile.avatar) || ''}
                                                         alt={product.profile.nickname}
                                                         onError={(e) => {
                                                             const target = e.target as HTMLImageElement;
-                                                            target.onerror = null;
-                                                            target.src = 'https://ionicframework.com/docs/img/demos/avatar.svg';
+                                                            target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23cccccc"/%3E%3Ctext x="50" y="50" font-family="Arial" font-size="20" text-anchor="middle" dominant-baseline="middle" fill="%23ffffff"%3E' + product.profile.nickname.charAt(0) + '%3C/text%3E%3C/svg%3E';
                                                         }}
                                                     />
                                                 </IonAvatar>
@@ -381,10 +442,11 @@ const ProductDetailPage: React.FC = () => {
                                     className="main-action-button"
                                     onClick={() => {
                                         // Aquí iría la lógica para iniciar un chat con el vendedor
-                                        history.push(`/Chat?profileId=${product.profile.id}&productId=${product.id}`);
+                                        history.push(`/profile?profileId=${product.profile.id}&productId=${product.id}`);
                                     }}
                                 >
-                                    Contactar
+                                    <IonIcon slot="start" icon={chatbubbleOutline} />
+                                    Hacer una pregunta
                                 </IonButton>
                                 <IonButton
                                     expand="block"
@@ -395,8 +457,8 @@ const ProductDetailPage: React.FC = () => {
                                         history.push(`/Chat?profileId=${product.profile.id}&productId=${product.id}&question=true`);
                                     }}
                                 >
-                                    <IonIcon slot="start" icon={chatbubbleOutline} />
-                                    Hacer una pregunta
+
+                                    Perfil del usuario
                                 </IonButton>
                             </div>
                         </div>
@@ -414,13 +476,12 @@ const ProductDetailPage: React.FC = () => {
                                             <div className="product-image">
                                                 {relProduct.imagenes && relProduct.imagenes.length > 0 ? (
                                                     <img
-                                                        src={getImageUrl(relProduct.imagenes[0])}
+                                                        src={getImageUrl(relProduct.imagenes[0]) || ''}
                                                         alt={relProduct.name}
                                                         className="product-image-img"
                                                         onError={(e) => {
                                                             const target = e.target as HTMLImageElement;
-                                                            target.onerror = null;
-                                                            target.src = `https://via.placeholder.com/150x150/${relProduct.id.substring(0, 6)}/FFFFFF?text=${relProduct.name.charAt(0)}`;
+                                                            target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23cccccc"/%3E%3Ctext x="50" y="50" font-family="Arial" font-size="20" text-anchor="middle" dominant-baseline="middle" fill="%23ffffff"%3E' + relProduct.name.charAt(0) + '%3C/text%3E%3C/svg%3E';
                                                         }}
                                                     />
                                                 ) : (

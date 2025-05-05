@@ -20,6 +20,8 @@ import {
     IonButtons,
     IonMenuButton,
     TextareaCustomEvent,
+    IonSearchbar,
+    IonBadge,
     useIonToast
 } from '@ionic/react';
 import { TextareaChangeEventDetail } from '@ionic/core';
@@ -35,7 +37,11 @@ import {
     checkmark,
     menuOutline,
     sunny,
-    moon
+    moon,
+    chatboxEllipses,
+    add,
+    chevronBack,
+    createOutline,
 } from 'ionicons/icons';
 import './IA.css';
 import Navegacion from '../../components/Navegation';
@@ -45,17 +51,49 @@ import { IAChat } from '../../Services/IAService'; // Importamos el servicio
 interface Message {
     id: number | string;
     text: string;
-    sender: 'user' | 'ai';
+    sender: 'user' | 'ai';  // Explicitly limited to these two values
     timestamp: Date;
     image?: string;
     images?: string[];
     isCopied?: boolean;
 }
 
+interface ChatSession {
+    id: string;
+    title: string;
+    lastMessage: string;
+    timestamp: Date;
+    messages: Message[];
+    unread?: number;
+}
+
+// Custom type for a non-existent Ionic component
+interface SideContentProps {
+    side: "start" | "end";
+    contentId: string;
+    className?: string;
+    collapsed?: boolean;
+    children?: React.ReactNode;
+}
+
+// Create a custom component to replace IonSideContent
+const SideContent: React.FC<SideContentProps> = ({ children, className, collapsed }) => {
+    return (
+        <div className={`custom-side-content ${className || ''} ${collapsed ? 'collapsed' : ''}`}>
+            {children}
+        </div>
+    );
+};
+
 const AIChatPage: React.FC = () => {
-    const [messages, setMessages] = useState<Message[]>([
-        { id: 1, text: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?", sender: "ai", timestamp: new Date() }
-    ]);
+    const initialAIMessage: Message = {
+        id: 1,
+        text: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
+        sender: "ai",  // This is now correctly typed
+        timestamp: new Date()
+    };
+
+    const [messages, setMessages] = useState<Message[]>([initialAIMessage]);
     const [inputText, setInputText] = useState<string>('');
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -73,9 +111,26 @@ const AIChatPage: React.FC = () => {
     const [productId, setProductId] = useState<string | null>(null);
     const [presentToast] = useIonToast();
 
+    // Estado para el panel lateral de chats
+    const [showChatSidebar, setShowChatSidebar] = useState<boolean>(true);
+    const [chatSessions, setChatSessions] = useState<ChatSession[]>([
+        {
+            id: 'default',
+            title: 'Nueva conversación',
+            lastMessage: 'Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?',
+            timestamp: new Date(),
+            messages: [initialAIMessage],
+        }
+    ]);
+    const [activeChatId, setActiveChatId] = useState<string>('default');
+    const [showNewChatModal, setShowNewChatModal] = useState<boolean>(false);
+    const [newChatTitle, setNewChatTitle] = useState<string>('');
+    const [searchQuery, setSearchQuery] = useState<string>('');
+
     const fileInputRef = useRef<HTMLInputElement>(null);
     const contentRef = useRef<HTMLIonContentElement>(null);
     const textareaRef = useRef<HTMLIonTextareaElement>(null);
+    const sidebarRef = useRef<HTMLDivElement>(null);
 
     // Detectar cambios en el tamaño de la pantalla
     useEffect(() => {
@@ -106,6 +161,15 @@ const AIChatPage: React.FC = () => {
         });
     }, [darkMode]);
 
+    // Actualizar mensajes cuando cambia la conversación activa
+    useEffect(() => {
+        const activeChat = chatSessions.find(chat => chat.id === activeChatId);
+        if (activeChat) {
+            setMessages(activeChat.messages);
+            setCurrentChatId(activeChat.id);
+        }
+    }, [activeChatId, chatSessions]);
+
     // Scroll to bottom when messages change and ensure proper layout
     useEffect(() => {
         if (contentRef.current) {
@@ -135,14 +199,18 @@ const AIChatPage: React.FC = () => {
                 images: previewImages.length > 0 ? previewImages : undefined
             };
 
-            setMessages(prevMessages => [...prevMessages, userMessage]);
-            setIsTyping(true);
+            // Actualizar mensajes de la sesión actual
+            const updatedMessages = [...messages, userMessage];
+            setMessages(updatedMessages);
 
+            // Actualizar la conversación en las sesiones de chat
+            updateChatSession(activeChatId, updatedMessages, inputText || 'Análisis de imagen');
+
+            setIsTyping(true);
 
             // Preparar para la llamada a la API
             const files = selectedImages;
             const message = inputText || "Analiza esta imagen";  // Mensaje por defecto si solo hay imágenes
-
 
             // Reiniciar estado de UI
             setInputText('');
@@ -156,7 +224,6 @@ const AIChatPage: React.FC = () => {
                 currentChatId || undefined,
                 productId || undefined
             );
-
 
             // Procesar respuesta de la API
             if (response) {
@@ -187,7 +254,21 @@ const AIChatPage: React.FC = () => {
                     images: messageImages.length > 0 ? messageImages : undefined
                 };
 
-                setMessages(prevMessages => [...prevMessages, aiResponse]);
+                const finalMessages = [...updatedMessages, aiResponse];
+                setMessages(finalMessages);
+
+                // Actualizar la conversación en las sesiones de chat
+                updateChatSession(
+                    activeChatId,
+                    finalMessages,
+                    aiResponse.text.substring(0, 50) + (aiResponse.text.length > 50 ? '...' : '')
+                );
+
+                // Actualizar título si es una conversación nueva
+                if (chatSessions.find(chat => chat.id === activeChatId)?.title === 'Nueva conversación') {
+                    const suggestedTitle = generateChatTitle(inputText);
+                    updateChatTitle(activeChatId, suggestedTitle);
+                }
             }
         } catch (error) {
             console.error("Error sending message:", error);
@@ -200,7 +281,11 @@ const AIChatPage: React.FC = () => {
                 timestamp: new Date()
             };
 
-            setMessages(prevMessages => [...prevMessages, errorMessage]);
+            const finalMessages = [...messages, errorMessage];
+            setMessages(finalMessages);
+
+            // Actualizar la conversación en las sesiones de chat
+            updateChatSession(activeChatId, finalMessages, "Error al procesar el mensaje");
 
             presentToast({
                 message: 'Error al enviar el mensaje. Intenta con un archivo más pequeño o diferente formato.',
@@ -210,6 +295,42 @@ const AIChatPage: React.FC = () => {
         } finally {
             setIsTyping(false);
         }
+    };
+
+    // Función para actualizar una sesión de chat
+    const updateChatSession = (chatId: string, updatedMessages: Message[], lastMessageText: string) => {
+        setChatSessions(prevSessions => prevSessions.map(session =>
+            session.id === chatId
+                ? {
+                    ...session,
+                    messages: updatedMessages,
+                    lastMessage: lastMessageText,
+                    timestamp: new Date()
+                }
+                : session
+        ));
+    };
+
+    // Función para actualizar el título de un chat
+    const updateChatTitle = (chatId: string, newTitle: string) => {
+        setChatSessions(prevSessions => prevSessions.map(session =>
+            session.id === chatId
+                ? { ...session, title: newTitle }
+                : session
+        ));
+    };
+
+    // Genera un título sugerido para la conversación basado en el primer mensaje
+    const generateChatTitle = (message: string): string => {
+        if (!message || message.trim() === '') return 'Nueva conversación';
+
+        // Limitar a 30 caracteres y añadir puntos suspensivos si es necesario
+        const maxLength = 30;
+        const title = message.trim().split('\n')[0]; // Tomar solo la primera línea
+
+        return title.length > maxLength
+            ? title.substring(0, maxLength) + '...'
+            : title;
     };
 
     // Cambiar entre modo oscuro y claro
@@ -236,7 +357,7 @@ const AIChatPage: React.FC = () => {
             // Verificar el tamaño de los archivos (máximo 5MB por archivo)
             const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
             const fileArray: File[] = [];
-            let sizeExceeded = false;
+            let hasOverSizedFiles = false;
 
             // Convertir FileList a array para un manejo más fácil
             for (let i = 0; i < files.length; i++) {
@@ -244,7 +365,7 @@ const AIChatPage: React.FC = () => {
 
                 // Verificar tamaño
                 if (file.size > MAX_FILE_SIZE) {
-                    sizeExceeded = true;
+                    hasOverSizedFiles = true;
                     presentToast({
                         message: `El archivo ${file.name} excede el tamaño máximo de 5MB`,
                         duration: 3000,
@@ -280,7 +401,6 @@ const AIChatPage: React.FC = () => {
                     };
                     reader.readAsDataURL(file);
                 });
-
             }
 
             // Limpiar el input para permitir seleccionar el mismo archivo nuevamente
@@ -323,7 +443,18 @@ const AIChatPage: React.FC = () => {
     };
 
     const handleDeleteMessage = (id: number | string): void => {
-        setMessages(messages.filter(m => m.id !== id));
+        const updatedMessages = messages.filter(m => m.id !== id);
+        setMessages(updatedMessages);
+
+        // Actualizar la sesión de chat
+        updateChatSession(
+            activeChatId,
+            updatedMessages,
+            updatedMessages.length > 0
+                ? updatedMessages[updatedMessages.length - 1].text.substring(0, 50)
+                : 'Conversación vacía'
+        );
+
         setShowOptions({ open: false, id: null });
     };
 
@@ -331,28 +462,236 @@ const AIChatPage: React.FC = () => {
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
+    const formatDate = (date: Date): string => {
+        const now = new Date();
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+
+        if (date.toDateString() === now.toDateString()) {
+            return 'Hoy';
+        } else if (date.toDateString() === yesterday.toDateString()) {
+            return 'Ayer';
+        } else {
+            return date.toLocaleDateString('es-ES', {
+                day: 'numeric',
+                month: 'short',
+            });
+        }
+    };
+
     const handleClearChat = () => {
-        setMessages([
-            { id: Date.now(), text: "Chat reiniciado. ¿En qué puedo ayudarte?", sender: "ai", timestamp: new Date() }
-        ]);
+        const newMessage: Message = {
+            id: Date.now(),
+            text: "Chat reiniciado. ¿En qué puedo ayudarte?",
+            sender: "ai",
+            timestamp: new Date()
+        };
+
+        // Limpieza del chat activo
+        setMessages([newMessage]);
+
+        // Actualizar la sesión de chat
+        updateChatSession(activeChatId, [newMessage], "Chat reiniciado. ¿En qué puedo ayudarte?");
+
         // Reset conversation state
-        setCurrentChatId(null);
         setProductId(null);
     };
+
+    const handleToggleSidebar = () => {
+        setShowChatSidebar(prev => !prev);
+    };
+
+    const handleCreateNewChat = () => {
+        // Crear un nuevo ID único para la conversación
+        const newChatId = `chat-${Date.now()}`;
+
+        // Mensaje inicial
+        const initialMessage: Message = {
+            id: Date.now(),
+            text: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
+            sender: "ai",
+            timestamp: new Date()
+        };
+
+        // Añadir nueva conversación a la lista
+        const newChat: ChatSession = {
+            id: newChatId,
+            title: newChatTitle || 'Nueva conversación',
+            lastMessage: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
+            timestamp: new Date(),
+            messages: [initialMessage],
+        };
+
+        setChatSessions(prev => [newChat, ...prev]);
+
+        // Cambiar a la nueva conversación
+        setActiveChatId(newChatId);
+        setMessages([initialMessage]);
+        setCurrentChatId(null);
+        setProductId(null);
+
+        // Cerrar modal
+        setShowNewChatModal(false);
+        setNewChatTitle('');
+
+        // En dispositivos móviles, cerrar el sidebar después de seleccionar
+        if (!isDesktop) {
+            setShowChatSidebar(false);
+        }
+    };
+
+    const handleSwitchChat = (chatId: string) => {
+        setActiveChatId(chatId);
+
+        // En dispositivos móviles, cerrar el sidebar después de seleccionar
+        if (!isDesktop) {
+            setShowChatSidebar(false);
+        }
+    };
+
+    const handleEditChatTitle = (chatId: string, newTitle: string) => {
+        if (newTitle.trim() !== '') {
+            updateChatTitle(chatId, newTitle);
+        }
+    };
+
+    const handleDeleteChat = (chatId: string) => {
+        // Filtrar las sesiones para eliminar la seleccionada
+        setChatSessions(prev => prev.filter(chat => chat.id !== chatId));
+
+        // Si se elimina la sesión activa, cambiar a la primera disponible
+        if (chatId === activeChatId && chatSessions.length > 1) {
+            const remainingSessions = chatSessions.filter(chat => chat.id !== chatId);
+            if (remainingSessions.length > 0) {
+                setActiveChatId(remainingSessions[0].id);
+                setMessages(remainingSessions[0].messages);
+                setCurrentChatId(remainingSessions[0].id);
+            } else {
+                // Si no quedan sesiones, crear una nueva
+                handleCreateNewChat();
+            }
+        }
+    };
+
+    // Filtra las conversaciones según la búsqueda
+    const filteredChats = chatSessions.filter(chat =>
+        chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
         <>
             <Navegacion isDesktop={isDesktop} isChatView={true} />
 
-            <IonPage id="main-content" className={`ai-chat-page ${!darkMode ? 'light-mode' : ''}`}>
+            <IonPage id="main-content" className={`ai-chat-page ${!showChatSidebar && isDesktop ? 'sidebar-hidden' : ''}`}>
+                {/* Panel lateral de chats - replaced IonSideContent with our custom component */}
+                <SideContent
+                    side="start"
+                    className={`custom-side-content ${showChatSidebar ? 'visible' : ''} ${!showChatSidebar ? 'collapsed' : ''}`}
+                    contentId="main-content"
+                    collapsed={!showChatSidebar}
+                >
+                    <div className="sidebar-header" ref={sidebarRef}>
+                        <IonTitle>Conversaciones</IonTitle>
+                        <IonButton
+                            fill="clear"
+                            className="close-sidebar-btn"
+                            onClick={() => setShowChatSidebar(false)}
+                        >
+                            <IonIcon icon={chevronBack} />
+                        </IonButton>
+                    </div>
+
+                    <div className="sidebar-search">
+                        <IonSearchbar
+                            value={searchQuery}
+                            onIonChange={e => setSearchQuery(e.detail.value || '')}
+                            placeholder="Buscar conversaciones"
+                            className="chat-search"
+                        />
+                    </div>
+
+                    <div className="new-chat-button-wrapper">
+                        <IonButton
+                            expand="block"
+                            className="new-chat-button"
+                            onClick={() => setShowNewChatModal(true)}
+                        >
+                            <IonIcon icon={add} slot="start" />
+                            Nueva conversación
+                        </IonButton>
+                    </div>
+
+                    <div className="chat-list">
+                        {filteredChats.length > 0 ? (
+                            filteredChats.map(chat => (
+                                <div
+                                    key={chat.id}
+                                    className={`chat-item ${activeChatId === chat.id ? 'active' : ''}`}
+                                    onClick={() => handleSwitchChat(chat.id)}
+                                >
+                                    <div className="chat-item-avatar">
+                                        <div className="ai-avatar">AI</div>
+                                    </div>
+                                    <div className="chat-item-content">
+                                        <div className="chat-item-header">
+                                            <div className="chat-item-title">{chat.title}</div>
+                                            <div className="chat-item-time">{formatDate(chat.timestamp)}</div>
+                                        </div>
+                                        <div className="chat-item-message">{chat.lastMessage}</div>
+                                    </div>
+
+                                    {/* Botones de acción del chat */}
+                                    <div className="chat-item-actions">
+                                        <IonButton fill="clear" size="large" onClick={(e) => {
+                                            e.stopPropagation();
+                                            const newTitle = prompt('Editar título de la conversación:', chat.title);
+                                            if (newTitle) handleEditChatTitle(chat.id, newTitle);
+                                        }}>
+                                            <IonIcon icon={createOutline} size="medium"/>
+                                        </IonButton>
+                                        <IonButton fill="clear" size="large" onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm('¿Estás seguro de eliminar esta conversación?')) {
+                                                handleDeleteChat(chat.id);
+                                            }
+                                        }}>
+                                            <IonIcon icon={trash} size="medium"/>
+                                        </IonButton>
+                                    </div>
+
+                                    {/* Badge para mensajes no leídos */}
+                                    {chat.unread && chat.unread > 0 && (
+                                        <IonBadge color="primary" className="unread-badge">
+                                            {chat.unread}
+                                        </IonBadge>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="no-chats-message">
+                                No se encontraron conversaciones
+                            </div>
+                        )}
+                    </div>
+                </SideContent>
+
                 <IonHeader className="ai-chat-header">
                     <IonToolbar>
                         <IonButtons slot="start">
+                            {/* Botón para mostrar/ocultar el sidebar de chats */}
+                            <IonButton onClick={handleToggleSidebar} className="chat-sidebar-toggle">
+                                <IonIcon icon={chatboxEllipses} />
+                            </IonButton>
+
+                            {/* Botón original del menú */}
                             <IonMenuButton>
                                 <IonIcon icon={menuOutline} />
                             </IonMenuButton>
                         </IonButtons>
-                        <IonTitle className="ion-text-center">Asistente IA</IonTitle>
+                        <IonTitle className="ion-text-center">
+                            {chatSessions.find(chat => chat.id === activeChatId)?.title || 'Asistente IA'}
+                        </IonTitle>
                         <IonButtons slot="end">
                             <IonButton onClick={toggleDarkMode}>
                                 <IonIcon icon={darkMode ? sunny : moon} />
@@ -368,6 +707,7 @@ const AIChatPage: React.FC = () => {
                     <div className="chat-container">
                         {messages.map((message) => (
                             <div
+                                key={message.id}
                                 className={`message-container ${message.sender === 'user' ? 'user-message' : 'ai-message'}`}
                             >
                                 <div className="message-avatar">
