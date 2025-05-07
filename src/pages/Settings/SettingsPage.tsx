@@ -22,7 +22,8 @@ import {
     IonCard,
     IonCardHeader,
     IonCardContent,
-    IonInput
+    IonInput,
+    InputCustomEvent
 } from '@ionic/react';
 import {
     informationCircleOutline,
@@ -31,7 +32,6 @@ import {
     logOutOutline,
     trashOutline,
     camera,
-    chevronForward,
     closeOutline,
     eyeOutline,
     createOutline,
@@ -40,29 +40,61 @@ import {
 } from 'ionicons/icons';
 import './Settings.css';
 import { Settings as SettingsService } from '../../Services/SettingsService';
-import {ProfileSettings} from "../../Models/ProfileSettings";
+// Importamos pero usamos el tipo ProfileSettings directamente
+
 import cloudinaryImage from "../../Services/CloudinaryService";
+import { ProfileSettings } from '../../Models/ProfileSettings';
+
+// Definimos una interfaz para nuestro estado de perfil
+interface ProfileState {
+    nickname: string;
+    email: string;
+    avatar: string;
+    premium: string;
+    preferencias: {
+        notifications: boolean;
+        darkMode: boolean;
+    };
+}
+
+// Definimos el tipo para nuestras secciones activas
+type ActiveSection = 'profile' | 'security' | 'privacy' | null;
+
+// Definimos la interfaz para las opciones de cuenta
+interface AccountOption {
+    label: string;
+    icon: string;
+    action: string;
+}
+
+// Interfaz para las props de las secciones de perfil y seguridad
+interface SectionProps {
+    onClose: () => void;
+}
+
+interface ProfileWithFile extends Omit<ProfileSettings, 'avatar'> {
+    avatar?: string | File;
+}
 
 const Settings: React.FC = () => {
     const history = useHistory();
 
     // UI states
-    const [activeSection, setActiveSection] = useState<string | null>(null);
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState('');
+    const [activeSection, setActiveSection] = useState<ActiveSection>(null);
+    const [showToast, setShowToast] = useState<boolean>(false);
+    const [toastMessage, setToastMessage] = useState<string>('');
 
     // Alert states
-    const [showLogoutAlert, setShowLogoutAlert] = useState(false);
-    const [showDeleteAccountAlert, setShowDeleteAccountAlert] = useState(false);
-    const [showAboutAlert, setShowAboutAlert] = useState(false);
+    const [showLogoutAlert, setShowLogoutAlert] = useState<boolean>(false);
+    const [showDeleteAccountAlert, setShowDeleteAccountAlert] = useState<boolean>(false);
+    const [showAboutAlert, setShowAboutAlert] = useState<boolean>(false);
 
     // Action sheet state
-    const [showActionSheet, setShowActionSheet] = useState(false);
-    const [actionSheetTitle] = useState('');
+    const [showActionSheet, setShowActionSheet] = useState<boolean>(false);
+    const [actionSheetTitle] = useState<string>('');
 
     // Profile state
-    // Estado inicial del perfil
-    const [profile, setProfile] = useState<ProfileSettings>({
+    const [profile, setProfile] = useState<ProfileWithFile>({
         nickname: '',
         email: '',
         avatar: '',
@@ -74,7 +106,7 @@ const Settings: React.FC = () => {
     });
 
     // Navigation options
-    const accountOptions = [
+    const accountOptions: AccountOption[] = [
         {
             label: 'Perfil',
             icon: personOutline,
@@ -87,7 +119,7 @@ const Settings: React.FC = () => {
         },
     ];
 
-    const openAccountOption = (action: string) => {
+    const openAccountOption = (action: string): void => {
         console.log(`Opening ${action}`);
 
         switch (action) {
@@ -105,21 +137,29 @@ const Settings: React.FC = () => {
         }
     };
 
-    const closeActiveSection = () => {
+    const closeActiveSection = (): void => {
         setActiveSection(null);
     };
 
-    const displayToast = (message: string) => {
+    const displayToast = (message: string): void => {
         setToastMessage(message);
         setShowToast(true);
     };
 
-    const logout = () => {
+    const logout = (): void => {
         sessionStorage.removeItem('token');
         history.push('/login');
     };
 
-    const loadSettings = async () => {
+    const getAvatarUrl = (avatar: string | File | undefined): string => {
+        if (!avatar) return '';
+        if (avatar instanceof File) {
+            return URL.createObjectURL(avatar);
+        }
+        return avatar as string;
+    };
+
+    const loadSettings = async (): Promise<void> => {
         try {
             const profileSettings = await SettingsService.getProfileSettings();
 
@@ -131,7 +171,7 @@ const Settings: React.FC = () => {
                 nickname: profileSettings.nickname || '',
                 email: profileSettings.email || '',
                 avatar: avatarUrl,
-                premium: profileSettings.premium === 'PREMIUM' ? 'Sí' : 'No',
+                premium: profileSettings.premium || '',
                 preferencias: {
                     notifications: profileSettings.preferencias?.notifications ?? true,
                     darkMode: profileSettings.preferencias?.darkMode ?? false,
@@ -139,8 +179,7 @@ const Settings: React.FC = () => {
             });
         } catch (error) {
             console.error('Error loading settings:', error);
-            setToastMessage('Error al cargar configuraciones');
-            setShowToast(true);
+            displayToast('Error al cargar configuraciones');
         }
     };
 
@@ -149,14 +188,25 @@ const Settings: React.FC = () => {
         loadSettings();
     }, []);
 
-
-    const ProfileSection: React.FC<{onClose: () => void}> = ({ onClose }) => {
-        const handleInputChange = (e: CustomEvent, field: keyof ProfileSettings) => {
+    const ProfileSection: React.FC<SectionProps> = ({ onClose }) => {
+        const handleInputChange = (e: InputCustomEvent, field: keyof ProfileState): void => {
             const value = e.detail.value || '';
             setProfile(prevProfile => ({
                 ...prevProfile,
                 [field]: value
             }));
+        };
+
+        const handleSave = async (): Promise<void> => {
+            try {
+                await SettingsService.updateProfileSettings(profile);
+                await loadSettings();
+                onClose();
+                displayToast('Perfil actualizado correctamente');
+            } catch (error) {
+                console.error('Error al guardar:', error);
+                displayToast('Error al actualizar el perfil');
+            }
         };
 
         return (
@@ -199,7 +249,12 @@ const Settings: React.FC = () => {
                         </IonItem>
 
                         <div className="ion-padding-top">
-                            <IonButton expand="block" color="primary" className="ion-margin-top" onClick={onClose}>
+                            <IonButton
+                                expand="block"
+                                color="primary"
+                                className="ion-margin-top"
+                                onClick={handleSave}
+                            >
                                 Guardar cambios
                             </IonButton>
                         </div>
@@ -209,16 +264,13 @@ const Settings: React.FC = () => {
         );
     };
 
-    // Componente para la sección de Seguridad
-    const SecuritySection: React.FC<{onClose: () => void}> = ({ onClose }) => {
-        const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-        const [showNewPassword, setShowNewPassword] = useState(false);
-        const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-        // Estados para almacenar los valores de las contraseñas
-        const [currentPassword, setCurrentPassword] = useState('');
-        const [newPassword, setNewPassword] = useState('');
-        const [confirmPassword, setConfirmPassword] = useState('');
+    const SecuritySection: React.FC<SectionProps> = ({ onClose }) => {
+        const [showCurrentPassword, setShowCurrentPassword] = useState<boolean>(false);
+        const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
+        const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+        const [currentPassword, setCurrentPassword] = useState<string>('');
+        const [newPassword, setNewPassword] = useState<string>('');
+        const [confirmPassword, setConfirmPassword] = useState<string>('');
 
         return (
             <IonCard className="profile-section-card">
@@ -312,48 +364,48 @@ const Settings: React.FC = () => {
             <IonContent className="settings-content">
                 <div className="user-profile-section">
                     <div className="user-avatar" onClick={() => document.getElementById('fileInput')?.click()}>
+                        <input
+                            type="file"
+                            id="fileInput"
+                            hidden
+                            accept="image/*"
+                            onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                    setProfile(prev => ({
+                                        ...prev,
+                                        avatar: file
+                                    }));
+
+                                    try {
+                                        await SettingsService.updateProfileSettings({
+                                            ...profile,
+                                            avatar: file
+                                        });
+                                        await loadSettings();
+                                        displayToast('Imagen actualizada correctamente');
+                                    } catch (error) {
+                                        console.error('Error al actualizar la imagen:', error);
+                                        displayToast('Error al actualizar la imagen');
+                                    }
+                                }
+                            }}
+                        />
                         <IonAvatar>
-                            <img src={profile.avatar} alt="User profile" />
+                            <img src={getAvatarUrl(profile.avatar)} alt="User profile" />
                         </IonAvatar>
                         <div className="edit-badge">
                             <IonIcon icon={camera} />
                         </div>
                     </div>
-                    <input
-                        id="fileInput"
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                                const reader = new FileReader();
-                                reader.onload = () => {
-                                    if (reader.result) {
 
-                                        setActiveSection('profile');
-                                    }
-                                };
-                                reader.readAsDataURL(file);
-                            }
-                        }}
-                    />
                     <div className="user-info">
-                        <h2>Ana García</h2>
-                        <p>ana.garcia@email.com</p>
-                        <IonButton
-                            fill="clear"
-                            color="primary"
-                            size="small"
-                            onClick={() => setActiveSection('profile')}
-                        >
-                            Editar perfil
-                            <IonIcon icon={chevronForward} slot="end" />
-                        </IonButton>
+                        <h2>{profile.nickname}</h2>
+                        <p>{profile.email}</p>
                     </div>
                 </div>
 
-                {/* Renderizar secciones activas */}
+                {/* Secciones activas */}
                 {activeSection === 'profile' && <ProfileSection onClose={closeActiveSection} />}
                 {activeSection === 'security' && <SecuritySection onClose={closeActiveSection} />}
 
@@ -379,8 +431,13 @@ const Settings: React.FC = () => {
                         <IonIcon icon={notificationsOutline} slot="start" className="settings-icon" />
                         <IonLabel>Notificaciones</IonLabel>
                         <IonToggle
-
-
+                            onIonChange={(e) => setProfile({
+                                ...profile,
+                                preferencias: {
+                                    ...profile.preferencias,
+                                    notifications: e.detail.checked
+                                }
+                            })}
                         />
                     </IonItem>
 
@@ -388,7 +445,13 @@ const Settings: React.FC = () => {
                         <IonIcon icon={colorPaletteOutline} slot="start" className="settings-icon" />
                         <IonLabel>Modo oscuro</IonLabel>
                         <IonToggle
-
+                            onIonChange={(e) => setProfile({
+                                ...profile,
+                                preferencias: {
+                                    ...profile.preferencias,
+                                    darkMode: e.detail.checked
+                                }
+                            })}
                         />
                     </IonItem>
                 </IonList>
@@ -405,7 +468,7 @@ const Settings: React.FC = () => {
                             className="logout-button"
                             onClick={() => setShowLogoutAlert(true)}
                         >
-                            <IonIcon icon={logOutOutline} slot="start" onClick={logout} />
+                            <IonIcon icon={logOutOutline} slot="start" />
                             Cerrar sesión
                         </IonButton>
 
@@ -438,10 +501,7 @@ const Settings: React.FC = () => {
                         },
                         {
                             text: 'Sí, cerrar sesión',
-                            handler: () => {
-                                console.log('Cerrando sesión...');
-                                logout();
-                            }
+                            handler: logout
                         }
                     ]}
                 />
