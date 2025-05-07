@@ -1,7 +1,8 @@
 import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import Home from './pages/Home/Home';
+import { useState, useEffect } from 'react';
+import Navegacion from './components/Navegation';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -46,52 +47,95 @@ import SettingsPage from "./pages/Settings/SettingsPage";
 
 setupIonicReact();
 
-const App: React.FC = () => (
-    <IonApp>
-        <IonReactRouter>
-            <IonRouterOutlet>
-                <Route exact path="/">
-                    <Redirect to="/register" />
-                </Route>
-                <Route exact path="/home">
-                    <Home />
-                </Route>
-                <Route exact path="/register">
-                    <RegisterPage />
-                </Route>
-                <Route exact path="/login">
-                    <LoginPage />
-                </Route>
-                <Route exact path="/products">
-                    <ProductsPage />
-                </Route>
-                <Route exact path="/profile">
-                    <ProfilePage />
-                </Route>
-                <Route exact path="/passwordRecover">
-                    <PasswordRecover/>
-                </Route>
-                <Route exact path="/IA">
-                    <IA/>
-                </Route>
-                <Route exact path="/premiumSuscribe">
-                    <SuscripcionPage />
-                </Route>
-                <Route exact path="/paymentGateway">
-                    <PagoPremium/>
-                </Route>
-                <Route exact path="/Chat">
-                    <ChatPage/>
-                </Route>
-                <Route exact path="/product/:id/:profileId">
-                    <ProductDetailPage/>
-                </Route>
-                <Route exact path="/settings">
-                    <SettingsPage />
-                </Route>
-            </IonRouterOutlet>
-        </IonReactRouter>
-    </IonApp>
-);
+const App: React.FC = () => {
+    // Detectar si es vista de escritorio
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    // Detectar si es vista de chat
+    const [isChatView, setIsChatView] = useState(false);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(min-width: 768px)');
+        const handleResize = (e: MediaQueryListEvent | MediaQueryList) => {
+            setIsDesktop(e.matches);
+        };
+
+        // Inicializar el estado
+        handleResize(mediaQuery);
+
+        // Escuchar cambios en el tamaño de la ventana
+        mediaQuery.addEventListener('change', handleResize);
+
+        // Limpiar event listener
+        return () => {
+            mediaQuery.removeEventListener('change', handleResize);
+        };
+    }, []);
+
+    // Actualizar estado de vista de chat basado en la URL actual
+    useEffect(() => {
+        const checkIfChatView = () => {
+            const path = window.location.pathname;
+            setIsChatView(path.includes('/Chat') || path.includes('/IA'));
+        };
+
+        checkIfChatView();
+
+        // Escuchar cambios en la ruta
+        window.addEventListener('popstate', checkIfChatView);
+
+        return () => {
+            window.removeEventListener('popstate', checkIfChatView);
+        };
+    }, []);
+
+    return (
+        <IonApp>
+            <IonReactRouter>
+                {/* Navegación global que se mantiene en toda la aplicación */}
+                <Navegacion isDesktop={isDesktop} isChatView={isChatView} />
+
+                <IonRouterOutlet id="main-content">
+                    <Route exact path="/">
+                        <Redirect to="/register" />
+                    </Route>
+                    <Route exact path="/register">
+                        <RegisterPage />
+                    </Route>
+                    <Route exact path="/login">
+                        <LoginPage />
+                    </Route>
+                    <Route exact path="/products">
+                        <ProductsPage />
+                    </Route>
+                    <Route exact path="/profile">
+                        <ProfilePage />
+                    </Route>
+                    <Route exact path="/passwordRecover">
+                        <PasswordRecover/>
+                    </Route>
+                    <Route exact path="/IA">
+                        <IA/>
+                    </Route>
+                    <Route exact path="/premiumSuscribe">
+                        <SuscripcionPage />
+                    </Route>
+                    <Route exact path="/paymentGateway">
+                        <PagoPremium/>
+                    </Route>
+                    <Route exact path="/Chat">
+                        <ChatPage/>
+                    </Route>
+                    <Route exact path="/product/:id/:profileId">
+                        <ProductDetailPage/>
+                    </Route>
+                    <Route exact path="/settings">
+                        <SettingsPage />
+                    </Route>
+                </IonRouterOutlet>
+            </IonReactRouter>
+        </IonApp>
+    );
+};
 
 export default App;

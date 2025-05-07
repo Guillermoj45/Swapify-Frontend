@@ -20,9 +20,8 @@ import {
     IonButtons,
     IonMenuButton,
     TextareaCustomEvent,
-    IonSearchbar,
     IonBadge,
-    useIonToast
+    useIonToast, IonInput,
 } from '@ionic/react';
 import { TextareaChangeEventDetail } from '@ionic/core';
 import {
@@ -89,7 +88,7 @@ const AIChatPage: React.FC = () => {
     const initialAIMessage: Message = {
         id: 1,
         text: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
-        sender: "ai",  // This is now correctly typed
+        sender: "ai",
         timestamp: new Date()
     };
 
@@ -123,9 +122,8 @@ const AIChatPage: React.FC = () => {
         }
     ]);
     const [activeChatId, setActiveChatId] = useState<string>('default');
-    const [showNewChatModal, setShowNewChatModal] = useState<boolean>(false);
+    const [showNewChatAlert, setShowNewChatAlert] = useState<boolean>(false);
     const [newChatTitle, setNewChatTitle] = useState<string>('');
-    const [searchQuery, setSearchQuery] = useState<string>('');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const contentRef = useRef<HTMLIonContentElement>(null);
@@ -333,11 +331,6 @@ const AIChatPage: React.FC = () => {
             : title;
     };
 
-    // Cambiar entre modo oscuro y claro
-    const toggleDarkMode = (): void => {
-        setDarkMode(prevMode => !prevMode);
-    };
-
     const handleKeyPress = (e: React.KeyboardEvent): void => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -527,11 +520,11 @@ const AIChatPage: React.FC = () => {
         // Cambiar a la nueva conversación
         setActiveChatId(newChatId);
         setMessages([initialMessage]);
-        setCurrentChatId(null);
-        setProductId(null);
+        setCurrentChatId(null); // Resetear ID de chat actual con la API
+        setProductId(null); // Resetear ID de producto si existe
 
-        // Cerrar modal
-        setShowNewChatModal(false);
+        // Cerrar alerta y limpiar input
+        setShowNewChatAlert(false);
         setNewChatTitle('');
 
         // En dispositivos móviles, cerrar el sidebar después de seleccionar
@@ -573,10 +566,32 @@ const AIChatPage: React.FC = () => {
         }
     };
 
-    // Filtra las conversaciones según la búsqueda
-    const filteredChats = chatSessions.filter(chat =>
-        chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+    const NewChatAlert = () => (
+        <IonPopover
+            isOpen={showNewChatAlert}
+            onDidDismiss={() => setShowNewChatAlert(false)}
+            className="new-chat-alert"
+        >
+            <div className="alert-content">
+                <h3>Nueva conversación</h3>
+                <IonItem>
+                    <IonLabel position="floating">Título (opcional)</IonLabel>
+                    <IonInput
+                        value={newChatTitle}
+                        onIonChange={e => setNewChatTitle(e.detail.value || '')}
+                        placeholder="Ej: Consulta sobre IA"
+                    />
+                </IonItem>
+                <div className="alert-buttons">
+                    <IonButton onClick={() => setShowNewChatAlert(false)}>
+                        Cancelar
+                    </IonButton>
+                    <IonButton onClick={handleCreateNewChat} strong={true}>
+                        Crear
+                    </IonButton>
+                </div>
+            </div>
+        </IonPopover>
     );
 
     return (
@@ -598,33 +613,24 @@ const AIChatPage: React.FC = () => {
                             className="close-sidebar-btn"
                             onClick={() => setShowChatSidebar(false)}
                         >
-                            <IonIcon icon={chevronBack} />
+                            <IonIcon icon={chevronBack}/>
                         </IonButton>
-                    </div>
-
-                    <div className="sidebar-search">
-                        <IonSearchbar
-                            value={searchQuery}
-                            onIonChange={e => setSearchQuery(e.detail.value || '')}
-                            placeholder="Buscar conversaciones"
-                            className="chat-search"
-                        />
                     </div>
 
                     <div className="new-chat-button-wrapper">
                         <IonButton
                             expand="block"
                             className="new-chat-button"
-                            onClick={() => setShowNewChatModal(true)}
+                            onClick={() => setShowNewChatAlert(true)}
                         >
-                            <IonIcon icon={add} slot="start" />
+                            <IonIcon icon={add} slot="start"/>
                             Nueva conversación
                         </IonButton>
                     </div>
 
                     <div className="chat-list">
-                        {filteredChats.length > 0 ? (
-                            filteredChats.map(chat => (
+                        {chatSessions.length > 0 ? (
+                            chatSessions.map(chat => (
                                 <div
                                     key={chat.id}
                                     className={`chat-item ${activeChatId === chat.id ? 'active' : ''}`}
@@ -670,7 +676,7 @@ const AIChatPage: React.FC = () => {
                             ))
                         ) : (
                             <div className="no-chats-message">
-                                No se encontraron conversaciones
+                                No hay conversaciones disponibles
                             </div>
                         )}
                     </div>
@@ -693,9 +699,6 @@ const AIChatPage: React.FC = () => {
                             {chatSessions.find(chat => chat.id === activeChatId)?.title || 'Asistente IA'}
                         </IonTitle>
                         <IonButtons slot="end">
-                            <IonButton onClick={toggleDarkMode}>
-                                <IonIcon icon={darkMode ? sunny : moon} />
-                            </IonButton>
                             <IonButton onClick={handleClearChat}>
                                 <IonIcon icon={refresh} />
                             </IonButton>
@@ -880,7 +883,7 @@ const AIChatPage: React.FC = () => {
                         </div>
                     )}
                 </IonFooter>
-
+                <NewChatAlert />
             </IonPage>
         </>
     );

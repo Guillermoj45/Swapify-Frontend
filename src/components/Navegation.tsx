@@ -12,7 +12,6 @@ import {
     IonFooter,
     IonTabBar,
     IonTabButton,
-    IonBadge,
 } from '@ionic/react';
 import {
     homeOutline,
@@ -21,8 +20,6 @@ import {
     mailOutline,
     settingsOutline,
     medicalOutline,
-    sunnyOutline,
-    moonOutline
 } from 'ionicons/icons';
 import './Navegation.css';
 
@@ -34,11 +31,6 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
     // En otras vistas, seguimos la lógica original basada en el tamaño de pantalla
     const showHamburgerMenu = isDesktop || isChatView;
     const showTabBar = !isDesktop && !isChatView;
-
-    // Cambiar modo claro/oscuro
-    const toggleTheme = () => {
-        setDarkMode(!darkMode);
-    };
 
     // Efecto para aplicar la clase al body para tema claro/oscuro global
     useEffect(() => {
@@ -60,24 +52,15 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                     <span className="menu-logo">Swapify</span>
                                     <IonLabel>Menu</IonLabel>
                                 </div>
-                                <button className="theme-toggle" onClick={toggleTheme}>
-                                    <IonIcon icon={darkMode ? sunnyOutline : moonOutline} />
-                                </button>
                             </div>
                         </IonToolbar>
                     </IonHeader>
                     <IonContent>
                         <IonList>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button routerLink="/home">
+                                <IonItem button routerLink="/products">
                                     <IonIcon slot="start" icon={homeOutline} />
                                     <IonLabel>Inicio</IonLabel>
-                                </IonItem>
-                            </IonMenuToggle>
-                            <IonMenuToggle autoHide={false}>
-                                <IonItem button routerLink="/products">
-                                    <IonIcon slot="start" icon={heartOutline} />
-                                    <IonLabel>Productos</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
@@ -90,7 +73,6 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 <IonItem button routerLink="/IA">
                                     <IonIcon slot="start" icon={mailOutline} />
                                     <IonLabel>IA</IonLabel>
-                                    <IonBadge color="primary" slot="end">2</IonBadge>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
@@ -125,7 +107,6 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                         </IonTabButton>
                         <IonTabButton tab="ia" href="/IA">
                             <IonIcon icon={mailOutline} />
-                            <IonBadge color="primary">2</IonBadge>
                         </IonTabButton>
                         <IonTabButton tab="premium" href="/premiumSuscribe">
                             <IonIcon icon={medicalOutline} />

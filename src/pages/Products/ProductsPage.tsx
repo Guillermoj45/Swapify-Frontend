@@ -28,7 +28,6 @@ import {
     star,
     starOutline
 } from 'ionicons/icons';
-import Navegation from "../../components/Navegation";
 import './ProductsPage.css';
 import { useHistory, useLocation } from "react-router-dom";
 import { ProductService, RecommendDTO, Product } from '../../Services/ProductService';
@@ -899,7 +898,6 @@ const ProductsPage = () => {
                     })
                 )}
             </IonContent>
-            <Navegation isDesktop={isDesktop} />
         </IonPage>
     );
 };
