@@ -72,30 +72,20 @@ const App: React.FC = () => {
         };
     }, []);
 
-    // Actualizar estado de vista de chat basado en la URL actual y configurar escucha para cambios de ruta
+    // Actualizar estado de vista de chat basado en la URL actual
     useEffect(() => {
         const checkIfChatView = () => {
             const path = window.location.pathname;
             setIsChatView(path.includes('/Chat') || path.includes('/IA'));
         };
 
-        // Verificar en la carga inicial
         checkIfChatView();
 
         // Escuchar cambios en la ruta
         window.addEventListener('popstate', checkIfChatView);
 
-        // Crear un observador para detectar cambios en la URL cuando se usan los enlaces de navegación
-        const observer = new MutationObserver(() => {
-            checkIfChatView();
-        });
-
-        // Observar cambios en el cuerpo del documento para detectar navegaciones
-        observer.observe(document.body, { childList: true, subtree: true });
-
         return () => {
             window.removeEventListener('popstate', checkIfChatView);
-            observer.disconnect();
         };
     }, []);
 
@@ -133,7 +123,7 @@ const App: React.FC = () => {
                     <Route exact path="/paymentGateway">
                         <PagoPremium/>
                     </Route>
-                    <Route path="/Chat">
+                    <Route exact path="/chat">
                         <ChatPage/>
                     </Route>
                     <Route exact path="/product/:id/:profileId">

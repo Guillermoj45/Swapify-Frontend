@@ -16,13 +16,8 @@ import {
 } from '@ionic/react';
 import {
     homeOutline,
-    heartOutline,
     addOutline,
     mailOutline,
-    settingsOutline,
-    medicalOutline,
-    logOutOutline,
-    personOutline,
     personCircle,
     logOut,
     settings,
@@ -95,7 +90,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => navigateTo('/Chat')} detail={false}>
+                                <IonItem button onClick={() => navigateTo('/chat')} detail={false}>
                                     <IonIcon slot="start" icon={mailOutline} />
                                     <IonLabel>Chats</IonLabel>
                                 </IonItem>
@@ -139,7 +134,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                             <IonIcon icon={addOutline} />
                             <IonLabel>IA</IonLabel>
                         </IonTabButton>
-                        <IonTabButton tab="chat" onClick={() => navigateTo('/Chat')} selected={isActive('/Chat')}>
+                        <IonTabButton tab="chat" onClick={() => navigateTo('/chat')} selected={isActive('/Chat')}>
                             <IonIcon icon={mailOutline} />
                             <IonLabel>Chats</IonLabel>
                         </IonTabButton>

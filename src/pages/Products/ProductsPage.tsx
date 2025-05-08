@@ -32,7 +32,6 @@ import './ProductsPage.css';
 import { useHistory, useLocation } from "react-router-dom";
 import { ProductService, RecommendDTO, Product } from '../../Services/ProductService';
 import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
-import Navegacion from "../../components/Navegation";
 
 interface CustomLocationState {
     token?: string;
@@ -681,8 +680,8 @@ const ProductsPage = () => {
     };
 
     return (
-        <><IonPage
-            className={`shopify-page ${darkMode ? 'dark-theme' : 'light-theme'} ${!isDesktop ? 'has-tab-bar' : ''}`}
+        <>
+        <IonPage className={`shopify-page ${darkMode ? 'dark-theme' : 'light-theme'} ${!isDesktop ? 'has-tab-bar' : ''}`}
             id="main-content">
             <IonHeader className="shopify-header">
                 <IonToolbar className={`shopify-toolbar ${darkMode ? 'dark-toolbar' : ''}`}>
@@ -899,7 +898,8 @@ const ProductsPage = () => {
                     })
                 )}
             </IonContent>
-        </IonPage><Navegacion isDesktop={isDesktop}/></>
+        </IonPage>
+        </>
     );
 };
 
