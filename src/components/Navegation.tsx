@@ -20,6 +20,8 @@ import {
     mailOutline,
     settingsOutline,
     medicalOutline,
+    logOutOutline,
+    personOutline
 } from 'ionicons/icons';
 import './Navegation.css';
 
@@ -65,7 +67,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
                                 <IonItem button routerLink="/profile">
-                                    <IonIcon slot="start" icon={addOutline} />
+                                    <IonIcon slot="start" icon={personOutline} />
                                     <IonLabel>Perfil</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
@@ -77,7 +79,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
                                 <IonItem button routerLink="/login">
-                                    <IonIcon slot="start" icon={settingsOutline} />
+                                    <IonIcon slot="start" icon={logOutOutline} />
                                     <IonLabel>Login</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
@@ -85,6 +87,12 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 <IonItem button routerLink="/premiumSuscribe">
                                     <IonIcon slot="start" icon={medicalOutline} />
                                     <IonLabel>Suscripción</IonLabel>
+                                </IonItem>
+                            </IonMenuToggle>
+                            <IonMenuToggle autoHide={false}>
+                                <IonItem button routerLink="/settings">
+                                    <IonIcon slot="start" icon={settingsOutline} />
+                                    <IonLabel>Ajustes</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                         </IonList>

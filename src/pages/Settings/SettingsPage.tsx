@@ -57,6 +57,12 @@ interface ProfileState {
     };
 }
 
+interface PasswordState {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+}
+
 // Definimos el tipo para nuestras secciones activas
 type ActiveSection = 'profile' | 'security' | 'privacy' | null;
 
@@ -104,6 +110,8 @@ const Settings: React.FC = () => {
             darkMode: false,
         },
     });
+
+
 
     // Navigation options
     const accountOptions: AccountOption[] = [
@@ -223,7 +231,7 @@ const Settings: React.FC = () => {
                 </IonCardHeader>
                 <IonCardContent className="profile-form-content">
                     <IonList className="profile-form-list">
-                        <IonItem className="ion-margin-bottom">
+                        <IonItem className="ion-margin-bottom editable-field">
                             <IonLabel position="floating">Nickname</IonLabel>
                             <IonInput
                                 value={profile.nickname}
@@ -231,16 +239,16 @@ const Settings: React.FC = () => {
                             />
                         </IonItem>
 
-                        <IonItem className="ion-margin-bottom">
+                        <IonItem className="ion-margin-bottom readonly-field">
                             <IonLabel position="floating">Email</IonLabel>
                             <IonInput
                                 value={profile.email}
+                                readonly
                                 type="email"
-                                onIonChange={(e) => handleInputChange(e, 'email')}
                             />
                         </IonItem>
 
-                        <IonItem className="ion-margin-bottom">
+                        <IonItem className="ion-margin-bottom readonly-field">
                             <IonLabel position="floating">Premium</IonLabel>
                             <IonInput
                                 value={profile.premium}
@@ -268,9 +276,36 @@ const Settings: React.FC = () => {
         const [showCurrentPassword, setShowCurrentPassword] = useState<boolean>(false);
         const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
         const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
-        const [currentPassword, setCurrentPassword] = useState<string>('');
-        const [newPassword, setNewPassword] = useState<string>('');
-        const [confirmPassword, setConfirmPassword] = useState<string>('');
+        const [passwordData, setPasswordData] = useState<PasswordState>({
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+        });
+
+        const handlePasswordChange = async (): Promise<void> => {
+            try {
+                if (passwordData.newPassword !== passwordData.confirmPassword) {
+                    displayToast('Las contraseñas nuevas no coinciden');
+                    return;
+                }
+
+                if (!passwordData.currentPassword || !passwordData.newPassword) {
+                    displayToast('Todos los campos son obligatorios');
+                    return;
+                }
+
+                await SettingsService.updatePassword({
+                    currentPassword: passwordData.currentPassword,
+                    newPassword: passwordData.newPassword
+                });
+
+                displayToast('Contraseña actualizada correctamente');
+                onClose();
+            } catch (error) {
+                console.error('Error al cambiar la contraseña:', error);
+                displayToast('Error al actualizar la contraseña, es posible que la contraseña actual sea incorrecta');
+            }
+        };
 
         return (
             <IonCard className="profile-section-card">
@@ -290,8 +325,11 @@ const Settings: React.FC = () => {
                             <IonLabel position="floating">Contraseña Actual</IonLabel>
                             <IonInput
                                 type={showCurrentPassword ? "text" : "password"}
-                                value={currentPassword}
-                                onIonChange={e => setCurrentPassword(e.detail.value || '')}
+                                value={passwordData.currentPassword}
+                                onIonChange={e => setPasswordData({
+                                    ...passwordData,
+                                    currentPassword: e.detail.value || ''
+                                })}
                             />
                             <IonButton
                                 slot="end"
@@ -306,8 +344,11 @@ const Settings: React.FC = () => {
                             <IonLabel position="floating">Nueva Contraseña</IonLabel>
                             <IonInput
                                 type={showNewPassword ? "text" : "password"}
-                                value={newPassword}
-                                onIonChange={e => setNewPassword(e.detail.value || '')}
+                                value={passwordData.newPassword}
+                                onIonChange={e => setPasswordData({
+                                    ...passwordData,
+                                    newPassword: e.detail.value || ''
+                                })}
                             />
                             <IonButton
                                 slot="end"
@@ -322,8 +363,11 @@ const Settings: React.FC = () => {
                             <IonLabel position="floating">Confirmar Contraseña</IonLabel>
                             <IonInput
                                 type={showConfirmPassword ? "text" : "password"}
-                                value={confirmPassword}
-                                onIonChange={e => setConfirmPassword(e.detail.value || '')}
+                                value={passwordData.confirmPassword}
+                                onIonChange={e => setPasswordData({
+                                    ...passwordData,
+                                    confirmPassword: e.detail.value || ''
+                                })}
                             />
                             <IonButton
                                 slot="end"
@@ -335,7 +379,12 @@ const Settings: React.FC = () => {
                         </IonItem>
 
                         <div className="ion-padding-top">
-                            <IonButton expand="block" color="primary" className="ion-margin-top" onClick={onClose}>
+                            <IonButton
+                                expand="block"
+                                color="primary"
+                                className="ion-margin-top"
+                                onClick={handlePasswordChange}
+                            >
                                 Guardar cambios
                             </IonButton>
                         </div>
