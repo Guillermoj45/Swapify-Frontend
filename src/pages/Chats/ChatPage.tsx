@@ -144,8 +144,17 @@ const ChatView: React.FC = () => {
     // Detectar si está en móvil
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
+    // Estado para controlar si el teclado está visible
+    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
     // Ref para el contenedor de mensajes
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Ref para el input de mensaje
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Ref para el contenedor principal
+    const chatMainRef = useRef<HTMLDivElement>(null);
 
     // Efecto para detectar el tamaño de la pantalla
     useEffect(() => {
@@ -156,6 +165,57 @@ const ChatView: React.FC = () => {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    // Efecto para detectar cuando el teclado virtual aparece/desaparece
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            // En dispositivos móviles, la altura de la ventana disminuye cuando aparece el teclado
+            const isKeyboardOpen = window.innerHeight < window.outerHeight * 0.75;
+            setIsKeyboardVisible(isKeyboardOpen);
+
+            // Si el teclado está visible, aseguramos que el input sea visible
+            if (isKeyboardOpen && inputRef.current) {
+                setTimeout(() => {
+                    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        };
+
+        window.addEventListener('resize', handleVisibilityChange);
+        return () => window.removeEventListener('resize', handleVisibilityChange);
+    }, []);
+
+    // Efecto para manejar el enfoque en el input
+    useEffect(() => {
+        const handleFocus = () => {
+            if (inputRef.current && chatMainRef.current) {
+                // Esperamos un poco para que el teclado se abra completamente
+                setTimeout(() => {
+                    // Desplazamos la vista para asegurar que el input sea visible
+                    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Desplazamos el contenedor principal hacia abajo
+                    chatMainRef.current?.scrollTo({
+                        top: chatMainRef.current.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }, 300);
+            }
+        };
+
+        // Añadir listeners para focus y click
+        if (inputRef.current) {
+            inputRef.current.addEventListener('focus', handleFocus);
+            inputRef.current.addEventListener('click', handleFocus);
+        }
+
+        return () => {
+            if (inputRef.current) {
+                inputRef.current.removeEventListener('focus', handleFocus);
+                inputRef.current.removeEventListener('click', handleFocus);
+            }
+        };
+    }, [activeChat]);
 
     // Formato de fecha para los mensajes
     const formatMessageTime = (date: Date) => {
@@ -261,6 +321,15 @@ const ChatView: React.FC = () => {
         }
     }, [messages]);
 
+    // Enfoque en el input cuando se cambia de chat
+    useEffect(() => {
+        if (activeChat && !isMobile) {
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 300);
+        }
+    }, [activeChat, isMobile]);
+
     return (
         <div className={`chat-view ${darkMode ? '' : 'light-mode'}`}>
             <div className={`chat-sidebar ${showChatPanel ? 'hidden-mobile' : ''}`}>
@@ -323,7 +392,10 @@ const ChatView: React.FC = () => {
                 )}
             </div>
 
-            <div className={`chat-main ${showChatPanel ? 'shown-mobile' : ''}`}>
+            <div
+                className={`chat-main ${showChatPanel ? 'shown-mobile' : ''}`}
+                ref={chatMainRef}
+            >
                 {activeChat ? (
                     <>
                         <div className="chat-header">
@@ -354,7 +426,7 @@ const ChatView: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="messages-container">
+                        <div className="messages-container" id="messages-container">
                             <div className="messages-list">
                                 {messages.map(message => (
                                     <div
@@ -406,7 +478,10 @@ const ChatView: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="chat-footer">
+                        <div
+                            className={`chat-footer ${isKeyboardVisible ? 'keyboard-visible' : ''}`}
+                            id="chat-footer"
+                        >
                             <div className="input-container">
                                 <button className="action-button">
                                     <IonIcon icon={addOutline} />
@@ -422,6 +497,15 @@ const ChatView: React.FC = () => {
                                         value={inputMessage}
                                         onChange={(e) => setInputMessage(e.target.value)}
                                         onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                                        ref={inputRef}
+                                        onClick={() => {
+                                            // Asegurar que el input está visible cuando se hace clic en él
+                                            if (isMobile) {
+                                                setTimeout(() => {
+                                                    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                }, 100);
+                                            }
+                                        }}
                                     />
                                 </div>
                                 {inputMessage.trim() ? (

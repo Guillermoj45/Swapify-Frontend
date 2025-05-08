@@ -80,12 +80,25 @@ ion-menu ion-item ion-icon {
     margin-right: 20px;
 }
 
+.navigation-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
 /* Estilo para el TabBar */
 ion-tab-bar {
     --background: var(--header-bg);
     --border-color: var(--border-color);
     box-shadow: 0 -1px 3px var(--shadow-color);
     padding: 4px 0;
+}
+
+.has-tab-bar {
+    --ion-safe-area-bottom: 56px; /* Height of the tab bar */
+    padding-bottom: 56px;
 }
 
 ion-tab-button {

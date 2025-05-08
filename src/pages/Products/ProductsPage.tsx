@@ -32,6 +32,7 @@ import './ProductsPage.css';
 import { useHistory, useLocation } from "react-router-dom";
 import { ProductService, RecommendDTO, Product } from '../../Services/ProductService';
 import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
+import Navegacion from "../../components/Navegation";
 
 interface CustomLocationState {
     token?: string;
@@ -680,7 +681,9 @@ const ProductsPage = () => {
     };
 
     return (
-        <IonPage className={`shopify-page ${darkMode ? 'dark-theme' : 'light-theme'}`} id="main-content">
+        <><IonPage
+            className={`shopify-page ${darkMode ? 'dark-theme' : 'light-theme'} ${!isDesktop ? 'has-tab-bar' : ''}`}
+            id="main-content">
             <IonHeader className="shopify-header">
                 <IonToolbar className={`shopify-toolbar ${darkMode ? 'dark-toolbar' : ''}`}>
                     {isDesktop && (
@@ -698,8 +701,7 @@ const ProductsPage = () => {
                             showCancelButton="focus"
                             onIonCancel={clearSearch}
                             onIonClear={clearSearch}
-                            className={`shopify-searchbar ${darkMode ? 'dark-searchbar' : ''}`}
-                        />
+                            className={`shopify-searchbar ${darkMode ? 'dark-searchbar' : ''}`}/>
                         {showSearchResults && searchResults.length > 0 && (
                             <div className="search-suggestions">
                                 <IonList>
@@ -714,7 +716,7 @@ const ProductsPage = () => {
                         )}
                         <IonButtons slot="end" className="header-buttons">
                             <IonButton className="theme-toggle-button">
-                                <SwitchDark darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+                                <SwitchDark darkMode={darkMode} toggleDarkMode={toggleDarkMode}/>
                             </IonButton>
                         </IonButtons>
                     </div>
@@ -729,8 +731,7 @@ const ProductsPage = () => {
                     message={error || "An error occurred"}
                     duration={3000}
                     position="bottom"
-                    color="danger"
-                />
+                    color="danger"/>
 
                 {isSearching && searchText && (
                     <div className="search-results-header">
@@ -883,7 +884,7 @@ const ProductsPage = () => {
                                         className="view-all-button"
                                         onClick={() => toggleCategoryFilter(title)}
                                     >
-                                        Ver todos <IonIcon icon={chevronForward} />
+                                        Ver todos <IonIcon icon={chevronForward}/>
                                     </IonButton>
                                 </div>
 
@@ -898,7 +899,7 @@ const ProductsPage = () => {
                     })
                 )}
             </IonContent>
-        </IonPage>
+        </IonPage><Navegacion isDesktop={isDesktop}/></>
     );
 };
 
