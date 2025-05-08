@@ -10,6 +10,11 @@ interface PasswordUpdate {
     newPassword: string;
 }
 
+interface PreferenceUpdate {
+    key: 'modo_oscuro' | 'notificaciones';
+    value: boolean;
+}
+
 export class Settings {
     static async getProfileSettings(): Promise<ProfileSettings> {
         try {
@@ -25,7 +30,6 @@ export class Settings {
             );
 
             return response.data as ProfileSettings;
-
         } catch (error) {
             console.error("Error recuperando configuraciones de perfil:", error);
             throw error;
@@ -44,7 +48,6 @@ export class Settings {
             formData.append('nickname', profile.nickname || '');
             formData.append('email', profile.email || '');
 
-            // Procesar el avatar
             if (profile.avatar) {
                 if (profile.avatar instanceof File) {
                     formData.append('avatar', profile.avatar);
@@ -59,21 +62,15 @@ export class Settings {
 
             const response = await api.put("/profile/updateProfileSettings", formData, { headers });
 
-            const data = response.data;
-
-            if (!data.success) {
-                // El backend respondió con success = false
-                throw new Error(data.message || 'Error desconocido en la respuesta del servidor');
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Error desconocido en la respuesta del servidor');
             }
-
         } catch (error: unknown) {
             if (error instanceof Error) {
                 console.error("Error actualizando configuraciones de perfil:", error.message);
                 throw error;
-            } else {
-                console.error("Error actualizando configuraciones de perfil:", error);
-                throw new Error('Error desconocido al actualizar configuraciones de perfil');
             }
+            throw new Error('Error desconocido al actualizar configuraciones de perfil');
         }
     }
 
@@ -90,12 +87,9 @@ export class Settings {
                 }
             );
 
-            const data = response.data;
-
-            if (!data.success) {
-                throw new Error(data.message || 'Error desconocido en la respuesta del servidor');
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Error desconocido en la respuesta del servidor');
             }
-
         } catch (error: unknown) {
             if (error instanceof Error) {
                 console.error("Error actualizando la contraseña:", error.message);
@@ -105,4 +99,28 @@ export class Settings {
         }
     }
 
+    static async updatePreference(preferenceUpdate: PreferenceUpdate): Promise<void> {
+        try {
+            const response = await api.put(
+                "/profile/updatePreference",
+                preferenceUpdate,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `${sessionStorage.getItem('token')}`
+                    }
+                }
+            );
+
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Error al actualizar la preferencia');
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                console.error("Error actualizando preferencia:", error.message);
+                throw error;
+            }
+            throw new Error('Error desconocido al actualizar la preferencia');
+        }
+    }
 }

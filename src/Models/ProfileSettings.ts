@@ -4,7 +4,7 @@ export class ProfileSettings {
     avatar?: string;
     premium?: string;
     preferencias?: {
-        notifications?: boolean;
-        darkMode?: boolean;
+        notificaciones?: boolean;
+        modo_oscuro?: boolean;
     };
 }

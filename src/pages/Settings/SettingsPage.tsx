@@ -106,8 +106,8 @@ const Settings: React.FC = () => {
         avatar: '',
         premium: '',
         preferencias: {
-            notifications: true,
-            darkMode: false,
+            notificaciones: true,
+            modo_oscuro: false,
         },
     });
 
@@ -181,13 +181,47 @@ const Settings: React.FC = () => {
                 avatar: avatarUrl,
                 premium: profileSettings.premium || '',
                 preferencias: {
-                    notifications: profileSettings.preferencias?.notifications ?? true,
-                    darkMode: profileSettings.preferencias?.darkMode ?? false,
+                    notificaciones: profileSettings.preferencias?.notificaciones ?? true,
+                    modo_oscuro: profileSettings.preferencias?.modo_oscuro ?? false,
                 },
             });
         } catch (error) {
             console.error('Error loading settings:', error);
             displayToast('Error al cargar configuraciones');
+        }
+    };
+
+    const handlePreferenceChange = async (e: CustomEvent, key: 'modo_oscuro' | 'notificaciones') => {
+        const newValue = e.detail.checked;
+
+        try {
+            // Actualizamos el estado local primero
+            setProfile(prevProfile => ({
+                ...prevProfile,
+                preferencias: {
+                    ...prevProfile.preferencias,
+                    [key]: newValue
+                }
+            }));
+
+            // Enviamos el cambio al backend
+            await SettingsService.updatePreference({
+                key: key,
+                value: newValue
+            });
+
+        } catch (error) {
+            console.error('Error actualizando preferencia:', error);
+            displayToast('Error al actualizar la preferencia');
+
+            // Revertimos el cambio en caso de error
+            setProfile(prevProfile => ({
+                ...prevProfile,
+                preferencias: {
+                    ...prevProfile.preferencias,
+                    [key]: !newValue
+                }
+            }));
         }
     };
 
@@ -303,7 +337,7 @@ const Settings: React.FC = () => {
                 onClose();
             } catch (error) {
                 console.error('Error al cambiar la contraseña:', error);
-                displayToast('Error al actualizar la contraseña, es posible que la contraseña actual sea incorrecta');
+                displayToast('Error al actualizar la contraseña');
             }
         };
 
@@ -480,13 +514,8 @@ const Settings: React.FC = () => {
                         <IonIcon icon={notificationsOutline} slot="start" className="settings-icon" />
                         <IonLabel>Notificaciones</IonLabel>
                         <IonToggle
-                            onIonChange={(e) => setProfile({
-                                ...profile,
-                                preferencias: {
-                                    ...profile.preferencias,
-                                    notifications: e.detail.checked
-                                }
-                            })}
+                            checked={profile.preferencias?.notificaciones}
+                            onIonChange={(e) => handlePreferenceChange(e, 'notificaciones')}
                         />
                     </IonItem>
 
@@ -494,13 +523,8 @@ const Settings: React.FC = () => {
                         <IonIcon icon={colorPaletteOutline} slot="start" className="settings-icon" />
                         <IonLabel>Modo oscuro</IonLabel>
                         <IonToggle
-                            onIonChange={(e) => setProfile({
-                                ...profile,
-                                preferencias: {
-                                    ...profile.preferencias,
-                                    darkMode: e.detail.checked
-                                }
-                            })}
+                            checked={profile.preferencias?.modo_oscuro}
+                            onIonChange={(e) => handlePreferenceChange(e, 'modo_oscuro')}
                         />
                     </IonItem>
                 </IonList>
