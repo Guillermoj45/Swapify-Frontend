@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import {
     IonMenu,
     IonHeader,
@@ -18,14 +19,19 @@ import {
     heartOutline,
     addOutline,
     mailOutline,
-    settingsOutline,
     medicalOutline,
+    personCircle,
+    logOut,
+    settings,
+    shieldCheckmark,
 } from 'ionicons/icons';
 import './Navegation.css';
 
 const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDesktop, isChatView = false }) => {
     // Estado para el modo oscuro/claro
     const [darkMode, setDarkMode] = useState(true);
+    const history = useHistory();
+    const location = useLocation();
 
     // Siempre mostramos el menú hamburguesa para todas las pantallas en vistas de chat
     // En otras vistas, seguimos la lógica original basada en el tamaño de pantalla
@@ -40,8 +46,18 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
         };
     }, [darkMode]);
 
+    // Función para manejar la navegación
+    const navigateTo = (path: string) => {
+        history.push(path);
+    };
+
+    // Verificar si una ruta está activa
+    const isActive = (path: string) => {
+        return location.pathname === path;
+    };
+
     return (
-        <div className={`navegacion-container ${darkMode ? '' : 'light-mode'}`}>
+        <>
             {/* Menú hamburguesa (siempre en vistas de chat, o cuando es escritorio en otras vistas) */}
             {showHamburgerMenu && (
                 <IonMenu contentId="main-content" side="start">
@@ -58,33 +74,45 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                     <IonContent>
                         <IonList>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button routerLink="/products">
+                                <IonItem button onClick={() => navigateTo('/products')} detail={false}>
                                     <IonIcon slot="start" icon={homeOutline} />
                                     <IonLabel>Inicio</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button routerLink="/profile">
-                                    <IonIcon slot="start" icon={addOutline} />
+                                <IonItem button onClick={() => navigateTo('/profile')} detail={false}>
+                                    <IonIcon slot="start" icon={personCircle} />
                                     <IonLabel>Perfil</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button routerLink="/IA">
-                                    <IonIcon slot="start" icon={mailOutline} />
+                                <IonItem button onClick={() => navigateTo('/IA')} detail={false}>
+                                    <IonIcon slot="start" icon={addOutline} />
                                     <IonLabel>IA</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button routerLink="/login">
-                                    <IonIcon slot="start" icon={settingsOutline} />
-                                    <IonLabel>Login</IonLabel>
+                                <IonItem button onClick={() => navigateTo('/Chat')} detail={false}>
+                                    <IonIcon slot="start" icon={mailOutline} />
+                                    <IonLabel>Chats</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button routerLink="/premiumSuscribe">
-                                    <IonIcon slot="start" icon={medicalOutline} />
+                                <IonItem button onClick={() => navigateTo('/premiumSuscribe')} detail={false}>
+                                    <IonIcon slot="start" icon={shieldCheckmark} />
                                     <IonLabel>Suscripción</IonLabel>
+                                </IonItem>
+                            </IonMenuToggle>
+                            <IonMenuToggle autoHide={false}>
+                                <IonItem button onClick={() => navigateTo('/settings')} detail={false}>
+                                    <IonIcon slot="start" icon={settings} />
+                                    <IonLabel>Ajustes</IonLabel>
+                                </IonItem>
+                            </IonMenuToggle>
+                            <IonMenuToggle autoHide={false}>
+                                <IonItem button onClick={() => navigateTo('/login')} detail={false}>
+                                    <IonIcon slot="start" icon={logOut} />
+                                    <IonLabel>Cerrar sesión</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                         </IonList>
@@ -92,29 +120,34 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                 </IonMenu>
             )}
 
-            {/* TabBar (solo en pantallas pequeñas y cuando NO es vista de chat) */}
+            {/* TabBar for mobile devices */}
             {showTabBar && (
-                <IonFooter>
+                <IonFooter className="ion-no-border navigation-footer">
                     <IonTabBar slot="bottom">
-                        <IonTabButton tab="home" href="/home">
+                        <IonTabButton tab="products" onClick={() => navigateTo('/products')} selected={isActive('/products')}>
                             <IonIcon icon={homeOutline} />
+                            <IonLabel>Inicio</IonLabel>
                         </IonTabButton>
-                        <IonTabButton tab="products" href="/products">
-                            <IonIcon icon={heartOutline} />
+                        <IonTabButton tab="profile" onClick={() => navigateTo('/profile')} selected={isActive('/profile')}>
+                            <IonIcon icon={personCircle} />
+                            <IonLabel>Perfil</IonLabel>
                         </IonTabButton>
-                        <IonTabButton tab="profile" href="/profile">
+                        <IonTabButton tab="ia" onClick={() => navigateTo('/IA')} selected={isActive('/IA')}>
                             <IonIcon icon={addOutline} />
+                            <IonLabel>IA</IonLabel>
                         </IonTabButton>
-                        <IonTabButton tab="ia" href="/IA">
+                        <IonTabButton tab="chat" onClick={() => navigateTo('/Chat')} selected={isActive('/Chat')}>
                             <IonIcon icon={mailOutline} />
+                            <IonLabel>Chats</IonLabel>
                         </IonTabButton>
-                        <IonTabButton tab="premium" href="/premiumSuscribe">
-                            <IonIcon icon={medicalOutline} />
+                        <IonTabButton tab="premium" onClick={() => navigateTo('/premiumSuscribe')} selected={isActive('/premiumSuscribe')}>
+                            <IonIcon icon={shieldCheckmark} />
+                            <IonLabel>Suscripción</IonLabel>
                         </IonTabButton>
                     </IonTabBar>
                 </IonFooter>
             )}
-        </div>
+        </>
     );
 };
 
