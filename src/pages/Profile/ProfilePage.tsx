@@ -163,7 +163,7 @@ export default function ProfilePage() {
         switch (activeTab) {
             case "enVenta":
                 // Determinar qué productos mostrar según el estado de showAllProducts
-                const displayProducts = showAllProducts
+                { const displayProducts = showAllProducts
                     ? userProducts
                     : userProducts.slice(0, 3);
 
@@ -217,7 +217,7 @@ export default function ProfilePage() {
                             </IonButton>
                         )}
                     </div>
-                )
+                ) }
 
             case "deseados":
                 return (
