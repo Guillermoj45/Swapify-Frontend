@@ -593,8 +593,9 @@ const Settings: React.FC = () => {
                             text: 'Eliminar cuenta',
                             cssClass: 'danger-button',
                             handler: () => {
-                                console.log('Deleting account...');
+                                SettingsService.deleteAccount();
                                 displayToast('Cuenta eliminada');
+
                             }
                         }
                     ]}
