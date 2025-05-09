@@ -46,7 +46,10 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
     const [profileData, setProfileData] = useState<ProfileDTO | null>(null);
     const [userProducts, setUserProducts] = useState<ProductDTO[]>([]);
+    const [savedProducts, setSavedProducts] = useState<ProductDTO[]>([]);
     const [showAllProducts, setShowAllProducts] = useState(false);
+    const [showAllSavedProducts, setShowAllSavedProducts] = useState(false);
+    const [loadingSaved, setLoadingSaved] = useState(false);
 
     const [activeTab, setActiveTab] = useState("reseñas")
 
@@ -100,6 +103,27 @@ export default function ProfilePage() {
         checkAuth();
     }, [history]);
 
+    // Cargar productos guardados cuando se activa la pestaña de deseados
+    useEffect(() => {
+        const loadSavedProducts = async () => {
+            if (activeTab === "deseados") {
+                try {
+                    setLoadingSaved(true);
+                    const saved = await ProfileService.getSavedProducts();
+                    setSavedProducts(saved);
+                    // Resetear el estado de visualización cuando se cargan nuevos productos guardados
+                    setShowAllSavedProducts(false);
+                } catch (error) {
+                    console.error("Error al cargar productos guardados:", error);
+                } finally {
+                    setLoadingSaved(false);
+                }
+            }
+        };
+
+        loadSavedProducts();
+    }, [activeTab]);
+
     // Función para manejar errores de carga de imágenes
     const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
         const target = e.target as HTMLImageElement;
@@ -107,11 +131,6 @@ export default function ProfilePage() {
         const firstLetter = userInfo.name.charAt(0).toUpperCase();
         target.src = `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23cccccc"/%3E%3Ctext x="50" y="50" font-family="Arial" font-size="40" text-anchor="middle" dominant-baseline="middle" fill="%23ffffff"%3E${firstLetter}%3C/text%3E%3C/svg%3E`;
     };
-
-    const wishlistItems = [
-        { id: 1, title: "PlayStation 5", price: "499€", image: "/placeholder.svg?height=60&width=60" },
-        { id: 2, title: "MacBook Pro", price: "1299€", image: "/placeholder.svg?height=60&width=60" },
-    ]
 
     const reviews = [
         {
@@ -194,7 +213,7 @@ export default function ProfilePage() {
                                                 <div className="category-badges">
                                                     {product.categories.slice(0, 2).map((category, index) => (
                                                         <IonBadge key={index} color="light" className="category-badge">
-                                                            {category.name} {/* Usamos category.name en lugar de category */}
+                                                            {category.name}
                                                         </IonBadge>
                                                     ))}
                                                     {product.categories.length > 2 && (
@@ -220,25 +239,64 @@ export default function ProfilePage() {
                 ) }
 
             case "deseados":
+                // Determinar qué productos guardados mostrar según el estado
+                { const displaySavedProducts = showAllSavedProducts
+                    ? savedProducts
+                    : savedProducts.slice(0, 3);
+
                 return (
                     <div className="tab-content">
-                        <h3 className="tab-title">Lista de deseos ({wishlistItems.length})</h3>
+                        <h3 className="tab-title">Lista de deseos ({savedProducts.length})</h3>
                         <IonList style={{ backgroundColor: "white" }}>
-                            {wishlistItems.map((item) => (
-                                <IonItem key={item.id} className="item-card wishlist-item">
-                                    <IonThumbnail slot="start">
-                                        <img src={item.image} alt={item.title} />
-                                    </IonThumbnail>
-                                    <div className="item-details">
-                                        <h4>{item.title}</h4>
-                                        <IonBadge color="tertiary" className="price-badge secondary">{item.price}</IonBadge>
-                                    </div>
-                                </IonItem>
-                            ))}
+                            {loadingSaved ? (
+                                <div className="loading-message">Cargando productos guardados...</div>
+                            ) : savedProducts.length === 0 ? (
+                                <div className="empty-message">No tienes productos guardados</div>
+                            ) : (
+                                displaySavedProducts.map((product) => (
+                                    <IonItem key={product.id} className="item-card wishlist-item">
+                                        <IonThumbnail slot="start">
+                                            <img
+                                                src={getProductImage(product.imagenes)}
+                                                alt={product.name}
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = "/placeholder.svg?height=60&width=60";
+                                                }}
+                                            />
+                                        </IonThumbnail>
+                                        <div className="item-details">
+                                            <h4>{product.name}</h4>
+                                            <IonBadge color="tertiary" className="price-badge secondary">
+                                                {formatPoints(product.points)}
+                                            </IonBadge>
+                                            <div className="product-seller">
+                                                <small>Vendedor: {product.profile.nickname}</small>
+                                            </div>
+                                            {product.categories && product.categories.length > 0 && (
+                                                <div className="category-badges">
+                                                    {product.categories.slice(0, 2).map((category, index) => (
+                                                        <IonBadge key={index} color="light" className="category-badge">
+                                                            {category.name}
+                                                        </IonBadge>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </IonItem>
+                                ))
+                            )}
                         </IonList>
-                        <IonButton expand="block" className="view-all-btn">Ver todos</IonButton>
+                        {savedProducts.length > 3 && (
+                            <IonButton
+                                expand="block"
+                                className="view-all-btn"
+                                onClick={() => setShowAllSavedProducts(!showAllSavedProducts)}
+                            >
+                                {showAllSavedProducts ? "Mostrar menos" : "Ver todos"}
+                            </IonButton>
+                        )}
                     </div>
-                )
+                ) }
 
             case "reseñas":
                 return (

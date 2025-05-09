@@ -20,6 +20,7 @@ import {
 import {
     chevronForward,
     heart,
+    heartOutline,
     add,
     search,
     checkmarkCircle,
@@ -31,6 +32,7 @@ import {
 import './ProductsPage.css';
 import { useHistory, useLocation } from "react-router-dom";
 import { ProductService, RecommendDTO, Product } from '../../Services/ProductService';
+import { ProfileService, SaveProductDTO } from '../../Services/ProfileService';
 import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
 
 interface CustomLocationState {
@@ -61,6 +63,11 @@ interface ImageIndexes {
     [key: string]: number;
 }
 
+// Define type for favorites
+interface Favorites {
+    [key: string]: boolean;
+}
+
 const ProductsPage = () => {
     const history = useHistory();
     const location = useLocation<CustomLocationState>();
@@ -84,6 +91,13 @@ const ProductsPage = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [showToast, setShowToast] = useState<boolean>(false);
+    const [toastMessage, setToastMessage] = useState<string>('');
+    const [toastColor, setToastColor] = useState<string>('danger');
+
+    // State to track user's favorite products
+    const [favorites, setFavorites] = useState<Favorites>({});
+    const [savingFavorite, setSavingFavorite] = useState<boolean>(false);
+    const [profileId, setProfileId] = useState<string>('');
 
     // State to store available categories
     const [availableCategories, setAvailableCategories] = useState<string[]>([]);
@@ -151,6 +165,66 @@ const ProductsPage = () => {
         setTimeout(resumeSlider, 5000);
     };
 
+    // Function to handle favorite/save product
+    const handleToggleFavorite = async (productId: string, productProfileId: string, e: React.MouseEvent) => {
+        // Stop event from bubbling to parent elements
+        e.stopPropagation();
+
+        if (savingFavorite) return; // Prevent multiple clicks while processing
+
+        try {
+            setSavingFavorite(true);
+
+            // Create data object for API call
+            const saveProductDTO: SaveProductDTO = {
+                productId: productId,
+                profileId: productProfileId
+            };
+
+            if (favorites[productId]) {
+                // If already favorited, remove from favorites
+                const response = await ProfileService.deleteProductFromProfile(saveProductDTO);
+
+                if (response.success) {
+                    setFavorites(prev => ({
+                        ...prev,
+                        [productId]: false
+                    }));
+
+                    showToastMessage('Producto eliminado de favoritos', 'success');
+                } else {
+                    showToastMessage(response.message || 'Error al eliminar de favoritos', 'danger');
+                }
+            } else {
+                // If not favorited, add to favorites
+                const response = await ProfileService.saveProductToProfile(saveProductDTO);
+
+                if (response.success) {
+                    setFavorites(prev => ({
+                        ...prev,
+                        [productId]: true
+                    }));
+
+                    showToastMessage('Producto guardado en favoritos', 'success');
+                } else {
+                    showToastMessage(response.message || 'Error al guardar en favoritos', 'danger');
+                }
+            }
+        } catch (error) {
+            console.error('Error managing favorite:', error);
+            showToastMessage('Error al procesar la solicitud', 'danger');
+        } finally {
+            setSavingFavorite(false);
+        }
+    };
+
+    // Helper function to show toast messages
+    const showToastMessage = (message: string, color: string = 'danger') => {
+        setToastMessage(message);
+        setToastColor(color);
+        setShowToast(true);
+    };
+
     // Function to get the Cloudinary URL for an image
     const getImageUrl = (imagePath: string | null): string | null => {
         if (!imagePath) return null;
@@ -163,6 +237,34 @@ const ProductsPage = () => {
             return null;
         }
     };
+
+    // Load user profile and saved products
+    useEffect(() => {
+        const loadUserProfile = async () => {
+            try {
+                const profileData = await ProfileService.getProfileInfo();
+                setProfileId(profileData.id);
+
+                // Load saved products
+                const savedProducts = await ProfileService.getSavedProducts();
+
+                // Create a map of product IDs that are favorited
+                const favoritesMap: Favorites = {};
+                savedProducts.forEach(product => {
+                    favoritesMap[product.id] = true;
+                });
+
+                setFavorites(favoritesMap);
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+            }
+        };
+
+        // Only load if there's a token
+        if (sessionStorage.getItem("token")) {
+            loadUserProfile();
+        }
+    }, []);
 
     useEffect(() => {
         const mensaje = new URLSearchParams(location.search).get('token');
@@ -216,7 +318,7 @@ const ProductsPage = () => {
                 console.error('Error loading recommended products:', err);
                 setError('Could not load recommended products');
                 setLoading(false);
-                setShowToast(true);
+                showToastMessage('No se pudieron cargar los productos recomendados');
             }
         };
 
@@ -270,7 +372,8 @@ const ProductsPage = () => {
         e: React.MouseEvent
     ) => {
         // Only navigate image if clicking directly on the image container, not on the nav buttons
-        if (!(e.target as Element).closest('.image-nav-button')) {
+        if (!(e.target as Element).closest('.image-nav-button') &&
+            !(e.target as Element).closest('.favorite-button')) {
             navigateProductImage(productId, 'next', totalImages, e);
         }
     };
@@ -562,14 +665,16 @@ const ProductsPage = () => {
     const renderProductCard = (product: Product, isHorizontalScroll: boolean = false) => {
         const currentImageIndex = currentImages[product.id] || 0;
         const hasMultipleImages = product.imagenes && product.imagenes.length > 1;
+        const isFavorite = favorites[product.id] || false;
 
         return (
             <div
                 key={product.id}
                 className={`product-card ${isHorizontalScroll ? 'horizontal-card' : ''}`}
                 onClick={(e) => {
-                    // Only navigate to product detail if not clicking on the navigation arrows
-                    if (!(e.target as Element).closest('.image-nav-button')) {
+                    // Only navigate to product detail if not clicking on navigation arrows or favorite button
+                    if (!(e.target as Element).closest('.image-nav-button') &&
+                        !(e.target as Element).closest('.favorite-button')) {
                         console.log('Product selected:', product);
                         history.push(`/product/${product.id}/${product.profile.id}`);
                     }
@@ -634,8 +739,11 @@ const ProductsPage = () => {
                             </>
                         )}
 
-                        <div className="favorite-button">
-                            <IonIcon icon={heart}/>
+                        <div
+                            className={`favorite-button ${isFavorite ? 'favorited' : ''}`}
+                            onClick={(e) => handleToggleFavorite(product.id, product.profile.id, e)}
+                        >
+                            <IonIcon icon={isFavorite ? heart : heartOutline} />
                         </div>
                     </div>
                 </div>
@@ -681,60 +789,61 @@ const ProductsPage = () => {
 
     return (
         <>
-        <IonPage className={`shopify-page ${darkMode ? 'dark-theme' : 'light-theme'} ${!isDesktop ? 'has-tab-bar' : ''}`}
-            id="main-content">
-            <IonHeader className="shopify-header">
-                <IonToolbar className={`shopify-toolbar ${darkMode ? 'dark-toolbar' : ''}`}>
-                    {isDesktop && (
-                        <IonButtons slot="start">
-                            <IonMenuButton/>
-                        </IonButtons>
-                    )}
-                    <div className="search-container" ref={searchContainerRef}>
-                        <IonSearchbar
-                            ref={searchInputRef}
-                            value={searchText}
-                            onIonInput={handleSearchChange}
-                            onKeyPress={handleKeyPress}
-                            placeholder="Búsqueda de productos"
-                            showCancelButton="focus"
-                            onIonCancel={clearSearch}
-                            onIonClear={clearSearch}
-                            className={`shopify-searchbar ${darkMode ? 'dark-searchbar' : ''}`}/>
-                        {showSearchResults && searchResults.length > 0 && (
-                            <div className="search-suggestions">
-                                <IonList>
-                                    {searchResults.map((product) => (
-                                        <IonItem key={product.id} onClick={() => handleSelectSuggestion(product)}>
-                                            <IonIcon icon={search} slot="start"/>
-                                            <IonLabel>{product.name}</IonLabel>
-                                        </IonItem>
-                                    ))}
-                                </IonList>
-                            </div>
+            <IonPage className={`shopify-page ${darkMode ? 'dark-theme' : 'light-theme'} ${!isDesktop ? 'has-tab-bar' : ''}`}
+                     id="main-content">
+                <IonHeader className="shopify-header">
+                    <IonToolbar className={`shopify-toolbar ${darkMode ? 'dark-toolbar' : ''}`}>
+                        {isDesktop && (
+                            <IonButtons slot="start">
+                                <IonMenuButton/>
+                            </IonButtons>
                         )}
-                        <IonButtons slot="end" className="header-buttons">
-                            <IonButton className="theme-toggle-button">
-                                <SwitchDark darkMode={darkMode} toggleDarkMode={toggleDarkMode}/>
-                            </IonButton>
-                        </IonButtons>
-                    </div>
-                </IonToolbar>
-            </IonHeader>
+                        <div className="search-container" ref={searchContainerRef}>
+                            <IonSearchbar
+                                ref={searchInputRef}
+                                value={searchText}
+                                onIonInput={handleSearchChange}
+                                onKeyPress={handleKeyPress}
+                                placeholder="Búsqueda de productos"
+                                showCancelButton="focus"
+                                onIonCancel={clearSearch}
+                                onIonClear={clearSearch}
+                                className={`shopify-searchbar ${darkMode ? 'dark-searchbar' : ''}`}/>
+                            {showSearchResults && searchResults.length > 0 && (
+                                <div className="search-suggestions">
+                                    <IonList>
+                                        {searchResults.map((product) => (
+                                            <IonItem key={product.id} onClick={() => handleSelectSuggestion(product)}>
+                                                <IonIcon icon={search} slot="start"/>
+                                                <IonLabel>{product.name}</IonLabel>
+                                            </IonItem>
+                                        ))}
+                                    </IonList>
+                                </div>
+                            )}
+                            <IonButtons slot="end" className="header-buttons">
+                                <IonButton className="theme-toggle-button">
+                                    <SwitchDark darkMode={darkMode} toggleDarkMode={toggleDarkMode}/>
+                                </IonButton>
+                            </IonButtons>
+                        </div>
+                    </IonToolbar>
+                </IonHeader>
 
-            <IonContent className="wallapop-content">
-                {/* Toast for errors */}
-                <IonToast
-                    isOpen={showToast}
-                    onDidDismiss={() => setShowToast(false)}
-                    message={error || "An error occurred"}
-                    duration={3000}
-                    position="bottom"
-                    color="danger"/>
+                <IonContent className="wallapop-content">
+                    {/* Toast for notifications */}
+                    <IonToast
+                        isOpen={showToast}
+                        onDidDismiss={() => setShowToast(false)}
+                        message={toastMessage}
+                        duration={3000}
+                        position="bottom"
+                        color={toastColor}
+                    />
 
-                {isSearching && searchText && (
-                    <div className="search-results-header">
-                        <h2>Results for "{searchText}"</h2>
+                    {isSearching && searchText && (
+                        <div className="search-results-header">
+                            <h2>Results for "{searchText}"</h2>
                         <IonButton fill="clear" onClick={clearSearch}>
                             Back
                         </IonButton>

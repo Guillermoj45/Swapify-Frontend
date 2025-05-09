@@ -27,6 +27,11 @@ export interface ProductDTO {
     categories: CategoryDTO[];
 }
 
+export interface SaveProductDTO {
+    productId: string;
+    profileId: string;
+}
+
 export const ProfileService = {
     /**
      * Obtiene la información del perfil del usuario actual
@@ -68,6 +73,68 @@ export const ProfileService = {
             return response.data;
         } catch (error) {
             console.error('Error al obtener los productos del usuario:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Guarda un producto en el perfil del usuario
+     * @param saveProductDTO Datos del producto y perfil a guardar
+     * @returns Promise con el resultado de la operación
+     */
+    saveProductToProfile: async (saveProductDTO: SaveProductDTO): Promise<{ success: boolean, message: string }> => {
+        try {
+            const response = await API.post('/profile/saveProduct', saveProductDTO);
+            return {
+                success: response.data.success,
+                message: response.data.message
+            };
+        } catch (error) {
+            console.error('Error al guardar el producto en el perfil:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Elimina un producto guardado del perfil del usuario
+     * @param saveProductDTO Datos del producto y perfil a eliminar
+     * @returns Promise con el resultado de la operación
+     */
+    deleteProductFromProfile: async (saveProductDTO: SaveProductDTO): Promise<{ success: boolean, message: string }> => {
+        try {
+            const response = await API.delete('/profile/deleteProduct', {
+                data: saveProductDTO
+            });
+            return {
+                success: response.data.success,
+                message: response.data.message
+            };
+        } catch (error) {
+            console.error('Error al eliminar el producto del perfil:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Obtiene los productos guardados por el usuario actual
+     * @returns Promise con la lista de productos guardados
+     */
+    getSavedProducts: async (): Promise<ProductDTO[]> => {
+        try {
+            const response = await API.get('/profile/savedProducts');
+
+            // Procesamos las URLs de las imágenes con cloudinary
+            if (response.data && Array.isArray(response.data)) {
+                response.data.forEach((product: ProductDTO) => {
+                    if (product.imagenes && Array.isArray(product.imagenes)) {
+                        product.imagenes = product.imagenes.map(image => cloudinaryImage(image));
+                    }
+                });
+            }
+
+            return response.data;
+        } catch (error) {
+            console.error('Error al obtener los productos guardados:', error);
             throw error;
         }
     }

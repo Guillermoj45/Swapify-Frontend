@@ -18,8 +18,6 @@ import {
 } from '@ionic/react';
 import { useParams, useHistory } from 'react-router-dom';
 import {
-    heart,
-    heartOutline,
     shareOutline,
     chatbubbleOutline,
     timeOutline,
@@ -48,7 +46,6 @@ const ProductDetailPage: React.FC = () => {
     const [showToast, setShowToast] = useState<boolean>(false);
     const [toastMessage, setToastMessage] = useState<string>("");
     const [toastColor, setToastColor] = useState<string>("danger");
-    const [isFavorite, setIsFavorite] = useState<boolean>(false);
     const [darkMode, setDarkMode] = useState<boolean>(false);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
@@ -120,10 +117,38 @@ const ProductDetailPage: React.FC = () => {
         fetchProductDetail();
     }, [id, profileId]);
 
-    // Toggle favorite state
-    const toggleFavorite = () => {
-        setIsFavorite(prev => !prev);
-    };
+    // Effect para controlar los indicadores de scroll de categorías
+    useEffect(() => {
+        if (product) {
+            const categoriesContainer = document.querySelector('.product-detail-categories') as HTMLElement;
+            if (categoriesContainer) {
+                const handleScroll = () => {
+                    if (categoriesContainer.scrollLeft > 0) {
+                        categoriesContainer.classList.add('scrolled-start');
+                    } else {
+                        categoriesContainer.classList.remove('scrolled-start');
+                    }
+
+                    if (Math.ceil(categoriesContainer.scrollLeft + categoriesContainer.clientWidth) >= categoriesContainer.scrollWidth) {
+                        categoriesContainer.classList.add('scrolled-end');
+                    } else {
+                        categoriesContainer.classList.remove('scrolled-end');
+                    }
+                };
+
+                // Ejecutar una vez para configurar el estado inicial
+                handleScroll();
+
+                // Agregar event listener
+                categoriesContainer.addEventListener('scroll', handleScroll);
+
+                // Limpieza
+                return () => {
+                    categoriesContainer.removeEventListener('scroll', handleScroll);
+                };
+            }
+        }
+    }, [product]);
 
     // Share product function - Copy product URL to clipboard
     const shareProduct = () => {
@@ -335,15 +360,6 @@ const ProductDetailPage: React.FC = () => {
                                     {product.name.charAt(0)}
                                 </div>
                             )}
-                            <div className="product-detail-favorite">
-                                <IonButton
-                                    fill="clear"
-                                    className={`favorite-button ${isFavorite ? 'is-favorite' : ''}`}
-                                    onClick={toggleFavorite}
-                                >
-                                    <IonIcon slot="icon-only" icon={isFavorite ? heart : heartOutline} />
-                                </IonButton>
-                            </div>
                         </div>
 
                         {/* Detalles del producto */}
@@ -355,23 +371,52 @@ const ProductDetailPage: React.FC = () => {
                                     <span>{formatPoints(product.points)}</span>
                                 </div>
                                 <div className="product-detail-time">
-                                    <IonIcon icon={timeOutline} />
+                                    <IonIcon icon={timeOutline}/>
                                     <span>{getTimeSince(product.createdAt)}</span>
                                 </div>
                             </div>
 
-                            {/* Chips de categorías */}
-                            <div className="product-detail-categories">
-                                {product.categories && product.categories.length > 0 ? (
-                                    product.categories.map((category, idx) => (
-                                        <IonChip key={idx} color="primary">
-                                            <IonLabel>{category.name}</IonLabel>
+                            <div className="product-detail-categories-wrapper">
+                                <div className="product-detail-categories" id="categories-slider">
+                                    {product.categories && product.categories.length > 0 ? (
+                                        product.categories.map((category, idx) => (
+                                            <IonChip key={idx} color="primary">
+                                                <IonLabel>{category.name}</IonLabel>
+                                            </IonChip>
+                                        ))
+                                    ) : (
+                                        <IonChip color="medium">
+                                            <IonLabel>Sin categoría</IonLabel>
                                         </IonChip>
-                                    ))
-                                ) : (
-                                    <IonChip color="medium">
-                                        <IonLabel>Sin categoría</IonLabel>
-                                    </IonChip>
+                                    )}
+                                </div>
+                                {product.categories && product.categories.length > 3 && (
+                                    <div className="categories-nav-buttons">
+                                        <button
+                                            className="categories-nav-button categories-nav-prev"
+                                            onClick={() => {
+                                                const container = document.getElementById('categories-slider');
+                                                if (container) {
+                                                    container.scrollBy({left: -100, behavior: 'smooth'});
+                                                }
+                                            }}
+                                            aria-label="Previous categories"
+                                        >
+                                            <IonIcon icon={arrowBack}/>
+                                        </button>
+                                        <button
+                                            className="categories-nav-button categories-nav-next"
+                                            onClick={() => {
+                                                const container = document.getElementById('categories-slider');
+                                                if (container) {
+                                                    container.scrollBy({left: 100, behavior: 'smooth'});
+                                                }
+                                            }}
+                                            aria-label="Next categories"
+                                        >
+                                            <IonIcon icon={arrowForward}/>
+                                        </button>
+                                    </div>
                                 )}
                             </div>
 
@@ -412,7 +457,7 @@ const ProductDetailPage: React.FC = () => {
                                                     />
                                                 </IonAvatar>
                                             ) : (
-                                                <IonIcon icon={personOutline} />
+                                                <IonIcon icon={personOutline}/>
                                             )}
                                         </div>
                                         <div className="user-info">
@@ -431,7 +476,7 @@ const ProductDetailPage: React.FC = () => {
 
                             {/* Ubicación - Este campo no viene del backend, se podría añadir si se implementa */}
                             <div className="product-detail-location">
-                                <IonIcon icon={locationOutline} />
+                                <IonIcon icon={locationOutline}/>
                                 <span>Ubicación no especificada</span>
                             </div>
 
@@ -445,7 +490,7 @@ const ProductDetailPage: React.FC = () => {
                                         history.push(`/profile?profileId=${product.profile.id}&productId=${product.id}`);
                                     }}
                                 >
-                                    <IonIcon slot="start" icon={chatbubbleOutline} />
+                                    <IonIcon slot="start" icon={chatbubbleOutline}/>
                                     Hacer una pregunta
                                 </IonButton>
                                 <IonButton
@@ -501,9 +546,7 @@ const ProductDetailPage: React.FC = () => {
                                                         {relProduct.name.charAt(0)}
                                                     </div>
                                                 )}
-                                                <div className="favorite-button">
-                                                    <IonIcon icon={heartOutline} />
-                                                </div>
+
                                             </div>
                                             <div className="product-info">
                                                 <h3 className="product-name">{relProduct.name}</h3>

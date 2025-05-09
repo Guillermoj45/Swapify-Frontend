@@ -91,41 +91,6 @@
     overflow: hidden;
 }
 
-.product-detail-favorite {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    z-index: 2;
-}
-
-.favorite-button {
-    width: 42px;
-    height: 42px;
-    --background: rgba(255, 255, 255, 0.8);
-    --border-radius: 50%;
-    --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    --color: #777;
-    transition: all 0.3s ease;
-}
-
-.dark-theme .favorite-button {
-    --background: rgba(20, 20, 20, 0.8);
-    --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-.favorite-button.is-favorite {
-    --color: #ff4556;
-}
-
-.favorite-button:hover {
-    --background: rgba(255, 255, 255, 0.9);
-    transform: scale(1.1);
-}
-
-.dark-theme .favorite-button:hover {
-    --background: rgba(30, 30, 30, 0.9);
-}
-
 /* Información del producto */
 .product-detail-info {
     background-color: var(--card-background);
@@ -168,25 +133,6 @@
 
 .product-detail-time ion-icon {
     margin-right: 4px;
-}
-
-/* Categorías */
-.product-detail-categories {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 20px;
-}
-
-.product-detail-categories ion-chip {
-    --background: var(--accent-color);
-    --color: white;
-    font-size: 12px;
-    height: 28px;
-}
-
-.dark-theme .product-detail-categories ion-chip {
-    --background: #5c8fee;
 }
 
 /* Descripción */
@@ -467,6 +413,187 @@ ion-badge[color="warning"] {
 /* Animación para transición de imágenes */
 .product-detail-image {
     transition: transform 0.3s ease;
+}
+
+/* Categorías */
+.product-detail-categories {
+    display: flex;
+    flex-wrap: nowrap; /* Impide el salto de línea */
+    gap: 8px;
+    margin-bottom: 20px;
+    overflow-x: auto; /* Permite scroll horizontal */
+    padding-bottom: 8px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    position: relative;
+    white-space: nowrap; /* Asegura que los elementos no se dividan */
+    width: 100%;
+}
+
+/* Estilizar la scrollbar */
+.product-detail-categories::-webkit-scrollbar {
+    height: 4px;
+}
+
+.product-detail-categories::-webkit-scrollbar-track {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.product-detail-categories::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 4px;
+}
+
+.product-detail-categories ion-chip {
+    --background: var(--accent-color);
+    --color: white;
+    font-size: 12px;
+    height: 28px;
+    flex-shrink: 0;
+    display: inline-flex;
+}
+
+.dark-theme .product-detail-categories ion-chip {
+    --background: #5c8fee;
+}
+
+/* Indicadores de scroll a los lados */
+.product-detail-categories::before,
+.product-detail-categories::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 8px;
+    width: 24px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.product-detail-categories::before {
+    left: 0;
+    background: linear-gradient(90deg, var(--card-background) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.product-detail-categories::after {
+    right: 0;
+    background: linear-gradient(270deg, var(--card-background) 0%, transparent 100%);
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.product-detail-categories.scrolled-start::before {
+    opacity: 0.7;
+}
+
+.product-detail-categories.scrolled-end::after {
+    opacity: 0;
+}
+
+.dark-theme .product-detail-categories ion-chip {
+    --background: #5c8fee;
+}
+
+/* Contenedor para el slider de categorías */
+.product-detail-categories-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+/* Indicadores de scroll a los lados */
+.product-detail-categories::before,
+.product-detail-categories::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 8px;
+    width: 24px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.product-detail-categories::before {
+    left: 0;
+    background: linear-gradient(90deg, var(--card-background) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.product-detail-categories::after {
+    right: 0;
+    background: linear-gradient(270deg, var(--card-background) 0%, transparent 100%);
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.product-detail-categories.scrolled-start::before {
+    opacity: 0.7;
+}
+
+.product-detail-categories.scrolled-end::after {
+    opacity: 0;
+}
+
+/* Botones de navegación para categorías */
+.categories-nav-buttons {
+    display: none; /* Se mostrarán solo en pantallas medianas y grandes */
+}
+
+.categories-nav-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.categories-nav-prev {
+    left: -14px;
+}
+
+.categories-nav-next {
+    right: -14px;
+}
+
+.categories-nav-button:hover {
+    background: var(--hover-color);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.categories-nav-button ion-icon {
+    font-size: 16px;
+}
+
+/* Mostrar botones de navegación en pantallas medianas y grandes */
+@media (min-width: 768px) {
+    .categories-nav-buttons {
+        display: block;
+    }
+
+    /* En pantallas más grandes, ocultar scrollbar pero mantener funcionalidad */
+    .product-detail-categories {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+
+    .product-detail-categories::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
 }
 
 /* Estilo adicional para pantallas pequeñas */
