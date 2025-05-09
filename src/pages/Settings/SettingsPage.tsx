@@ -191,6 +191,10 @@ const Settings: React.FC = () => {
         }
     };
 
+    //TODO
+    //const lightModeSound = new Audio('Flashbang Sound Effect.mp3'); // Ajusta la ruta según tu estructura
+
+
     const handlePreferenceChange = async (e: CustomEvent, key: 'modo_oscuro' | 'notificaciones') => {
         const newValue = e.detail.checked;
 
@@ -203,6 +207,17 @@ const Settings: React.FC = () => {
                     [key]: newValue
                 }
             }));
+
+            //TODO
+            // Si es el modo oscuro y se está cambiando a modo claro
+            /*if (key === 'modo_oscuro' && !newValue) {
+                lightModeSound.play().catch(error => console.log('Error reproduciendo sonido:', error));
+            }*/
+
+            // Si es el modo oscuro, actualizamos la clase del documento
+            if (key === 'modo_oscuro') {
+                document.body.classList.toggle('dark', newValue);
+            }
 
             // Enviamos el cambio al backend
             await SettingsService.updatePreference({
@@ -222,12 +237,21 @@ const Settings: React.FC = () => {
                     [key]: !newValue
                 }
             }));
+
+            // Revertimos también la clase del documento
+            if (key === 'modo_oscuro') {
+                document.body.classList.toggle('dark', !newValue);
+            }
         }
     };
 
     // Load profile settings on component mount
     useEffect(() => {
-        loadSettings();
+        if (!sessionStorage.getItem('token')){
+            history.push('/login');
+        }else {
+            loadSettings();
+            document.body.classList.toggle('dark', profile.preferencias?.modo_oscuro ?? false);}
     }, []);
 
     const ProfileSection: React.FC<SectionProps> = ({ onClose }) => {
@@ -433,7 +457,7 @@ const Settings: React.FC = () => {
             <IonHeader className="ion-no-border">
                 <IonToolbar>
                     <IonButtons slot="start">
-                        <IonBackButton defaultHref="/home" />
+                        <IonBackButton defaultHref="/products" />
                     </IonButtons>
                     <IonTitle>Ajustes</IonTitle>
                     <IonButtons slot="end">
@@ -593,8 +617,9 @@ const Settings: React.FC = () => {
                             text: 'Eliminar cuenta',
                             cssClass: 'danger-button',
                             handler: () => {
-                                console.log('Deleting account...');
+                                SettingsService.deleteAccount();
                                 displayToast('Cuenta eliminada');
+                                history.push('/login');
                             }
                         }
                     ]}

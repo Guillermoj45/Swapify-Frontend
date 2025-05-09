@@ -1,5 +1,5 @@
 /* Settings.css */
-
+/* Variables para el tema claro/oscuro */
 /* General styles */
 .settings-content {
     --background: var(--ion-color-light-shade, #f4f5f8);

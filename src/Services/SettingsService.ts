@@ -123,4 +123,28 @@ export class Settings {
             throw new Error('Error desconocido al actualizar la preferencia');
         }
     }
+
+    static async deleteAccount(): Promise<void> {
+        try {
+            const response = await api.delete(
+                "/user/delete",
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `${sessionStorage.getItem('token')}`
+                    }
+                }
+            );
+
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Error al eliminar la cuenta');
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                console.error("Error eliminando la cuenta:", error.message);
+                throw error;
+            }
+            throw new Error('Error desconocido al eliminar la cuenta');
+        }
+    }
 }
