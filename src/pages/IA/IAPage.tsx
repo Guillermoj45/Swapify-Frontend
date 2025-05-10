@@ -121,7 +121,7 @@ const AIChatPage: React.FC = () => {
             messages: [initialAIMessage],
         }
     ]);
-    const [activeChatId, setActiveChatId] = useState<string>('default');
+    const [activeChatId, setActiveChatId] = useState<string>();
     const [showNewChatAlert, setShowNewChatAlert] = useState<boolean>(false);
     const [newChatTitle, setNewChatTitle] = useState<string>('');
 
