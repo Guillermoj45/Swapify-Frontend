@@ -62,14 +62,33 @@ const SuscripcionPage: React.FC = () => {
 
     const history = useHistory();
 
-    const [isDarkMode, setDarkMode] = useState(false);
+    // Al inicio, obtener el estado inicial del modo oscuro
+    const [isDarkMode, setDarkMode] = useState(() => {
+        const storedMode = sessionStorage.getItem('modoOscuroClaro');
+        return storedMode === 'true';
+    });
 
+// Efecto para aplicar la clase cuando cambie el modo
     useEffect(() => {
-        document.body.classList.toggle('dark', isDarkMode);
+        document.body.classList.remove('dark', 'light');
+        document.body.classList.add(isDarkMode ? 'dark' : 'light');
     }, [isDarkMode]);
 
-    const toggleDarkMode = () => {
-        setDarkMode(prev => !prev);
+// Función para cambiar el modo
+    const toggleDarkMode = async () => {
+        const newDarkMode = !isDarkMode;
+        setDarkMode(newDarkMode);
+        sessionStorage.setItem('modoOscuroClaro', newDarkMode.toString());
+
+        try {
+            const preferenceUpdate: PreferenceUpdate = {
+                key: 'modo_oscuro',
+                value: newDarkMode
+            };
+            await SettingsService.updatePreference(preferenceUpdate);
+        } catch (error) {
+            console.error('Error al actualizar modo oscuro:', error);
+        }
     };
 
     return (

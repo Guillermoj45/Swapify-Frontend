@@ -34,6 +34,7 @@ import { useHistory, useLocation } from "react-router-dom";
 import { ProductService, RecommendDTO, Product } from '../../Services/ProductService';
 import { ProfileService, SaveProductDTO } from '../../Services/ProfileService';
 import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
+import { Settings as SettingsService } from '../../Services/SettingsService';
 
 interface CustomLocationState {
     token?: string;
@@ -241,26 +242,43 @@ const ProductsPage = () => {
     // Load user profile and saved products
     useEffect(() => {
         const loadUserProfile = async () => {
+            // Obtener el valor del modo oscuro del sessionStorage
+            const modoOscuroStorage = sessionStorage.getItem('modoOscuroClaro');
+
+            if (modoOscuroStorage === null) {
+                // Si no hay valor en sessionStorage, llamar al backend
+                try {
+                    const modoOscuroBackend = await SettingsService.getModoOcuro();
+                    const modoOscuroFinal = modoOscuroBackend === true;
+                    sessionStorage.setItem('modoOscuroClaro', modoOscuroFinal.toString());
+                    setDarkMode(modoOscuroFinal);
+                } catch (error) {
+                    console.error('Error al obtener modo oscuro del backend:', error);
+                    // Valor por defecto en caso de error
+                    sessionStorage.setItem('modoOscuroClaro', 'false');
+                    setDarkMode(false);
+                }
+            } else {
+                // Usar el valor almacenado en sessionStorage
+                setDarkMode(modoOscuroStorage === 'true');
+            }
+
             try {
                 const profileData = await ProfileService.getProfileInfo();
                 setProfileId(profileData.id);
 
-                // Load saved products
+                // Cargar productos guardados
                 const savedProducts = await ProfileService.getSavedProducts();
-
-                // Create a map of product IDs that are favorited
                 const favoritesMap: Favorites = {};
                 savedProducts.forEach(product => {
                     favoritesMap[product.id] = true;
                 });
-
                 setFavorites(favoritesMap);
             } catch (error) {
                 console.error('Error loading user profile:', error);
             }
         };
 
-        // Only load if there's a token
         if (sessionStorage.getItem("token")) {
             loadUserProfile();
         }
@@ -425,23 +443,52 @@ const ProductsPage = () => {
         };
     }, []);
 
-    // Check user's preferred color scheme on component mount
+    // Configuración inicial del tema basado en sessionStorage o preferencia del sistema
     useEffect(() => {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setDarkMode(prefersDark);
+        // Obtener el valor del sessionStorage al iniciar
+        const modoOscuroStorage = sessionStorage.getItem('modoOscuroClaro');
 
-        // Apply theme class to body
-        document.body.classList.toggle('dark-theme', prefersDark);
+        // Si existe un valor en sessionStorage, usarlo
+        if (modoOscuroStorage !== null) {
+            const isDarkMode = modoOscuroStorage === 'true';
+            setDarkMode(isDarkMode);
+            // Aplicar la clase al body inmediatamente
+            document.body.classList.remove('light-theme', 'dark-theme');
+            document.body.classList.add(isDarkMode ? 'dark-theme' : 'light-theme');
+        } else {
+            // Si no hay valor en sessionStorage, usar preferencia del sistema
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            setDarkMode(prefersDark);
+            document.body.classList.remove('light-theme', 'dark-theme');
+            document.body.classList.add(prefersDark ? 'dark-theme' : 'light-theme');
+            // Guardar la preferencia en sessionStorage
+            sessionStorage.setItem('modoOscuroClaro', prefersDark.toString());
+        }
     }, []);
 
-    // Apply dark mode class when darkMode state changes
-    useEffect(() => {
-        document.body.classList.toggle('dark-theme', darkMode);
-    }, [darkMode]);
+    const toggleDarkMode = async () => {
+        const newDarkMode = !darkMode;
+        setDarkMode(newDarkMode);
 
-    // Toggle dark mode
-    const toggleDarkMode = () => {
-        setDarkMode(prev => !prev);
+        // Actualizar el sessionStorage
+        sessionStorage.setItem('modoOscuroClaro', newDarkMode.toString());
+
+        // Aplicar las clases de tema al body
+        document.body.classList.remove('light-theme', 'dark-theme');
+        document.body.classList.add(newDarkMode ? 'dark-theme' : 'light-theme');
+
+        try {
+            // Crear el objeto PreferenceUpdate
+            const preferenceUpdate: PreferenceUpdate = {
+                key: 'modo_oscuro',
+                value: newDarkMode
+            };
+
+            // Actualizar en el backend
+            await SettingsService.updatePreference(preferenceUpdate);
+        } catch (error) {
+            console.error('Error al actualizar modo oscuro:', error);
+        }
     };
 
     // Slider items

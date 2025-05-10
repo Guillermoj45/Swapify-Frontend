@@ -208,15 +208,10 @@ const Settings: React.FC = () => {
                 }
             }));
 
-            //TODO
-            // Si es el modo oscuro y se está cambiando a modo claro
-            /*if (key === 'modo_oscuro' && !newValue) {
-                lightModeSound.play().catch(error => console.log('Error reproduciendo sonido:', error));
-            }*/
-
-            // Si es el modo oscuro, actualizamos la clase del documento
+            // Si es el modo oscuro, actualizamos la clase del documento y el sessionStorage
             if (key === 'modo_oscuro') {
                 document.body.classList.toggle('dark', newValue);
+                sessionStorage.setItem('modoOscuroClaro', newValue.toString());
             }
 
             // Enviamos el cambio al backend
@@ -238,9 +233,10 @@ const Settings: React.FC = () => {
                 }
             }));
 
-            // Revertimos también la clase del documento
+            // Revertimos también la clase del documento y el sessionStorage
             if (key === 'modo_oscuro') {
                 document.body.classList.toggle('dark', !newValue);
+                sessionStorage.setItem('modoOscuroClaro', (!newValue).toString());
             }
         }
     };

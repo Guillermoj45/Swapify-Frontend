@@ -14,7 +14,6 @@ import {
     IonGrid,
     IonHeader,
     IonIcon,
-    IonInput,
     IonItem,
     IonLabel,
     IonList,
@@ -23,7 +22,6 @@ import {
     IonRow,
     IonSegment,
     IonSegmentButton,
-    IonTextarea,
     IonThumbnail,
     IonToolbar,
     IonLoading
@@ -34,7 +32,6 @@ import {
     cartOutline,
     chatbubbleOutline,
     heartOutline,
-    informationCircleOutline,
     star,
     starOutline,
 } from "ionicons/icons"
@@ -152,10 +149,6 @@ export default function ProfilePage() {
             image: "/placeholder.svg?height=40&width=40",
         },
     ]
-
-    const handleInputChange = (field: keyof typeof userInfo, value: string) => {
-        setUserInfo({ ...userInfo, [field]: value })
-    }
 
     const renderStars = (rating: number) =>
         Array.from({ length: 5 }, (_, i) => (
@@ -321,36 +314,6 @@ export default function ProfilePage() {
                     </div>
                 )
 
-            case "info":
-                return (
-                    <div className="tab-content">
-                        <h3 className="tab-title">Tu información</h3>
-                        <IonList style={{ backgroundColor: "white" }}>
-                            {[
-                                { label: "Nombre", value: profileData?.nickname || "", field: "fullName" },
-                                { label: "Ciudad", value: userInfo.city, field: "city" },
-                                { label: "Hobby", value: userInfo.hobby, field: "hobby" },
-                                { label: "Redes Sociales", value: userInfo.socialMedia, field: "socialMedia" },
-                            ].map(({ label, value, field }) => (
-                                <IonItem key={field} className="input-item">
-                                    <IonLabel color="primary">{label}</IonLabel>
-                                    <IonInput value={value} readonly onIonChange={(e: CustomEvent) => handleInputChange(field as keyof typeof userInfo, e.detail.value || "")}>
-                                    </IonInput>
-                                </IonItem>
-                            ))}
-                            <IonItem className="input-item">
-                                <IonLabel color="primary">Biografía</IonLabel>
-                                <IonTextarea
-                                    rows={4}
-                                    value={userInfo.biography}
-                                    readonly
-                                    onIonChange={(e) => handleInputChange("biography", e.detail.value || "")}
-                                />
-                            </IonItem>
-                        </IonList>
-                    </div>
-                )
-
             default:
                 return null
         }
@@ -385,11 +348,19 @@ export default function ProfilePage() {
                                     <span className="reviews">({userInfo.totalReviews})</span>
                                 </div>
                                 <div className="stats-small">
-                                    <div><Building size={16} /> <span>100% fiable</span></div>
-                                    <div><MapPin size={16} /> <span>31 comprados</span></div>
+                                    <div><Building size={10} /> <span>100% fiable</span></div>
+                                    <div><MapPin size={10} /> <span>31 comprados</span></div>
                                 </div>
                                 {profileData?.newUser && (
-                                    <IonBadge color="success">Nuevo usuario</IonBadge>
+                                    <IonBadge color="success" style={{
+                                        padding: '4px 8px',
+                                        fontSize: '12px',
+                                        height: 'auto',
+                                        display: 'inline-flex',
+                                        alignItems: 'center'
+                                    }}>
+                                        Nuevo usuario
+                                    </IonBadge>
                                 )}
                             </IonCol>
                             <IonCol size="4" className="avatar-col">
@@ -425,10 +396,6 @@ export default function ProfilePage() {
                         <IonSegmentButton value="reseñas">
                             <IonIcon icon={chatbubbleOutline} />
                             <IonLabel>Reseñas</IonLabel>
-                        </IonSegmentButton>
-                        <IonSegmentButton value="info">
-                            <IonIcon icon={informationCircleOutline} />
-                            <IonLabel>Info</IonLabel>
                         </IonSegmentButton>
                     </IonSegment>
                     <div className="tab-container">{renderTabContent()}</div>

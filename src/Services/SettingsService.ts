@@ -55,12 +55,12 @@ export class Settings {
                     const response = await fetch(profile.avatar);
                     const blob = await response.blob();
                     const fileName = profile.avatar.split('/').pop() || 'avatar.jpg';
-                    const file = new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+                    const file = new File([blob], fileName, {type: blob.type || 'image/jpeg'});
                     formData.append('avatar', file);
                 }
             }
 
-            const response = await api.put("/profile/updateProfileSettings", formData, { headers });
+            const response = await api.put("/profile/updateProfileSettings", formData, {headers});
 
             if (!response.data.success) {
                 throw new Error(response.data.message || 'Error desconocido en la respuesta del servidor');
@@ -145,6 +145,22 @@ export class Settings {
                 throw error;
             }
             throw new Error('Error desconocido al eliminar la cuenta');
+        }
+    }
+
+    static async getModoOcuro(): Promise<boolean> {
+        try {
+            const response = await api.get("/profile/getModoOscuroClaro", {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `${sessionStorage.getItem('token')}`
+                }
+            });
+
+            return response.data.body === 'true';
+        } catch (error) {
+            console.error("Error recuperando el modo oscuro:", error);
+            throw error;
         }
     }
 }
