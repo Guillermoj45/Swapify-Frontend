@@ -466,6 +466,11 @@ const ProductsPage = () => {
         }
     }, []);
 
+    interface PreferenceUpdate {
+        key: 'modo_oscuro' | 'notificaciones';
+        value: boolean;
+    }
+
     const toggleDarkMode = async () => {
         const newDarkMode = !darkMode;
         setDarkMode(newDarkMode);

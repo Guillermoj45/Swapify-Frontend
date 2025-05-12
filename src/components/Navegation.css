@@ -40,6 +40,11 @@ ion-menu::part(container) {
     background-color: var(--card-background);
     border-right: 1px solid var(--border-color);
 }
+ion-list {
+    --background: var(--card-background);
+    --ion-item-background: var(--card-background);
+    --ion-item-border-color: var(--border-color);
+}
 
 ion-menu ion-toolbar {
     --background: var(--header-bg);

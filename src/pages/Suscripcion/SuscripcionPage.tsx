@@ -21,11 +21,9 @@ import {
     informationCircle,
     checkmarkCircle,
     moon,
-    sunny,
-    flashOutline,
-    notificationsOutline,
-    cloudUploadOutline,
     statsChartOutline,
+    cloudUploadOutline,
+    notificationsOutline,
     eyeOutline,
     arrowForward,
     closeCircle,
@@ -34,6 +32,7 @@ import {
 import { useHistory } from "react-router-dom";
 import './SuscripcionPage.css';
 import { useState, useEffect } from 'react';
+import {Settings as SettingsService} from '../../Services/SettingsService';
 
 const SuscripcionPage: React.FC = () => {
 
@@ -55,7 +54,7 @@ const SuscripcionPage: React.FC = () => {
             text: "Sumar hasta 20 puntos más al precio evaluado"
         },
         {
-            icon: flashOutline,
+            icon: eyeOutline,
             text: "Ver todos los productos sin restricción"
         }
     ];
@@ -68,28 +67,11 @@ const SuscripcionPage: React.FC = () => {
         return storedMode === 'true';
     });
 
-// Efecto para aplicar la clase cuando cambie el modo
+    // Efecto para aplicar la clase cuando cambie el modo
     useEffect(() => {
         document.body.classList.remove('dark', 'light');
         document.body.classList.add(isDarkMode ? 'dark' : 'light');
     }, [isDarkMode]);
-
-// Función para cambiar el modo
-    const toggleDarkMode = async () => {
-        const newDarkMode = !isDarkMode;
-        setDarkMode(newDarkMode);
-        sessionStorage.setItem('modoOscuroClaro', newDarkMode.toString());
-
-        try {
-            const preferenceUpdate: PreferenceUpdate = {
-                key: 'modo_oscuro',
-                value: newDarkMode
-            };
-            await SettingsService.updatePreference(preferenceUpdate);
-        } catch (error) {
-            console.error('Error al actualizar modo oscuro:', error);
-        }
-    };
 
     return (
         <IonPage>
@@ -102,14 +84,6 @@ const SuscripcionPage: React.FC = () => {
                             <IonLabel>Mejora tu experiencia</IonLabel>
                         </IonChip>
                     </IonTitle>
-                    <IonButton
-                        fill="clear"
-                        slot="end"
-                        onClick={toggleDarkMode}
-                        className="theme-toggle-btn"
-                    >
-                        <IonIcon icon={isDarkMode ? sunny : moon} />
-                    </IonButton>
                 </IonToolbar>
             </IonHeader>
             <IonContent className="ion-padding subscription-content">

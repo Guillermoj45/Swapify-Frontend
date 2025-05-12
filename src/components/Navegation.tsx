@@ -70,7 +70,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                         </IonToolbar>
                     </IonHeader>
                     <IonContent>
-                        <IonList>
+                        <IonList className="menu-list">
                             <IonMenuToggle autoHide={false}>
                                 <IonItem button onClick={() => navigateTo('/products')} detail={false}>
                                     <IonIcon slot="start" icon={homeOutline} />
