@@ -1,9 +1,7 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react";
 import { useHistory } from "react-router-dom";
-import "./ProfilePage.css"
-import ProfileService, { ProfileDTO, ProductDTO } from "../../Services/ProfileService";
 
 import {
     IonAvatar,
@@ -17,15 +15,15 @@ import {
     IonItem,
     IonLabel,
     IonList,
+    IonLoading,
     IonMenuButton,
     IonPage,
     IonRow,
     IonSegment,
     IonSegmentButton,
     IonThumbnail,
-    IonToolbar,
-    IonLoading
-} from "@ionic/react"
+    IonToolbar
+} from "@ionic/react";
 
 import {
     bookmarkOutline,
@@ -33,22 +31,27 @@ import {
     chatbubbleOutline,
     heartOutline,
     star,
-    starOutline,
-} from "ionicons/icons"
+    starOutline
+} from "ionicons/icons";
 
-import { Building, MapPin } from "lucide-react"
+import { Building, MapPin } from "lucide-react";
+
+import ProfileService, { ProfileDTO, ProductDTO } from "../../Services/ProfileService";
+import "./ProfilePage.css";
 
 export default function ProfilePage() {
     const history = useHistory();
+
+    // State
     const [loading, setLoading] = useState(true);
+    const [loadingSaved, setLoadingSaved] = useState(false);
     const [profileData, setProfileData] = useState<ProfileDTO | null>(null);
     const [userProducts, setUserProducts] = useState<ProductDTO[]>([]);
     const [savedProducts, setSavedProducts] = useState<ProductDTO[]>([]);
     const [showAllProducts, setShowAllProducts] = useState(false);
     const [showAllSavedProducts, setShowAllSavedProducts] = useState(false);
-    const [loadingSaved, setLoadingSaved] = useState(false);
-
-    const [activeTab, setActiveTab] = useState("reseñas")
+    const [activeTab, setActiveTab] = useState("reseñas");
+    const [bannerImage, setBannerImage] = useState<string>("");
 
     const [userInfo, setUserInfo] = useState({
         name: "",
@@ -60,10 +63,12 @@ export default function ProfilePage() {
         city: "",
         hobby: "",
         socialMedia: "",
-        biography: "",
-    })
+        biography: ""
+    });
 
-    // Cargar datos del perfil y productos al montar el componente
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Effects
     useEffect(() => {
         const checkAuth = async () => {
             if (!sessionStorage.getItem("token")) {
@@ -75,23 +80,20 @@ export default function ProfilePage() {
                 setLoading(true);
                 const profileInfo = await ProfileService.getProfileInfo();
                 setProfileData(profileInfo);
+                setBannerImage(profileInfo.banner)
 
-                // Cargar los productos del usuario
                 const products = await ProfileService.getUserProducts();
                 setUserProducts(products);
 
-                // Actualizar la información del usuario con los datos recibidos
-                setUserInfo(prevInfo => ({
-                    ...prevInfo,
+                setUserInfo(prev => ({
+                    ...prev,
                     name: profileInfo.nickname || "Usuario",
-                    itemsForSale: products.length,
+                    itemsForSale: products.length
                 }));
 
-                // Resetear el estado de visualización cuando se cargan nuevos productos
                 setShowAllProducts(false);
             } catch (error) {
-                console.error("Error al cargar perfil o productos:", error);
-                // Manejar el error según sea necesario
+                console.error("Error loading profile or products:", error);
             } finally {
                 setLoading(false);
             }
@@ -100,56 +102,86 @@ export default function ProfilePage() {
         checkAuth();
     }, [history]);
 
-    // Cargar productos guardados cuando se activa la pestaña de deseados
     useEffect(() => {
-        const loadSavedProducts = async () => {
-            if (activeTab === "deseados") {
+        if (activeTab === "deseados") {
+            const loadSaved = async () => {
+                setLoadingSaved(true);
                 try {
-                    setLoadingSaved(true);
                     const saved = await ProfileService.getSavedProducts();
                     setSavedProducts(saved);
-                    // Resetear el estado de visualización cuando se cargan nuevos productos guardados
                     setShowAllSavedProducts(false);
                 } catch (error) {
-                    console.error("Error al cargar productos guardados:", error);
+                    console.error("Error loading saved products:", error);
                 } finally {
                     setLoadingSaved(false);
                 }
-            }
-        };
+            };
 
-        loadSavedProducts();
+            loadSaved();
+        }
     }, [activeTab]);
 
-    // Función para manejar errores de carga de imágenes
-    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-        const target = e.target as HTMLImageElement;
-        // Usamos la primera letra del nombre como imagen de respaldo
-        const firstLetter = userInfo.name.charAt(0).toUpperCase();
-        target.src = `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23cccccc"/%3E%3Ctext x="50" y="50" font-family="Arial" font-size="40" text-anchor="middle" dominant-baseline="middle" fill="%23ffffff"%3E${firstLetter}%3C/text%3E%3C/svg%3E`;
+    useEffect(() => {
+        const isDark = sessionStorage.getItem('modoOscuroClaro') === 'true';
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        document.body.style.setProperty('--ion-background-color', isDark ? '#0a0a0a' : '#ffffff');
+        document.body.style.setProperty('--ion-text-color', isDark ? '#ffffff' : '#333333');
+    }, []);
+
+    useEffect(() => {
+        applyTheme();
+
+        // Agregar un observador para cambios en sessionStorage
+        const handleStorageChange = () => {
+            applyTheme();
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
+    const applyTheme = () => {
+        const isDark = sessionStorage.getItem('modoOscuroClaro') === 'true';
+        if (isDark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.body.style.setProperty('--ion-background-color', '#0a0a0a');
+            document.body.style.setProperty('--ion-text-color', '#ffffff');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.body.style.setProperty('--ion-background-color', '#ffffff');
+            document.body.style.setProperty('--ion-text-color', '#333333');
+        }
     };
 
-    const reviews = [
-        {
-            id: 1,
-            product: "Samsung DS2 5G",
-            comment: "Todo perfecto",
-            reviewer: "rafa",
-            rating: 5,
-            date: "26 Aug 2024",
-            image: "/placeholder.svg?height=40&width=40",
-        },
-        {
-            id: 2,
-            product: "Apple AirPods",
-            comment: "Excelente servicio",
-            reviewer: "maria",
-            rating: 4,
-            date: "15 Sep 2024",
-            image: "/placeholder.svg?height=40&width=40",
-        },
-    ]
+    // Handlers
+    const handleBannerClick = () => fileInputRef.current?.click();
 
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            // Mostrar preview local
+            const reader = new FileReader();
+            reader.onloadend = () => setBannerImage(reader.result as string);
+            reader.readAsDataURL(file);
+
+            // Subir a servidor
+            const result = await ProfileService.updateBanner(file);
+
+            if(result.success) {
+                setBannerImage(result.imageUrl);
+            }
+
+        } catch (error) {
+            console.error('Error al subir la imagen:', error);
+            // Aquí podrías mostrar un mensaje de error al usuario
+        }
+    };
+
+    // Helpers
+    const formatPoints = (points: number) => `${points} pts`;
+    const getProductImage = (images: string[]) => images[0] || "/placeholder.svg?height=60&width=60";
     const renderStars = (rating: number) =>
         Array.from({ length: 5 }, (_, i) => (
             <IonIcon
@@ -157,171 +189,127 @@ export default function ProfilePage() {
                 icon={i < rating ? star : starOutline}
                 className={i < rating ? "star-filled" : "star-outline"}
             />
-        ))
+        ));
 
-    // Helper para formatear puntos como precio
-    const formatPoints = (points: number): string => {
-        return `${points} pts`;
-    }
+    // Static reviews sample
+    const reviews = [
+        { id: 1, product: "Samsung DS2 5G", comment: "Todo perfecto", reviewer: "rafa", rating: 5, date: "26 Aug 2024", image: "/placeholder.svg?height=40&width=40" },
+        { id: 2, product: "Apple AirPods", comment: "Excelente servicio", reviewer: "maria", rating: 4, date: "15 Sep 2024", image: "/placeholder.svg?height=40&width=40" }
+    ];
 
-    // Helper para obtener imagen del producto o placeholder
-    const getProductImage = (images: string[]): string => {
-        return images && images.length > 0
-            ? images[0]
-            : "/placeholder.svg?height=60&width=60";
-    }
-
+    // Tab content renderer
     const renderTabContent = () => {
-        switch (activeTab) {
-            case "enVenta":
-                // Determinar qué productos mostrar según el estado de showAllProducts
-                { const displayProducts = showAllProducts
-                    ? userProducts
-                    : userProducts.slice(0, 3);
+        if (activeTab === "enVenta") {
+            const items = showAllProducts ? userProducts : userProducts.slice(0, 3);
 
-                return (
-                    <div className="tab-content">
-                        <h3 className="tab-title">Artículos en venta ({userInfo.itemsForSale})</h3>
-                        <IonList lines="none" style={{ backgroundColor: "white" }}>
-                            {loading ? (
-                                <div className="loading-message">Cargando productos...</div>
-                            ) : userProducts.length === 0 ? (
-                                <div className="empty-message">No tienes productos en venta</div>
-                            ) : (
-                                displayProducts.map((product) => (
-                                    <IonItem key={product.id} className="item-card">
-                                        <IonThumbnail slot="start">
-                                            <img
-                                                src={getProductImage(product.imagenes)}
-                                                alt={product.name}
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = "/placeholder.svg?height=60&width=60";
-                                                }}
-                                            />
-                                        </IonThumbnail>
-                                        <div className="item-details">
-                                            <h4>{product.name}</h4>
-                                            <IonBadge className="price-badge">{formatPoints(product.points)}</IonBadge>
-                                            {product.categories && product.categories.length > 0 && (
-                                                <div className="category-badges">
-                                                    {product.categories.slice(0, 2).map((category, index) => (
-                                                        <IonBadge key={index} color="light" className="category-badge">
-                                                            {category.name}
-                                                        </IonBadge>
-                                                    ))}
-                                                    {product.categories.length > 2 && (
-                                                        <span className="more-categories">+{product.categories.length - 2}</span>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </IonItem>
-                                ))
-                            )}
-                        </IonList>
-                        {userProducts.length > 3 && (
-                            <IonButton
-                                expand="block"
-                                className="view-all-btn"
-                                onClick={() => setShowAllProducts(!showAllProducts)}
-                            >
-                                {showAllProducts ? "Mostrar menos" : "Ver todos"}
-                            </IonButton>
-                        )}
-                    </div>
-                ) }
-
-            case "deseados":
-                // Determinar qué productos guardados mostrar según el estado
-                { const displaySavedProducts = showAllSavedProducts
-                    ? savedProducts
-                    : savedProducts.slice(0, 3);
-
-                return (
-                    <div className="tab-content">
-                        <h3 className="tab-title">Lista de deseos ({savedProducts.length})</h3>
-                        <IonList style={{ backgroundColor: "white" }}>
-                            {loadingSaved ? (
-                                <div className="loading-message">Cargando productos guardados...</div>
-                            ) : savedProducts.length === 0 ? (
-                                <div className="empty-message">No tienes productos guardados</div>
-                            ) : (
-                                displaySavedProducts.map((product) => (
-                                    <IonItem key={product.id} className="item-card wishlist-item">
-                                        <IonThumbnail slot="start">
-                                            <img
-                                                src={getProductImage(product.imagenes)}
-                                                alt={product.name}
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = "/placeholder.svg?height=60&width=60";
-                                                }}
-                                            />
-                                        </IonThumbnail>
-                                        <div className="item-details">
-                                            <h4>{product.name}</h4>
-                                            <IonBadge color="tertiary" className="price-badge secondary">
-                                                {formatPoints(product.points)}
-                                            </IonBadge>
-                                            <div className="product-seller">
-                                                <small>Vendedor: {product.profile.nickname}</small>
+            return (
+                <div className="tab-content">
+                    <h3 className="tab-title">Artículos en venta ({userInfo.itemsForSale})</h3>
+                    <IonList lines="none" style={{ backgroundColor: "white" }}>
+                        {loading ? (
+                            <div className="loading-message">Cargando productos...</div>
+                        ) : items.length === 0 ? (
+                            <div className="empty-message">No tienes productos en venta</div>
+                        ) : (
+                            items.map(product => (
+                                <IonItem key={product.id} className="item-card">
+                                    <IonThumbnail slot="start">
+                                        <img src={getProductImage(product.imagenes)} alt={product.name} onError={e => { (e.target as HTMLImageElement).src = "/placeholder.svg?height=60&width=60"; }} />
+                                    </IonThumbnail>
+                                    <div className="item-details">
+                                        <h4>{product.name}</h4>
+                                        <IonBadge className="price-badge">{formatPoints(product.points)}</IonBadge>
+                                        {product.categories?.length > 0 && (
+                                            <div className="category-badges">
+                                                {product.categories.slice(0, 2).map((cat, idx) => (
+                                                    <IonBadge key={idx} color="light" className="category-badge">{cat.name}</IonBadge>
+                                                ))}
+                                                {product.categories.length > 2 && <span className="more-categories">+{product.categories.length - 2}</span>}
                                             </div>
-                                            {product.categories && product.categories.length > 0 && (
-                                                <div className="category-badges">
-                                                    {product.categories.slice(0, 2).map((category, index) => (
-                                                        <IonBadge key={index} color="light" className="category-badge">
-                                                            {category.name}
-                                                        </IonBadge>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </IonItem>
-                                ))
-                            )}
-                        </IonList>
-                        {savedProducts.length > 3 && (
-                            <IonButton
-                                expand="block"
-                                className="view-all-btn"
-                                onClick={() => setShowAllSavedProducts(!showAllSavedProducts)}
-                            >
-                                {showAllSavedProducts ? "Mostrar menos" : "Ver todos"}
-                            </IonButton>
-                        )}
-                    </div>
-                ) }
-
-            case "reseñas":
-                return (
-                    <div className="tab-content reviews-tab">
-                        {reviews.map((review) => (
-                            <div key={review.id} className="review-card">
-                                <div className="review-user">
-                                    <img src={review.image} alt={review.reviewer} className="reviewer-img" />
-                                    <div className="review-product">
-                                        <h4>{review.product}</h4>
-                                        <p>{review.comment}</p>
-                                        <span className="reviewer-name">Por {review.reviewer}</span>
+                                        )}
                                     </div>
-                                </div>
-                                <div className="review-meta">
-                                    <div className="review-stars">{renderStars(review.rating)}</div>
-                                    <div className="review-date">{review.date}</div>
-                                    <IonIcon icon={bookmarkOutline} className="bookmark-icon" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )
-
-            default:
-                return null
+                                </IonItem>
+                            ))
+                        )}
+                    </IonList>
+                    {userProducts.length > 3 && (
+                        <IonButton expand="block" className="view-all-btn" onClick={() => setShowAllProducts(!showAllProducts)}>
+                            {showAllProducts ? "Mostrar menos" : "Ver todos"}
+                        </IonButton>
+                    )}
+                </div>
+            );
         }
-    }
 
-    // Determinar si el usuario es premium
+        if (activeTab === "deseados") {
+            const items = showAllSavedProducts ? savedProducts : savedProducts.slice(0, 3);
+
+            return (
+                <div className="tab-content">
+                    <h3 className="tab-title">Lista de deseos ({savedProducts.length})</h3>
+                    <IonList style={{ backgroundColor: "white" }}>
+                        {loadingSaved ? (
+                            <div className="loading-message">Cargando productos guardados...</div>
+                        ) : items.length === 0 ? (
+                            <div className="empty-message">No tienes productos guardados</div>
+                        ) : (
+                            items.map(product => (
+                                <IonItem key={product.id} className="item-card wishlist-item">
+                                    <IonThumbnail slot="start">
+                                        <img src={getProductImage(product.imagenes)} alt={product.name} onError={e => { (e.target as HTMLImageElement).src = "/placeholder.svg?height=60&width=60"; }} />
+                                    </IonThumbnail>
+                                    <div className="item-details">
+                                        <h4>{product.name}</h4>
+                                        <IonBadge color="tertiary" className="price-badge secondary">{formatPoints(product.points)}</IonBadge>
+                                        <div className="product-seller"><small>Vendedor: {product.profile.nickname}</small></div>
+                                        {product.categories?.length > 0 && (
+                                            <div className="category-badges">
+                                                {product.categories.slice(0, 2).map((cat, idx) => (
+                                                    <IonBadge key={idx} color="light" className="category-badge">{cat.name}</IonBadge>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </IonItem>
+                            ))
+                        )}
+                    </IonList>
+                    {savedProducts.length > 3 && (
+                        <IonButton expand="block" className="view-all-btn" onClick={() => setShowAllSavedProducts(!showAllSavedProducts)}>
+                            {showAllSavedProducts ? "Mostrar menos" : "Ver todos"}
+                        </IonButton>
+                    )}
+                </div>
+            );
+        }
+
+        // Reseñas por defecto
+        return (
+            <div className="tab-content reviews-tab">
+                {reviews.map(review => (
+                    <div key={review.id} className="review-card">
+                        <div className="review-user">
+                            <img src={review.image} alt={review.reviewer} className="reviewer-img" />
+                            <div className="review-product">
+                                <h4>{review.product}</h4>
+                                <p>{review.comment}</p>
+                                <span className="reviewer-name">Por {review.reviewer}</span>
+                            </div>
+                        </div>
+                        <div className="review-meta">
+                            <div className="review-stars">{renderStars(review.rating)}</div>
+                            <div className="review-date">{review.date}</div>
+                            <IonIcon icon={bookmarkOutline} className="bookmark-icon" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
     const isPremium = profileData?.premium !== "FREE";
 
+    // Render
     return (
         <IonPage>
             <IonHeader>
@@ -329,10 +317,14 @@ export default function ProfilePage() {
                     <IonMenuButton slot="start" />
                 </IonToolbar>
             </IonHeader>
-            <IonContent fullscreen>
+            <IonContent fullscreen className={sessionStorage.getItem('modoOscuroClaro') === 'true' ? 'dark-mode' : ''}>
                 <IonLoading isOpen={loading} message="Cargando perfil..." />
 
-                <div className="hero-banner"><span>Aquí va una imagen de background</span></div>
+                <div className="hero-banner" onClick={handleBannerClick} style={{ backgroundImage: bannerImage ? `url(${bannerImage})` : 'none' }}>
+                    <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" hidden />
+                    {!bannerImage && <span>Haz clic para añadir una imagen de fondo</span>}
+                </div>
+
                 <section className="profile-header">
                     <IonGrid>
                         <IonRow>
@@ -345,62 +337,42 @@ export default function ProfilePage() {
                                 <h2 className="profile-name">{userInfo.name}</h2>
                                 <div className="rating">
                                     <div className="stars-container">{renderStars(userInfo.rating)}</div>
-                                    <span className="reviews">({userInfo.totalReviews})</span>
+                                    <IonLabel className="reviews">({userInfo.totalReviews})</IonLabel>
                                 </div>
                                 <div className="stats-small">
                                     <div><Building size={10} /> <span>100% fiable</span></div>
                                     <div><MapPin size={10} /> <span>31 comprados</span></div>
                                 </div>
                                 {profileData?.newUser && (
-                                    <IonBadge color="success" style={{
-                                        padding: '4px 8px',
-                                        fontSize: '12px',
-                                        height: 'auto',
-                                        display: 'inline-flex',
-                                        alignItems: 'center'
-                                    }}>
+                                    <IonBadge color="success" style={{ padding: '4px 8px', fontSize: '12px' }}>
                                         Nuevo usuario
                                     </IonBadge>
                                 )}
                             </IonCol>
                             <IonCol size="4" className="avatar-col">
                                 <IonAvatar className="avatar">
-                                    {profileData?.avatar ? (
-                                        <img
-                                            src={profileData.avatar}
-                                            alt="User avatar"
-                                            onError={handleImageError}
-                                        />
-                                    ) : (
-                                        <img
-                                            src="/placeholder.svg?height=70&width=70"
-                                            alt="User avatar"
-                                            onError={handleImageError}
-                                        />
-                                    )}
+                                    <img src={profileData?.avatar || "/placeholder.svg?height=70&width=70"} alt="User avatar" />
                                 </IonAvatar>
                             </IonCol>
                         </IonRow>
                     </IonGrid>
                 </section>
+
                 <section className="profile-tabs">
-                    <IonSegment value={activeTab} onIonChange={(e) => setActiveTab(String(e.detail.value))} className="segment-container">
+                    <IonSegment value={activeTab} onIonChange={e => setActiveTab(String(e.detail.value))} className="segment-container">
                         <IonSegmentButton value="enVenta">
-                            <IonIcon icon={cartOutline} />
-                            <IonLabel>En venta</IonLabel>
+                            <IonIcon icon={cartOutline} /><IonLabel>En venta</IonLabel>
                         </IonSegmentButton>
                         <IonSegmentButton value="deseados">
-                            <IonIcon icon={heartOutline} />
-                            <IonLabel>Deseados</IonLabel>
+                            <IonIcon icon={heartOutline} /><IonLabel>Deseados</IonLabel>
                         </IonSegmentButton>
                         <IonSegmentButton value="reseñas">
-                            <IonIcon icon={chatbubbleOutline} />
-                            <IonLabel>Reseñas</IonLabel>
+                            <IonIcon icon={chatbubbleOutline} /><IonLabel>Reseñas</IonLabel>
                         </IonSegmentButton>
                     </IonSegment>
                     <div className="tab-container">{renderTabContent()}</div>
                 </section>
             </IonContent>
         </IonPage>
-    )
+    );
 }

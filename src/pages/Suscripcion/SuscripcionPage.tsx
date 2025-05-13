@@ -20,7 +20,6 @@ import {
 import {
     informationCircle,
     checkmarkCircle,
-    moon,
     statsChartOutline,
     cloudUploadOutline,
     notificationsOutline,
@@ -32,7 +31,6 @@ import {
 import { useHistory } from "react-router-dom";
 import './SuscripcionPage.css';
 import { useState, useEffect } from 'react';
-import {Settings as SettingsService} from '../../Services/SettingsService';
 
 const SuscripcionPage: React.FC = () => {
 

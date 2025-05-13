@@ -1,5 +1,5 @@
-import API from './api'; // Asegúrate de que la ruta sea correcta según tu estructura de carpetas
-import cloudinaryImage from "./CloudinaryService"; // Importamos la función para procesar imágenes
+import API from './api';
+import cloudinaryImage from "./CloudinaryService";
 
 export interface CategoryDTO {
     name: string;
@@ -13,6 +13,7 @@ export interface ProfileDTO {
     banAt: boolean;
     premium: string;
     newUser: boolean;
+    banner: string;
 }
 
 export interface ProductDTO {
@@ -20,8 +21,8 @@ export interface ProductDTO {
     name: string;
     description: string;
     points: number;
-    createdAt: string; // ISO string para fechas
-    updatedAt: string; // ISO string para fechas
+    createdAt: string;
+    updatedAt: string;
     imagenes: string[];
     profile: ProfileDTO;
     categories: CategoryDTO[];
@@ -33,19 +34,15 @@ export interface SaveProductDTO {
 }
 
 export const ProfileService = {
-    /**
-     * Obtiene la información del perfil del usuario actual
-     * @returns Promise con los datos del perfil
-     */
     getProfileInfo: async (): Promise<ProfileDTO> => {
         try {
             const response = await API.get('/profile/getProfileDto');
-
-            // Procesamos la URL del avatar con cloudinary si existe
             if (response.data && response.data.avatar) {
                 response.data.avatar = cloudinaryImage(response.data.avatar);
             }
-
+            if (response.data && response.data.banner) {
+                response.data.banner = cloudinaryImage(response.data.banner);
+            }
             return response.data;
         } catch (error) {
             console.error('Error al obtener información del perfil:', error);
@@ -53,15 +50,9 @@ export const ProfileService = {
         }
     },
 
-    /**
-     * Obtiene todos los productos subidos por el usuario actual
-     * @returns Promise con la lista de productos del usuario
-     */
     getUserProducts: async (): Promise<ProductDTO[]> => {
         try {
             const response = await API.get('/profile/myProducts');
-
-            // Procesamos las URLs de las imágenes con cloudinary
             if (response.data && Array.isArray(response.data)) {
                 response.data.forEach((product: ProductDTO) => {
                     if (product.imagenes && Array.isArray(product.imagenes)) {
@@ -69,7 +60,6 @@ export const ProfileService = {
                     }
                 });
             }
-
             return response.data;
         } catch (error) {
             console.error('Error al obtener los productos del usuario:', error);
@@ -77,11 +67,6 @@ export const ProfileService = {
         }
     },
 
-    /**
-     * Guarda un producto en el perfil del usuario
-     * @param saveProductDTO Datos del producto y perfil a guardar
-     * @returns Promise con el resultado de la operación
-     */
     saveProductToProfile: async (saveProductDTO: SaveProductDTO): Promise<{ success: boolean, message: string }> => {
         try {
             const response = await API.post('/profile/saveProduct', saveProductDTO);
@@ -95,11 +80,6 @@ export const ProfileService = {
         }
     },
 
-    /**
-     * Elimina un producto guardado del perfil del usuario
-     * @param saveProductDTO Datos del producto y perfil a eliminar
-     * @returns Promise con el resultado de la operación
-     */
     deleteProductFromProfile: async (saveProductDTO: SaveProductDTO): Promise<{ success: boolean, message: string }> => {
         try {
             const response = await API.delete('/profile/deleteProduct', {
@@ -115,15 +95,9 @@ export const ProfileService = {
         }
     },
 
-    /**
-     * Obtiene los productos guardados por el usuario actual
-     * @returns Promise con la lista de productos guardados
-     */
     getSavedProducts: async (): Promise<ProductDTO[]> => {
         try {
             const response = await API.get('/profile/savedProducts');
-
-            // Procesamos las URLs de las imágenes con cloudinary
             if (response.data && Array.isArray(response.data)) {
                 response.data.forEach((product: ProductDTO) => {
                     if (product.imagenes && Array.isArray(product.imagenes)) {
@@ -131,10 +105,31 @@ export const ProfileService = {
                     }
                 });
             }
-
             return response.data;
         } catch (error) {
             console.error('Error al obtener los productos guardados:', error);
+            throw error;
+        }
+    },
+
+    updateBanner: async (imageFile: File): Promise<{ success: boolean, imageUrl: string }> => {
+        try {
+            const formData = new FormData();
+            formData.append('banner', imageFile);
+
+            const response = await API.put('/profile/updateBanner', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `${sessionStorage.getItem('token')}`
+                }
+            });
+
+            return {
+                success: response.data.success,
+                imageUrl: imageFile ? URL.createObjectURL(imageFile) : ''
+            };
+        } catch (error) {
+            console.error('Error al actualizar la imagen de banner:', error);
             throw error;
         }
     }
