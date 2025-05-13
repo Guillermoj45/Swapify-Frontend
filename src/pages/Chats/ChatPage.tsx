@@ -17,6 +17,7 @@ import {
     chatbubblesOutline
 } from 'ionicons/icons';
 import Navegacion from '../../components/Navegation';
+import {WebSocketService} from "../../Services/websocket";
 
 interface Message {
     id: string;
@@ -38,6 +39,22 @@ interface Chat {
 }
 
 const ChatView: React.FC = () => {
+    const web= new WebSocketService()
+        web.connect().then(() => {
+            const mensaje = {
+            type: 'chat',
+            content: 'Hola mundo',
+            timestamp: new Date().toISOString(),
+            roomId: 'sala1'  // Si necesitas especificar una sala
+        };
+        web.subscribeToRoom('sala1');
+        web.setMessageCallback((message) => {
+            console.log('Mensaje recibido:', message);
+        });
+
+        web.sendMessage('sala1', JSON.stringify(mensaje));
+    })
+
     // Estado para los chats
     const [chats, setChats] = useState<Chat[]>([
         {
