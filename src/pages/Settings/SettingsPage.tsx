@@ -453,7 +453,9 @@ const Settings: React.FC = () => {
             <IonHeader className="ion-no-border">
                 <IonToolbar>
                     <IonButtons slot="start">
-                        <IonBackButton defaultHref="/products" />
+                        <IonButton onClick={() => (window.location.href = '/products')} slot="start">
+                            <IonIcon icon={closeOutline} />
+                        </IonButton>
                     </IonButtons>
                     <IonTitle>Ajustes</IonTitle>
                     <IonButtons slot="end">
