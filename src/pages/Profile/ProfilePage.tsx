@@ -205,7 +205,7 @@ export default function ProfilePage() {
             return (
                 <div className="tab-content">
                     <h3 className="tab-title">Artículos en venta ({userInfo.itemsForSale})</h3>
-                    <IonList lines="none" style={{ backgroundColor: "white" }}>
+                    <IonList lines="none">
                         {loading ? (
                             <div className="loading-message">Cargando productos...</div>
                         ) : items.length === 0 ? (
@@ -247,7 +247,7 @@ export default function ProfilePage() {
             return (
                 <div className="tab-content">
                     <h3 className="tab-title">Lista de deseos ({savedProducts.length})</h3>
-                    <IonList style={{ backgroundColor: "white" }}>
+                    <IonList>
                         {loadingSaved ? (
                             <div className="loading-message">Cargando productos guardados...</div>
                         ) : items.length === 0 ? (

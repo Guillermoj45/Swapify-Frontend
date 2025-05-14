@@ -9,30 +9,30 @@
     --gradient-end: #e52e71;
     --text-light: #ffffff;
     --text-dark: #333333;
-    --card-bg: #ffffff;
+    --card-bg: #ffffff; /* Blanco en modo claro */
     --feature-icon: #4caf50;
     --limited-icon: #ff5722;
     --border-radius: 16px;
     --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    --feature-text-color: #333333; /* Black for light mode */
+    --feature-text-color: #333333; /* Negro para modo claro */
 }
 
 body.dark {
-    --card-bg: #1c1c1e;
+    --card-bg: #0c1e37; /* Azul marino en lugar de negro #1c1c1e */
     --text-dark: #f4f4f4;
     --text-light: #ffffff;
     --secondary-color: #5dabf8;
-    --feature-text-color: #f4f4f4; /* Light gray for dark mode */
+    --feature-text-color: #f4f4f4; /* Gris claro para modo oscuro */
 }
 
 .subscription-content {
-    background-color: #f5f7fa;
+    background-color: #f5f7fa; /* Celeste claro en modo normal */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     --background: #f5f7fa;
 }
 
 body.dark .subscription-content {
-    --background: #121212;
+    --background: #0c1e37; /* Azul marino en lugar de #121212 */
 }
 
 /* Main toolbar */
@@ -506,4 +506,3 @@ body.dark .limited-check {
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3))
 }
-

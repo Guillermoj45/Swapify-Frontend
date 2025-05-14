@@ -113,19 +113,19 @@ body {
 
 /* DARK MODE */
 [data-theme="dark"] {
-    --background-color: #0a0a0a !important;
+    --background-color: #0c1e37 !important; /* Cambiado de #0a0a0a a azul marino */
     --text-color: #ffffff !important;
     --text-secondary: #cccccc !important;
-    --card-background: #1a1a1a !important;
-    --background-light: #121212 !important;
-    --ion-background-color: #0a0a0a !important;
+    --card-background: #132845 !important; /* Cambiado de #1a1a1a a azul marino más claro */
+    --background-light: #102140 !important; /* Cambiado de #121212 a azul marino intermedio */
+    --ion-background-color: #0c1e37 !important; /* Cambiado a azul marino */
     --ion-text-color: #ffffff !important;
     --text-muted: #9aa3b2 !important;
     --card-border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 [data-theme="dark"] .hero-banner span {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(12, 30, 55, 0.6); /* Modificado para usar tonos de azul marino */
     color: #f0f0f0;
 }
 
