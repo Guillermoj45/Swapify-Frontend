@@ -50,7 +50,7 @@ const ChatView: React.FC = () => {
             timestamp: new Date().toISOString(),
             roomId: 'sala1'  // Si necesitas especificar una sala
         };
-        web.subscribeToRoom('sala1');
+        web.subscribeToRoom('sala1', 'idProduct', 'idProfileProduct', 'idProfile');
         web.unsubscribeFromRoom()
         web.setMessageCallback((message) => {
             console.log('Mensaje recibido:', message);
