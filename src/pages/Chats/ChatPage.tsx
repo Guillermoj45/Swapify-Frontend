@@ -17,15 +17,17 @@ import {
     chatbubblesOutline
 } from 'ionicons/icons';
 import Navegacion from '../../components/Navegation';
-import {WebSocketService} from "../../Services/websocket";
+import { WebSocketService } from "../../Services/websocket";
 
+// Interfaces para los tipos de datos
 interface Message {
     id: string;
     content: string;
-    sender: 'user' | 'ai';
+    sender: 'user' | 'ai' | 'other';
     timestamp: Date;
     read: boolean;
     image?: string;
+    senderName?: string;
 }
 
 interface Chat {
@@ -38,117 +40,49 @@ interface Chat {
     isOnline: boolean;
 }
 
-
-
-const ChatView: React.FC = () => {
-    const web = new WebSocketService()
-
-    web.connect().then(() => {
-        const mensaje = {
-            type: 'chat',
-            content: 'Hola mundo',
-            timestamp: new Date().toISOString(),
-            roomId: 'sala1'  // Si necesitas especificar una sala
-        };
-        web.subscribeToRoom('sala1', 'idProduct', 'idProfileProduct', 'idProfile');
-        web.unsubscribeFromRoom()
-        web.setMessageCallback((message) => {
-            console.log('Mensaje recibido:', message);
-        });
-
-        web.sendMessage('sala1', JSON.stringify(mensaje));
-    })
+const ChatPage: React.FC = () => {
+    // Instancia del servicio WebSocket
+    const [webSocketService] = useState(() => new WebSocketService());
+    const [isConnected, setIsConnected] = useState(false);
+    const currentUserId = sessionStorage.getItem('userId') || 'user';
+    const currentUserName = sessionStorage.getItem('nickname') || 'Usuario';
 
     // Estado para los chats
     const [chats, setChats] = useState<Chat[]>([
         {
-            id: '1',
-            name: 'Asistente AI',
-            avatar: 'ai',
-            lastMessage: 'Hola, ¿en qué puedo ayudarte hoy?',
-            timestamp: new Date(Date.now() - 5 * 60000),
-            unreadCount: 2,
+            id: 'sala1',
+            name: 'Chat General',
+            avatar: 'G',
+            lastMessage: 'Bienvenido al chat general',
+            timestamp: new Date(),
+            unreadCount: 0,
             isOnline: true
         },
         {
-            id: '2',
+            id: 'soporte',
             name: 'Soporte Técnico',
             avatar: 'S',
-            lastMessage: 'Tu ticket ha sido resuelto',
+            lastMessage: '¿Cómo podemos ayudarte?',
             timestamp: new Date(Date.now() - 3 * 3600000),
             unreadCount: 0,
             isOnline: true
         },
         {
-            id: '3',
+            id: 'desarrollo',
             name: 'Grupo Desarrollo',
-            avatar: 'G',
-            lastMessage: 'Juan: Se completó la revisión del sprint',
+            avatar: 'D',
+            lastMessage: 'Discusión sobre el próximo sprint',
             timestamp: new Date(Date.now() - 1 * 86400000),
-            unreadCount: 5,
-            isOnline: false
-        },
-        {
-            id: '4',
-            name: 'Equipo Marketing',
-            avatar: 'M',
-            lastMessage: 'Ana: Envié los materiales para la campaña',
-            timestamp: new Date(Date.now() - 2 * 86400000),
-            unreadCount: 0,
-            isOnline: false
-        },
-        {
-            id: '5',
-            name: 'Cliente Premium',
-            avatar: 'C',
-            lastMessage: 'Gracias por la información',
-            timestamp: new Date(Date.now() - 3 * 86400000),
             unreadCount: 0,
             isOnline: false
         }
     ]);
 
     // Estado para los mensajes del chat activo
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: '1',
-            content: 'Hola, ¿cómo puedo ayudarte hoy?',
-            sender: 'ai',
-            timestamp: new Date(Date.now() - 15 * 60000),
-            read: true
-        },
-        {
-            id: '2',
-            content: 'Necesito información sobre el nuevo producto',
-            sender: 'user',
-            timestamp: new Date(Date.now() - 14 * 60000),
-            read: true
-        },
-        {
-            id: '3',
-            content: 'Claro, el nuevo producto tiene características mejoradas incluyendo mejor rendimiento y una interfaz renovada. ¿Hay algo específico que quieras saber?',
-            sender: 'ai',
-            timestamp: new Date(Date.now() - 13 * 60000),
-            read: true
-        },
-        {
-            id: '4',
-            content: '¿Cuándo estará disponible?',
-            sender: 'user',
-            timestamp: new Date(Date.now() - 12 * 60000),
-            read: true
-        },
-        {
-            id: '5',
-            content: 'El lanzamiento está programado para el próximo mes. Los clientes premium tendrán acceso anticipado una semana antes del lanzamiento oficial.',
-            sender: 'ai',
-            timestamp: new Date(Date.now() - 11 * 60000),
-            read: true
-        },
-    ]);
+    const [messages, setMessages] = useState<Message[]>([]);
 
     // Estado para el chat activo actual
-    const [activeChat, setActiveChat] = useState<Chat | null>(chats[0]);
+    const [activeChat, setActiveChat] = useState<Chat | null>(null);
 
     // Estado para el mensaje de entrada
     const [inputMessage, setInputMessage] = useState('');
@@ -176,6 +110,56 @@ const ChatView: React.FC = () => {
 
     // Ref para el contenedor principal
     const chatMainRef = useRef<HTMLDivElement>(null);
+
+    // Efecto para conectar el WebSocket al montar el componente
+    useEffect(() => {
+        const connectWebSocket = async () => {
+            try {
+                await webSocketService.connect();
+                setIsConnected(true);
+
+                // Configurar el callback para recibir mensajes
+                webSocketService.setMessageCallback((messageData) => {
+                    try {
+                        // Intentar parsear el mensaje si es un string
+                        const parsedData = typeof messageData === 'string'
+                            ? JSON.parse(messageData)
+                            : messageData;
+
+                        console.log("Mensaje recibido:", parsedData);
+
+                        // Crear un nuevo mensaje para el chat
+                        const newMessage: Message = {
+                            id: Date.now().toString(),
+                            content: parsedData.content || parsedData.hola || "Mensaje recibido",
+                            sender: parsedData.userId === currentUserId ? 'user' : 'other',
+                            senderName: parsedData.senderName || 'Otro usuario',
+                            timestamp: new Date(),
+                            read: false
+                        };
+
+                        // Añadir el mensaje a la lista de mensajes
+                        setMessages(prev => [...prev, newMessage]);
+
+                        // Actualizar el último mensaje en la lista de chats
+                        if (activeChat) {
+                            updateLastMessage(activeChat.id, newMessage.content, newMessage.timestamp);
+                        }
+                    } catch (error) {
+                        console.error("Error al procesar el mensaje recibido:", error);
+                    }
+                });
+            } catch (error) {
+                console.error("Error al conectar con WebSocket:", error);
+            }
+        };
+
+        connectWebSocket();
+
+        return () => {
+            webSocketService.disconnect();
+        };
+    }, []);
 
     // Efecto para detectar el tamaño de la pantalla
     useEffect(() => {
@@ -238,6 +222,36 @@ const ChatView: React.FC = () => {
         };
     }, [activeChat]);
 
+    // Scroll al último mensaje cuando se añaden nuevos mensajes
+    useEffect(() => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages]);
+
+    // Suscribirse a la sala de chat cuando cambia el chat activo
+    useEffect(() => {
+        if (isConnected && activeChat) {
+            // Desuscribirse de la sala anterior
+            webSocketService.unsubscribeFromRoom();
+
+            // Suscribirse a la nueva sala
+            webSocketService.subscribeToRoom(activeChat.id);
+
+            // Cargar mensajes del chat (esto podría ser una llamada API en una implementación real)
+            // Por ahora, lo simulamos con mensajes de bienvenida
+            const initialMessage: Message = {
+                id: 'welcome',
+                content: `Bienvenido a ${activeChat.name}`,
+                sender: 'ai',
+                timestamp: new Date(),
+                read: true
+            };
+
+            setMessages([initialMessage]);
+        }
+    }, [isConnected, activeChat]);
+
     // Formato de fecha para los mensajes
     const formatMessageTime = (date: Date) => {
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -258,10 +272,34 @@ const ChatView: React.FC = () => {
         }
     };
 
+    // Actualizar el último mensaje de un chat
+    const updateLastMessage = (chatId: string, message: string, timestamp: Date) => {
+        setChats(prevChats =>
+            prevChats.map(chat =>
+                chat.id === chatId
+                    ? { ...chat, lastMessage: message, timestamp, unreadCount: chat.id !== activeChat?.id ? chat.unreadCount + 1 : 0 }
+                    : chat
+            )
+        );
+    };
+
     // Función para enviar mensaje
     const sendMessage = () => {
-        if (inputMessage.trim() === '') return;
+        if (inputMessage.trim() === '' || !activeChat || !isConnected) return;
 
+        const messageToSend = {
+            content: inputMessage,
+            userId: currentUserId,
+            senderName: currentUserName,
+            roomId: activeChat.id,
+            timestamp: new Date().toISOString(),
+            type: 'chat'
+        };
+
+        // Enviar el mensaje a través de WebSocket
+        webSocketService.sendMessage(activeChat.id, JSON.stringify(messageToSend));
+
+        // Añadir el mensaje a la UI inmediatamente (optimistic update)
         const newMessage: Message = {
             id: Date.now().toString(),
             content: inputMessage,
@@ -270,38 +308,17 @@ const ChatView: React.FC = () => {
             read: true
         };
 
-        setMessages([...messages, newMessage]);
+        setMessages(prev => [...prev, newMessage]);
         setInputMessage('');
 
-        // Simular respuesta del asistente
+        // Actualizar el último mensaje en la lista de chats
+        updateLastMessage(activeChat.id, inputMessage, new Date());
+
+        // Simular indicador de escritura (opcional)
         setIsTyping(true);
         setTimeout(() => {
-            const aiResponse: Message = {
-                id: (Date.now() + 1).toString(),
-                content: 'Gracias por tu mensaje. Estoy procesando tu consulta...',
-                sender: 'ai',
-                timestamp: new Date(),
-                read: false
-            };
-            setMessages(prev => [...prev, aiResponse]);
             setIsTyping(false);
-
-            // Actualizar el último mensaje en la lista de chats
-            if (activeChat) {
-                const updatedChats = chats.map(chat => {
-                    if (chat.id === activeChat.id) {
-                        return {
-                            ...chat,
-                            lastMessage: aiResponse.content,
-                            timestamp: aiResponse.timestamp,
-                            unreadCount: 0
-                        };
-                    }
-                    return chat;
-                });
-                setChats(updatedChats);
-            }
-        }, 2000);
+        }, 1000);
     };
 
     // Manejar cambio de chat
@@ -335,13 +352,6 @@ const ChatView: React.FC = () => {
     // Solo se muestra en móvil cuando estamos en la vista de lista de chats (no en un chat específico)
     const shouldShowNavigation = isMobile && !showChatPanel;
 
-    // Scroll al último mensaje
-    useEffect(() => {
-        if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, [messages]);
-
     // Enfoque en el input cuando se cambia de chat
     useEffect(() => {
         if (activeChat && !isMobile) {
@@ -357,7 +367,7 @@ const ChatView: React.FC = () => {
                 <div className="sidebar-header">
                     <div className="user-profile">
                         <div className="user-avatar">U</div>
-                        <h3>Usuario</h3>
+                        <h3>{currentUserName}</h3>
                     </div>
                     <div className="header-actions">
                         <button className="action-icon-button">
@@ -452,16 +462,24 @@ const ChatView: React.FC = () => {
                                 {messages.map(message => (
                                     <div
                                         key={message.id}
-                                        className={`message-container ${message.sender === 'user' ? 'user-message' : 'ai-message'}`}
+                                        className={`message-container ${
+                                            message.sender === 'user' ? 'user-message' :
+                                                message.sender === 'ai' ? 'ai-message' : 'other-message'
+                                        }`}
                                     >
                                         <div className="message-avatar">
                                             {message.sender === 'ai' ? (
                                                 <div className="ai-avatar">AI</div>
-                                            ) : (
+                                            ) : message.sender === 'user' ? (
                                                 <div className="user-avatar">U</div>
+                                            ) : (
+                                                <div className="user-avatar-chat">{message.senderName?.charAt(0) || 'O'}</div>
                                             )}
                                         </div>
                                         <div className="message-content">
+                                            {message.sender === 'other' && (
+                                                <div className="sender-name">{message.senderName}</div>
+                                            )}
                                             <div className="message-bubble">
                                                 {message.image && (
                                                     <div className="message-image-container">
@@ -555,4 +573,4 @@ const ChatView: React.FC = () => {
     );
 };
 
-export default ChatView;
+export default ChatPage;
