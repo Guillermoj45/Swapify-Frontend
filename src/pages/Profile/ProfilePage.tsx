@@ -330,8 +330,19 @@ export default function ProfilePage() {
                         <IonRow>
                             <IonCol size="8" className="profile-info">
                                 {isPremium && (
-                                    <IonButton shape="round" fill="solid" className="pro-badge">
-                                        <IonIcon icon={starOutline} slot="start" /> PRO
+                                    <IonButton
+                                        shape="round"
+                                        fill="clear"
+                                        className="pro-badge"
+                                        style={{
+                                            '--background': 'transparent',
+                                            '--background-activated': 'transparent',
+                                            '--background-focused': 'transparent',
+                                            '--background-hover': 'transparent',
+                                            '--ripple-color': 'transparent'
+                                        }}
+                                    >
+                                        <IonIcon icon={starOutline} slot="start" /> PREMIUM
                                     </IonButton>
                                 )}
                                 <h2 className="profile-name">{userInfo.name}</h2>
