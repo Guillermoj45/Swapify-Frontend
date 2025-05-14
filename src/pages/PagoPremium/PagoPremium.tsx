@@ -21,8 +21,6 @@ import {
     IonToast
 } from '@ionic/react';
 import { lockClosedOutline, checkmarkCircleOutline, closeCircleOutline, homeOutline } from 'ionicons/icons';
-import { FaApplePay } from "react-icons/fa";
-import { FaCcPaypal } from "react-icons/fa";
 import PagoService from '../../Services/PagoService';
 
 import { useState, useEffect } from 'react';
@@ -102,7 +100,7 @@ const CheckoutForm: React.FC = () => {
     const history = useHistory();
 
     // Form state
-    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
+    const [paymentMethod] = useState<PaymentMethod>('card');
     const [cardNumber, setCardNumber] = useState('');
     const [cardName, setCardName] = useState('');
     const [expiryDate, setExpiryDate] = useState('');
@@ -150,33 +148,44 @@ const CheckoutForm: React.FC = () => {
 
     const createPaymentIntent = async (): Promise<void> => {
         try {
+            // Primero validamos el formulario
+            const validation = validateForm();
+            if (!validation.isValid) {
+                setMessage(validation.errorMessage || 'Por favor, completa todos los campos correctamente');
+                setShowToast(true);
+                return;
+            }
+
             setLoading(true);
 
+            // Crear el Payment Intent
             const data = await PagoService.createPaymentIntent({
                 priceId: 'price_1RKFLoQBTir074R6yJjLZDKf',
-                quantity: 1
+                quantity: 1,
+                paymentData: {
+                    cardName,
+                    cardNumber: cardNumber.replace(/\s/g, ''),
+                    expiryDate: expiryDate.replace(/\s/g, ''),
+                    cvc
+                }
             });
 
-            if (data.success) {
+            if (data.success && data.url) {
                 // Redirigir al usuario a la página de pago de Stripe
-                window.location.href = "/products"; // Corrección: usar data.url en lugar de una ruta fija
+                window.location.href = data.url;
             } else {
                 setPaymentStatus('error');
-                setMessage(data.error || 'No se recibió la URL de pago. Por favor, inténtalo más tarde.');
+                setMessage(data.error || 'Error al procesar el pago. Por favor, inténtalo más tarde.');
                 setIsSuccess(false);
-                setLoading(false);
             }
         } catch (error: unknown) {
             console.error('Error al crear el intent de pago:', error);
             setPaymentStatus('error');
-
-            // Manejo seguro del error cuando es de tipo unknown
-            const errorMessage = error instanceof Error
+            setMessage(error instanceof Error
                 ? error.message
-                : 'No se pudo inicializar el pago. Por favor, inténtalo de nuevo más tarde.';
-
-            setMessage(errorMessage);
+                : 'Error al procesar el pago. Por favor, inténtalo de nuevo.');
             setIsSuccess(false);
+        } finally {
             setLoading(false);
         }
     };
@@ -228,89 +237,24 @@ const CheckoutForm: React.FC = () => {
 
     // Validate form inputs
     const validateForm = (): { isValid: boolean; errorMessage?: string } => {
-        if (!cardName.trim()) {
-            return { isValid: false, errorMessage: 'Por favor, introduce el nombre en la tarjeta' };
+        // Validar que los campos no estén vacíos
+        if (!cardName || cardName.trim() === '') {
+            return { isValid: false, errorMessage: 'El nombre en la tarjeta es obligatorio' };
         }
 
-        if (cardNumber.replace(/\s/g, '').length !== 16) {
-            return { isValid: false, errorMessage: 'El número de tarjeta debe tener 16 dígitos' };
+        if (!cardNumber || cardNumber.replace(/\s/g, '').length !== 16) {
+            return { isValid: false, errorMessage: 'Introduce un número de tarjeta válido de 16 dígitos' };
         }
 
-        if (expiryDate.length < 7) { // "MM / YY" format
-            return { isValid: false, errorMessage: 'Introduce una fecha de caducidad válida' };
+        if (!expiryDate || !expiryDate.match(/^\d{2}\s\/\s\d{2}$/)) {
+            return { isValid: false, errorMessage: 'Introduce una fecha de caducidad válida (MM / AA)' };
         }
 
-        if (cvc.length !== 3) {
+        if (!cvc || !cvc.match(/^\d{3}$/)) {
             return { isValid: false, errorMessage: 'El código CVC debe tener 3 dígitos' };
         }
 
         return { isValid: true };
-    };
-
-    // Process payment
-    const handlePayment = async (): Promise<void> => {
-        if (!stripe || !elements || !clientSecret) {
-            setMessage('El sistema de pago no está disponible en este momento.');
-            setShowToast(true);
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            // Validate inputs
-            const validation = validateForm();
-            if (!validation.isValid) {
-                throw new Error(validation.errorMessage);
-            }
-
-            // Process payment based on selected method
-            if (paymentMethod === 'card') {
-                const cardElement = elements.getElement(CardElement) as StripeCardElement;
-
-                if (!cardElement) {
-                    throw new Error('Error en el elemento de tarjeta');
-                }
-
-                const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-                    payment_method: {
-                        card: cardElement,
-                        billing_details: {
-                            name: cardName,
-                        },
-                    },
-                });
-
-                if (error) {
-                    throw new Error(error.message || 'Error procesando el pago');
-                } else if (paymentIntent.status === 'succeeded') {
-                    setPaymentStatus('success');
-                    setMessage('¡Pago completado con éxito! Tu cuenta premium está activa.');
-                }
-            } else if (paymentMethod === 'paypal') {
-                // This would be replaced with actual PayPal integration
-                setMessage('Redirigiendo a PayPal...');
-                // Simulate success for demo purposes
-                setTimeout(() => {
-                    setPaymentStatus('success');
-                    setMessage('¡Pago completado con éxito! Tu cuenta premium está activa.');
-                }, 2000);
-            } else if (paymentMethod === 'applepay') {
-                setMessage('Iniciando Apple Pay...');
-                // Actual Apple Pay integration would go here
-                setTimeout(() => {
-                    setPaymentStatus('success');
-                    setMessage('¡Pago completado con éxito! Tu cuenta premium está activa.');
-                }, 2000);
-            }
-        } catch (error) {
-            const stripeError = error as StripeError;
-            console.error('Payment error:', error);
-            setPaymentStatus('error');
-            setMessage(stripeError.message || 'Error al procesar el pago. Inténtalo de nuevo.');
-        } finally {
-            setLoading(false);
-        }
     };
 
     // If payment status is not pending, show result screen
@@ -493,58 +437,6 @@ OjU2KzAwOjAw0ssWdwAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyMy0wMi0xM1QwODoxOTo1Nisw MDo
                                 </div>
                             </IonCardContent>
                         </IonCard>
-                    </IonCol>
-                </IonRow>
-
-                {/* Alternative Payment Methods */}
-                <IonRow>
-                    <IonCol size="12" sizeMd="8" offsetMd="2" className="ion-text-center ion-margin-top">
-                        <p className="alternative-text">
-                            ¿O prefieres otro método de pago alternativo?
-                        </p>
-
-                        <div className="payment-methods">
-                            <IonButton
-                                className="payment-method-button"
-                                fill={paymentMethod === 'applepay' ? 'solid' : 'outline'}
-                                onClick={() => setPaymentMethod('applepay')}
-                            >
-                                <div className="payment-logo">
-                                    <FaApplePay className="icons" />
-                                </div>
-                            </IonButton>
-
-                            <IonButton
-                                className="payment-method-button"
-                                fill={paymentMethod === 'paypal' ? 'solid' : 'outline'}
-                                onClick={() => setPaymentMethod('paypal')}
-                            >
-                                <div className="payment-logo">
-                                    <FaCcPaypal className="icons" />
-                                </div>
-                            </IonButton>
-                        </div>
-                    </IonCol>
-                </IonRow>
-
-                {/* Pay Button */}
-                <IonRow className="ion-margin-top">
-                    <IonCol size="12" sizeMd="8" offsetMd="2">
-                        <IonButton
-                            expand="block"
-                            className="pay-button"
-                            onClick={handlePayment}
-                            disabled={!stripe || loading}
-                        >
-                            {isSuccess ? (
-                                <>
-                                    <IonIcon icon={checkmarkCircleOutline} slot="start" />
-                                    Pago Completado
-                                </>
-                            ) : (
-                                'Pagar 9,99€/mes'
-                            )}
-                        </IonButton>
                     </IonCol>
                 </IonRow>
             </IonGrid>

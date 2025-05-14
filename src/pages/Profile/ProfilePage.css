@@ -41,10 +41,6 @@ body {
     color: var(--text-color) !important;
 }
 
-ion-content {
-    --background: var(--background-color) !important;
-}
-
 /* HERO BANNER */
 .hero-banner {
     width: 100%;
