@@ -12,7 +12,7 @@ export class WebSocketService {
   private subscribeChatMessages?: StompSubscription = null;
 
   connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.client = new Client({
         brokerURL: import.meta.env.VITE_API_WEB_SOCKET_URL || 'ws://localhost:8080/ws-native',
         connectHeaders: this.headers,
@@ -26,19 +26,16 @@ export class WebSocketService {
         onDisconnect: () => {
           console.log('Desconectado del WebSocket');
         },
-        onError: (error) => {
-          console.error('Error en WebSocket:', error);
-          reject(error);
-        }
       });
 
       this.client.activate();
     });
   }
 
-  subscribeToRoom(roomId: string) {
+  subscribeToRoom(chaId: string, idProduct: string, idProfileProduct: string, idProfile: string) {
     if (!this.client) return;
-    this.subscribeChatMessages = this.client.subscribe(`/topic/messages/${roomId}`, (message: Message) => {
+
+    this.subscribeChatMessages = this.client.subscribe(`/topic/messages/${chaId}/${idProduct}/${idProfileProduct}/${idProfile}`, (message: Message) => {
       if (this.messageCallback) {
         const data = JSON.parse(message.body);
         this.messageCallback(data);

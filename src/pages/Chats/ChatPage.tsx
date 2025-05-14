@@ -51,6 +51,7 @@ const ChatView: React.FC = () => {
             roomId: 'sala1'  // Si necesitas especificar una sala
         };
         web.subscribeToRoom('sala1');
+        web.unsubscribeFromRoom()
         web.setMessageCallback((message) => {
             console.log('Mensaje recibido:', message);
         });
