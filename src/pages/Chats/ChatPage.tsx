@@ -38,10 +38,13 @@ interface Chat {
     isOnline: boolean;
 }
 
+
+
 const ChatView: React.FC = () => {
-    const web= new WebSocketService()
-        web.connect().then(() => {
-            const mensaje = {
+    const web = new WebSocketService()
+
+    web.connect().then(() => {
+        const mensaje = {
             type: 'chat',
             content: 'Hola mundo',
             timestamp: new Date().toISOString(),

@@ -1,4 +1,5 @@
-import { Client, Message } from '@stomp/stompjs';
+import {Client, Message, StompSubscription} from '@stomp/stompjs';
+import api from "./api";
 
 type MessageCallback = (message: { content: string, roomId: string }) => void;
 
@@ -8,11 +9,12 @@ export class WebSocketService {
   private headers = {
       'Authorization': `Bearer ${sessionStorage.getItem('token')}`
   };
+  private subscribeChatMessages?: StompSubscription = null;
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.client = new Client({
-        brokerURL: 'ws://localhost:8080/ws-native',
+        brokerURL: import.meta.env.VITE_API_WEB_SOCKET_URL || 'ws://localhost:8080/ws-native',
         connectHeaders: this.headers,
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
@@ -36,13 +38,21 @@ export class WebSocketService {
 
   subscribeToRoom(roomId: string) {
     if (!this.client) return;
-    this.client.subscribe(`/topic/messages/${roomId}`, (message: Message) => {
+    this.subscribeChatMessages = this.client.subscribe(`/topic/messages/${roomId}`, (message: Message) => {
       if (this.messageCallback) {
         const data = JSON.parse(message.body);
         this.messageCallback(data);
+        console.log(api.getUri())
       }
     });
   }
+
+    unsubscribeFromRoom() {
+        if (this.subscribeChatMessages) {
+        this.subscribeChatMessages.unsubscribe();
+        this.subscribeChatMessages = undefined;
+        }
+    }
 
   sendMessage(roomId: string, message: string) {
     if (!this.client) return;
