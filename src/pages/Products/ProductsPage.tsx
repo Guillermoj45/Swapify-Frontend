@@ -968,28 +968,56 @@ const ProductsPage = () => {
                     </>
                 )}
 
-                {/* Filter chips - Show always to allow filtering */}
-                <div className="filters-container">
-                    {loading ? (
-                        <IonChip disabled>
-                            <IonSpinner name="crescent"/>
-                            <IonLabel>Loading categories...</IonLabel>
-                        </IonChip>
-                    ) : (
-                        availableCategories.map((category) => (
-                            <IonChip
-                                key={category}
-                                onClick={() => toggleCategoryFilter(category)}
-                                className={`filter-chip ${selectedCategories.includes(category) ? 'selected' : ''}`}
-                            >
-                                {selectedCategories.includes(category) && (
-                                    <IonIcon icon={checkmarkCircle} className="category-selected-icon"/>
-                                )}
-                                <IonLabel>{category}</IonLabel>
-                            </IonChip>
-                        ))
-                    )}
-                </div>
+                    {/* Filter chips - Show always to allow filtering */}
+                    <div className="filters-container-wrapper">
+                        <button
+                            className="filters-nav-button filters-nav-prev"
+                            onClick={() => {
+                                if (document.querySelector('.filters-container')) {
+                                    const container = document.querySelector('.filters-container') as HTMLElement;
+                                    container.scrollBy({ left: -200, behavior: 'smooth' });
+                                }
+                            }}
+                            aria-label="Scroll left"
+                        >
+                            <IonIcon icon={arrowBack} />
+                        </button>
+
+                        <div className="filters-container">
+                            {loading ? (
+                                <IonChip disabled>
+                                    <IonSpinner name="crescent"/>
+                                    <IonLabel>Loading categories...</IonLabel>
+                                </IonChip>
+                            ) : (
+                                availableCategories.map((category) => (
+                                    <IonChip
+                                        key={category}
+                                        onClick={() => toggleCategoryFilter(category)}
+                                        className={`filter-chip ${selectedCategories.includes(category) ? 'selected' : ''}`}
+                                    >
+                                        {selectedCategories.includes(category) && (
+                                            <IonIcon icon={checkmarkCircle} className="category-selected-icon"/>
+                                        )}
+                                        <IonLabel>{category}</IonLabel>
+                                    </IonChip>
+                                ))
+                            )}
+                        </div>
+
+                        <button
+                            className="filters-nav-button filters-nav-next"
+                            onClick={() => {
+                                if (document.querySelector('.filters-container')) {
+                                    const container = document.querySelector('.filters-container') as HTMLElement;
+                                    container.scrollBy({ left: 200, behavior: 'smooth' });
+                                }
+                            }}
+                            aria-label="Scroll right"
+                        >
+                            <IonIcon icon={arrowForward} />
+                        </button>
+                    </div>
 
                 {/* Dynamic content based on search or recommended data */}
                 {loading ? (

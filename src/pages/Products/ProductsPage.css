@@ -277,29 +277,89 @@ body.dark-theme {
     background-color: #5c8fee;
 }
 
-/*** FILTROS Y CATEGORÍAS ***/
 .filters-container {
     display: flex;
     overflow-x: auto;
     white-space: nowrap;
     width: 100%;
-    padding: 16px 8px 10px;
+    padding: 16px 16px 10px; /* Aumentado el padding horizontal a 16px */
+    margin: 0 8px; /* Margen adicional en los lados */
     scrollbar-width: none;
     background-color: var(--card-background);
     position: sticky;
     top: 60px;
     z-index: 5;
     box-shadow: 0 4px 6px var(--shadow-color);
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: center;
     gap: 8px;
     max-height: none;
     overflow-y: visible;
+    scroll-behavior: smooth; /* Para scroll suave */
+    -webkit-overflow-scrolling: touch; /* Mejor desplazamiento en iOS */
 }
 
 .filters-container::-webkit-scrollbar {
     display: none;
+}
+
+.filters-container-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* Flechas de navegación */
+.filters-nav-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--ion-color-light);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border: none;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.filters-nav-button:hover {
+    opacity: 1;
+}
+
+.filters-nav-prev {
+    left: 4px;
+}
+
+.filters-nav-next {
+    right: 4px;
+}
+
+/* Estilos para el modo oscuro */
+.dark-theme .filters-nav-button {
+    background-color: var(--ion-color-medium);
+    color: var(--ion-color-light);
+}
+
+/* Estilo para los chips seleccionados */
+.filter-chip.selected {
+    background-color: var(--ion-color-primary-tint);
+    color: var(--ion-color-primary-contrast);
+}
+
+/* Dar un pequeño espacio al primer y último chip */
+.filters-container .filter-chip:first-child {
+    margin-left: 2px;
+}
+
+.filters-container .filter-chip:last-child {
+    margin-right: 2px;
 }
 
 .filter-chip {
