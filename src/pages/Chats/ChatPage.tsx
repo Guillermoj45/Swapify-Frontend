@@ -50,13 +50,12 @@ const ChatView: React.FC = () => {
             timestamp: new Date().toISOString(),
             roomId: 'sala1'  // Si necesitas especificar una sala
         };
-        web.subscribeToRoom('sala1', 'idProduct', 'idProfileProduct', 'idProfile');
-        web.unsubscribeFromRoom()
+        web.subscribeToRoom( 'bcc107d2-79a9-4d86-a4ec-59d7906be5e2', '1ff84f03-e1aa-4ce3-b458-ced67dcaeb9f', '45552e96-18ad-4115-9859-986f591441a8');
         web.setMessageCallback((message) => {
             console.log('Mensaje recibido:', message);
         });
 
-        web.sendMessage('sala1', JSON.stringify(mensaje));
+        web.sendMessage('sala1', 'idProduct', 'idProfileProduct','idProfile', JSON.stringify(mensaje));
     })
 
     // Estado para los chats

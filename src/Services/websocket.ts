@@ -32,16 +32,15 @@ export class WebSocketService {
     });
   }
 
-  subscribeToRoom(chaId: string, idProduct: string, idProfileProduct: string, idProfile: string) {
+  subscribeToRoom(idProduct: string, idProfileProduct: string, idProfile: string) {
     if (!this.client) return;
-
-    this.subscribeChatMessages = this.client.subscribe(`/topic/messages/${chaId}/${idProduct}/${idProfileProduct}/${idProfile}`, (message: Message) => {
+    this.subscribeChatMessages = this.client.subscribe(`/topic/messages/${idProduct}/${idProfileProduct}/${idProfile}`, (message: Message) => {
       if (this.messageCallback) {
         const data = JSON.parse(message.body);
         this.messageCallback(data);
-        console.log(api.getUri())
+        console.log("Hola",data)
       }
-    });
+    }, this.headers);
   }
 
     unsubscribeFromRoom() {
@@ -51,11 +50,11 @@ export class WebSocketService {
         }
     }
 
-  sendMessage(roomId: string, message: string) {
+  sendMessage( idProduct: string, idProfileProduct: string, idProfile: string, message: string) {
     if (!this.client) return;
 
     this.client.publish({
-      destination: `/app/chat/${roomId}`,
+      destination: `/app/chat/${idProduct}/${idProfileProduct}/${idProfile}`,
       body: JSON.stringify(message)
     });
   }
