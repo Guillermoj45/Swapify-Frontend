@@ -2,9 +2,7 @@ import axios from 'axios';
 
 const API = axios.create({
     // Usar una URL completa en lugar del proxy para pruebas
-    baseURL: process.env.NODE_ENV === 'development'
-        ? 'http://localhost:8080'
-        : '/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
     headers: {
         'Content-Type': 'application/json',
     },
