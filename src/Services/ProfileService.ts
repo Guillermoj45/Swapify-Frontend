@@ -132,6 +132,16 @@ export const ProfileService = {
             console.error('Error al actualizar la imagen de banner:', error);
             throw error;
         }
+    },
+
+    isPremium: async (): Promise<boolean> => {
+        try {
+            const response = await API.get('/profile/isPremium');
+            return response.data; // Asegúrate de que el backend devuelva esta propiedad
+        } catch (error) {
+            console.error('Error al verificar el estado premium:', error);
+            return false; // En caso de error, retorna false
+        }
     }
 };
 

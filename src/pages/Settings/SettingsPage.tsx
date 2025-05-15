@@ -7,7 +7,6 @@ import {
     IonTitle,
     IonPage,
     IonButtons,
-    IonBackButton,
     IonButton,
     IonIcon,
     IonList,
@@ -36,12 +35,10 @@ import {
     eyeOutline,
     createOutline,
     colorPaletteOutline,
-    notificationsOutline,
+    notificationsOutline, arrowBackOutline,
 } from 'ionicons/icons';
 import './Settings.css';
 import { Settings as SettingsService } from '../../Services/SettingsService';
-// Importamos pero usamos el tipo ProfileSettings directamente
-
 import cloudinaryImage from "../../Services/CloudinaryService";
 import { ProfileSettings } from '../../Models/ProfileSettings';
 
@@ -110,8 +107,6 @@ const Settings: React.FC = () => {
             modo_oscuro: false,
         },
     });
-
-
 
     // Navigation options
     const accountOptions: AccountOption[] = [
@@ -185,15 +180,28 @@ const Settings: React.FC = () => {
                     modo_oscuro: profileSettings.preferencias?.modo_oscuro ?? false,
                 },
             });
+
+            // Aplicar el modo oscuro inicial
+            applyTheme(profileSettings.preferencias?.modo_oscuro ?? false);
         } catch (error) {
             console.error('Error loading settings:', error);
             displayToast('Error al cargar configuraciones');
         }
     };
 
-    //TODO
-    //const lightModeSound = new Audio('Flashbang Sound Effect.mp3'); // Ajusta la ruta según tu estructura
+    // Función para aplicar el tema de forma consistente
+    const applyTheme = (isDark: boolean): void => {
+        if (isDark) {
+            document.body.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.body.classList.remove('dark');
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
 
+        // Guardar preferencia en sessionStorage
+        sessionStorage.setItem('modoOscuroClaro', isDark.toString());
+    };
 
     const handlePreferenceChange = async (e: CustomEvent, key: 'modo_oscuro' | 'notificaciones') => {
         const newValue = e.detail.checked;
@@ -208,10 +216,9 @@ const Settings: React.FC = () => {
                 }
             }));
 
-            // Si es el modo oscuro, actualizamos la clase del documento y el sessionStorage
+            // Si es el modo oscuro, aplicamos el tema usando nuestra función
             if (key === 'modo_oscuro') {
-                document.body.classList.toggle('dark', newValue);
-                sessionStorage.setItem('modoOscuroClaro', newValue.toString());
+                applyTheme(newValue);
             }
 
             // Enviamos el cambio al backend
@@ -233,10 +240,9 @@ const Settings: React.FC = () => {
                 }
             }));
 
-            // Revertimos también la clase del documento y el sessionStorage
+            // Revertimos también el tema
             if (key === 'modo_oscuro') {
-                document.body.classList.toggle('dark', !newValue);
-                sessionStorage.setItem('modoOscuroClaro', (!newValue).toString());
+                applyTheme(!newValue);
             }
         }
     };
@@ -245,9 +251,17 @@ const Settings: React.FC = () => {
     useEffect(() => {
         if (!sessionStorage.getItem('token')){
             history.push('/login');
-        }else {
+        } else {
             loadSettings();
-            document.body.classList.toggle('dark', profile.preferencias?.modo_oscuro ?? false);}
+
+            // También aplicamos el tema basado en el sessionStorage
+            // por si hay un valor ya guardado
+            const savedDarkMode = sessionStorage.getItem('modoOscuroClaro');
+            if (savedDarkMode !== null) {
+                const isDark = savedDarkMode === 'true';
+                applyTheme(isDark);
+            }
+        }
     }, []);
 
     const ProfileSection: React.FC<SectionProps> = ({ onClose }) => {
@@ -449,12 +463,12 @@ const Settings: React.FC = () => {
     };
 
     return (
-        <IonPage>
+        <IonPage className={profile.preferencias?.modo_oscuro ? 'dark-theme' : 'light-theme'}>
             <IonHeader className="ion-no-border">
                 <IonToolbar>
                     <IonButtons slot="start">
                         <IonButton onClick={() => (window.location.href = '/products')} slot="start">
-                            <IonIcon icon={closeOutline} />
+                            <IonIcon icon={arrowBackOutline} />
                         </IonButton>
                     </IonButtons>
                     <IonTitle>Ajustes</IonTitle>

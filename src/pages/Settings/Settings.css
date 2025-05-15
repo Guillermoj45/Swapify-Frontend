@@ -1,23 +1,104 @@
-/* Settings.css */
-/* Variables para el tema claro/oscuro */
+/* Settings.css - Enhanced Dark/Light Mode */
+
+/* Variables theme base */
+:root {
+    /* Light theme variables */
+    --light-background: #f8f9fa;
+    --light-surface: #ffffff;
+    --light-primary: #3880ff;
+    --light-primary-shade: #3171e0;
+    --light-secondary: #5260ff;
+    --light-text: #333333;
+    --light-text-secondary: #666666;
+    --light-border: #e1e4e8;
+    --light-input-bg: #f1f3f5;
+    --light-card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --light-toggle-bg: #d9dde2;
+
+    /* Dark theme variables */
+    --dark-background: #121212;
+    --dark-surface: #1e1e1e;
+    --dark-surface-lighter: #252525;
+    --dark-primary: #4d8dff;
+    --dark-primary-shade: #5d97ff;
+    --dark-secondary: #6370ff;
+    --dark-text: #f8f9fa;
+    --dark-text-secondary: #b0b3b8;
+    --dark-border: #333333;
+    --dark-input-bg: #2a2a2a;
+    --dark-card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --dark-toggle-bg: #444444;
+}
+
+/* Base transitions for smooth theme switching */
+body, ion-content, ion-toolbar, ion-item, ion-card, ion-list, ion-label, ion-input, ion-button, .settings-icon, .user-profile-section, .danger-zone {
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
 /* General styles */
 .settings-content {
-    --background: var(--ion-color-light-shade, #f4f5f8);
     --padding-top: 0;
     --padding-bottom: 32px;
     font-family: var(--ion-font-family, inherit);
 }
 
-/* Dark mode styles */
-body.dark-theme {
-    --ion-background-color: #121212;
-    --ion-text-color: #ffffff;
-    --ion-border-color: #333333;
-    --ion-item-background: #1e1e1e;
-    --ion-toolbar-background: #1e1e1e;
+/* Light theme (default) */
+body {
+    --ion-background-color: var(--light-background);
+    --ion-text-color: var(--light-text);
+    --ion-border-color: var(--light-border);
+    --ion-item-background: var(--light-surface);
+    --ion-toolbar-background: var(--light-surface);
+    --ion-color-step-50: #f2f2f2;
+    --ion-color-step-100: #e6e6e6;
+    --ion-color-step-150: #d9d9d9;
+    --ion-color-step-200: #cccccc;
+    --ion-color-step-250: #bfbfbf;
+    --ion-color-step-300: #b3b3b3;
+    --ion-color-step-350: #a6a6a6;
+    --ion-color-step-400: #999999;
+    --ion-color-step-450: #8c8c8c;
+    --ion-color-step-500: #808080;
+    --ion-color-step-550: #737373;
+    --ion-color-step-600: #666666;
+    --ion-color-step-650: #595959;
+    --ion-color-step-700: #4d4d4d;
+    --ion-color-step-750: #404040;
+    --ion-color-step-800: #333333;
+    --ion-color-step-850: #262626;
+    --ion-color-step-900: #191919;
+    --ion-color-step-950: #0d0d0d;
 }
 
-/* User profile section */
+/* Dark theme */
+body.dark-theme, .dark-theme {
+    --ion-background-color: var(--dark-background);
+    --ion-text-color: var(--dark-text);
+    --ion-border-color: var(--dark-border);
+    --ion-item-background: var(--dark-surface);
+    --ion-toolbar-background: var(--dark-surface);
+    --ion-color-step-50: #1e1e1e;
+    --ion-color-step-100: #2a2a2a;
+    --ion-color-step-150: #363636;
+    --ion-color-step-200: #414141;
+    --ion-color-step-250: #4d4d4d;
+    --ion-color-step-300: #595959;
+    --ion-color-step-350: #656565;
+    --ion-color-step-400: #717171;
+    --ion-color-step-450: #7d7d7d;
+    --ion-color-step-500: #898989;
+    --ion-color-step-550: #949494;
+    --ion-color-step-600: #a0a0a0;
+    --ion-color-step-650: #acacac;
+    --ion-color-step-700: #b8b8b8;
+    --ion-color-step-750: #c4c4c4;
+    --ion-color-step-800: #d0d0d0;
+    --ion-color-step-850: #dbdbdb;
+    --ion-color-step-900: #e7e7e7;
+    --ion-color-step-950: #f3f3f3;
+}
+
+/* User profile section enhancements */
 .user-profile-section {
     background: var(--ion-color-primary, #3880ff);
     background: linear-gradient(135deg, var(--ion-color-primary, #3880ff) 0%, var(--ion-color-primary-shade, #3171e0) 100%);
@@ -26,7 +107,14 @@ body.dark-theme {
     display: flex;
     align-items: center;
     position: relative;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    margin-bottom: 16px;
+}
+
+/* Dark theme adjustments for user profile */
+body.dark-theme .user-profile-section {
+    background: linear-gradient(135deg, var(--dark-primary) 0%, var(--dark-primary-shade) 100%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .user-avatar {
@@ -38,7 +126,17 @@ body.dark-theme {
     width: 80px;
     height: 80px;
     border: 3px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+body.dark-theme .user-avatar ion-avatar {
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.user-avatar:hover ion-avatar {
+    transform: scale(1.03);
 }
 
 .edit-badge {
@@ -54,94 +152,129 @@ body.dark-theme {
     justify-content: center;
     color: var(--ion-color-primary, #3880ff);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
 }
 
-.edit-badge ion-icon {
-    font-size: 16px;
+body.dark-theme .edit-badge {
+    background-color: var(--dark-surface-lighter);
+    color: var(--dark-primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
-.user-info {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
+.edit-badge:hover {
+    transform: scale(1.1);
+    background-color: white;
 }
 
-.user-info h2 {
-    margin: 0 0 4px 0;
-    font-size: 24px;
-    font-weight: 600;
+body.dark-theme .edit-badge:hover {
+    background-color: var(--dark-primary);
+    color: white;
 }
 
-.user-info p {
-    margin: 0 0 8px 0;
-    font-size: 14px;
-    opacity: 0.8;
-}
-
-/* Section headers */
+/* Section headers enhancements */
 .section-header {
-    margin-top: 16px;
+    margin-top: 20px;
     padding-bottom: 0;
     font-weight: 700;
     color: var(--ion-color-primary, #3880ff);
     border-bottom: none;
+    padding-left: 16px;
 }
 
-/* Settings lists */
+body.dark-theme .section-header {
+    color: var(--dark-primary);
+}
+
+/* Settings lists enhancements */
 .settings-list {
-    margin-bottom: 16px;
-    border-radius: 8px;
+    margin: 0 16px 16px;
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--light-card-shadow);
     background-color: var(--ion-item-background, #ffffff);
+}
+
+body.dark-theme .settings-list {
+    box-shadow: var(--dark-card-shadow);
+    background-color: var(--dark-surface);
+    border: 1px solid var(--dark-border);
 }
 
 .settings-list ion-item {
     --padding-start: 16px;
     --inner-padding-end: 16px;
     --min-height: 56px;
+    --background-hover: rgba(0, 0, 0, 0.04);
+}
+
+body.dark-theme .settings-list ion-item {
+    --background-hover: rgba(255, 255, 255, 0.05);
+}
+
+.settings-list ion-item:last-child {
+    --border-width: 0;
 }
 
 .settings-icon {
     font-size: 20px;
-    margin-right: 8px;
     color: var(--ion-color-medium, #92949c);
 }
 
-ion-item ion-label h2 {
-    font-size: 16px;
-    font-weight: 500;
-    margin-bottom: 2px;
+body.dark-theme .settings-icon {
+    color: var(--dark-text-secondary);
 }
 
-ion-item ion-label p {
-    font-size: 13px;
-    color: var(--ion-color-medium, #92949c);
-}
-
-/* Toggle customization */
+/* Toggle enhancements */
 ion-toggle {
-    --background: #ddd;
+    --background: var(--light-toggle-bg);
     --background-checked: var(--ion-color-primary-shade, #3171e0);
     --handle-background: #fff;
     --handle-background-checked: #fff;
+    --handle-width: 20px;
+    --handle-height: 20px;
+    --handle-border-radius: 50%;
+    transition: transform 0.3s ease;
 }
 
-/* Language selector */
-.language-select {
-    max-width: 120px;
+body.dark-theme ion-toggle {
+    --background: var(--dark-toggle-bg);
+    --background-checked: var(--dark-primary);
 }
 
-/* Danger zone */
+/* Active state animation for toggles */
+ion-toggle::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 14px;
+    background-color: transparent;
+    transform: scale(0);
+    transition: all 0.2s ease;
+}
+
+ion-toggle:active::before {
+    transform: scale(1.1);
+    background-color: rgba(var(--ion-color-primary-rgb), 0.1);
+}
+
+body.dark-theme ion-toggle:active::before {
+    background-color: rgba(var(--ion-color-primary-rgb), 0.2);
+}
+
+/* Danger zone enhancements */
 .danger-zone {
     margin: 24px 16px;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--light-card-shadow);
+    border: 1px solid var(--light-border);
 }
 
-.danger-zone ion-card-header {
-    padding: 16px;
+body.dark-theme .danger-zone {
+    box-shadow: var(--dark-card-shadow);
+    border: 1px solid var(--dark-border);
+    background-color: var(--dark-surface);
 }
 
 .danger-zone-title {
@@ -150,25 +283,94 @@ ion-toggle {
     font-size: 16px;
 }
 
-.danger-zone ion-card-content {
-    padding: 16px;
-}
-
 .logout-button {
     margin-bottom: 12px;
-    --border-radius: 8px;
+    --border-radius: 10px;
     --background: var(--ion-color-light, #f4f5f8);
     --color: var(--ion-color-dark, #222428);
     font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+body.dark-theme .logout-button {
+    --background: var(--dark-surface-lighter);
+    --color: var(--dark-text);
 }
 
 .delete-account-button {
-    --border-radius: 8px;
+    --border-radius: 10px;
     font-weight: 500;
+    transition: all 0.2s ease;
 }
 
-.danger-button {
-    color: var(--ion-color-danger, #eb445a);
+.logout-button:active, .delete-account-button:active {
+    transform: scale(0.98);
+}
+
+/* Form styles enhancements */
+.profile-section-card {
+    margin: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--light-card-shadow);
+}
+
+body.dark-theme .profile-section-card {
+    box-shadow: var(--dark-card-shadow);
+    background-color: var(--dark-surface);
+    border: 1px solid var(--dark-border);
+}
+
+.profile-form-list ion-item {
+    --padding-start: 0;
+    --padding-end: 0;
+    --inner-padding-end: 0;
+    margin-bottom: 16px;
+}
+
+/* Enhanced styling for editable fields */
+.profile-form-list ion-item.editable-field {
+    --background: transparent;
+    border-bottom: 2px solid var(--ion-color-primary-shade);
+    transition: border-color 0.3s ease;
+}
+
+body.dark-theme .profile-form-list ion-item.editable-field {
+    border-bottom-color: var(--dark-primary-shade);
+}
+
+.profile-form-list ion-item.editable-field:focus-within {
+    border-bottom-color: var(--ion-color-secondary);
+}
+
+body.dark-theme .profile-form-list ion-item.editable-field:focus-within {
+    border-bottom-color: var(--dark-secondary);
+}
+
+/* Enhanced styling for read-only fields */
+.profile-form-list ion-item.readonly-field {
+    --background: var(--light-input-bg);
+    border-radius: 8px;
+    opacity: 0.9;
+}
+
+body.dark-theme .profile-form-list ion-item.readonly-field {
+    --background: var(--dark-input-bg);
+    opacity: 0.8;
+}
+
+/* Theme specific input fields */
+ion-input {
+    --padding-start: 8px;
+    --padding-end: 8px;
+    --padding-top: 10px;
+    --padding-bottom: 10px;
+    border-radius: 6px;
+}
+
+body.dark-theme ion-input {
+    --color: var(--dark-text);
+    --placeholder-color: var(--dark-text-secondary);
 }
 
 /* App version */
@@ -180,6 +382,10 @@ ion-toggle {
     font-size: 12px;
 }
 
+body.dark-theme .app-version {
+    color: var(--dark-text-secondary);
+}
+
 /* Responsive adjustments */
 @media (min-width: 768px) {
     .settings-content {
@@ -188,17 +394,8 @@ ion-toggle {
     }
 
     .user-profile-section {
-        border-radius: 12px;
+        border-radius: 16px;
         margin: 16px;
-    }
-
-    .settings-list {
-        margin-left: 16px;
-        margin-right: 16px;
-    }
-
-    .section-header {
-        padding-left: 16px;
     }
 }
 
@@ -209,95 +406,82 @@ ion-toggle {
     }
 }
 
-/* Animation for toggles */
-ion-toggle {
-    transition: background-color 0.3s, transform 0.2s;
+/* Custom animations for dark mode toggle specifically */
+ion-item:has(ion-icon[name="color-palette-outline"]) ion-toggle {
+    --handle-width: 22px;
+    --handle-height: 22px;
+    overflow: visible;
 }
 
-ion-toggle:active {
-    transform: scale(0.95);
+ion-item:has(ion-icon[name="color-palette-outline"]) ion-toggle::before {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background-color: rgba(var(--ion-color-primary-rgb), 0.1);
+    transition: transform 0.3s ease;
 }
 
-/* Hover effects */
-ion-item {
-    transition: background-color 0.2s;
+ion-item:has(ion-icon[name="color-palette-outline"]) ion-toggle:active::before {
+    transform: translate(-50%, -50%) scale(1);
 }
 
-.logout-button:hover, .delete-account-button:hover {
-    opacity: 0.9;
+/* Special highlight for active dark mode */
+ion-item:has(ion-icon[name="color-palette-outline"]) ion-toggle[checked]::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 16px;
+    border: 2px solid transparent;
+    animation: pulse 2s ease-in-out infinite;
 }
 
-/* Custom switch styles for specific toggles */
-ion-item:has(ion-toggle[checked]) .settings-icon {
-    color: var(--ion-color-primary, #3880ff);
+body.dark-theme ion-item:has(ion-icon[name="color-palette-outline"]) ion-toggle[checked]::after {
+    border-color: var(--dark-primary);
 }
 
-/* Fancy toggles for critical settings */
-ion-item:has(.settings-icon[name="fingerprint-outline"]) ion-toggle {
-    --handle-width: 20px;
-    --handle-height: 20px;
-    --handle-border-radius: 50%;
+@keyframes pulse {
+    0% { opacity: 0.2; }
+    50% { opacity: 0.8; }
+    100% { opacity: 0.2; }
 }
 
-ion-item:has(.settings-icon[name="color-palette-outline"]) ion-toggle {
-    --handle-width: 20px;
-    --handle-height: 20px;
+/* Visual effect when switching themes */
+.theme-transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
 }
 
-/* Transition for dark mode */
-body {
-    transition: background-color 0.3s ease, color 0.3s ease;
+.theme-transition-active .theme-transition-overlay {
+    opacity: 1;
 }
 
-ion-content, ion-toolbar, ion-item {
-    transition: --background 0.3s ease, --ion-background-color 0.3s ease;
+/* Special styling for better visual hierarchy */
+body.dark-theme .danger-zone .danger-zone-title {
+    color: #ff6b6b;
 }
 
-/* Estilos para el formulario de perfil */
-.profile-section-card {
-    margin: 16px;
-    border-radius: 10px;
+/* Enhanced focus states for all interactive elements */
+ion-button:focus, ion-toggle:focus, ion-input:focus {
+    outline: none;
 }
 
-.profile-form-content {
-    padding: 16px;
+ion-item:focus-within {
+    background-color: rgba(var(--ion-color-primary-rgb), 0.05);
 }
 
-.profile-form-list {
-    padding: 8px 0;
-}
-
-.profile-form-list ion-item {
-    --padding-start: 0;
-    --padding-end: 0;
-    --inner-padding-end: 0;
-    margin-bottom: 16px;
-}
-
-.profile-form-list ion-input {
-    margin-top: 8px;
-}
-
-/* Añade estos estilos a Settings.css */
-
-/* Estilo para campos no editables */
-.profile-form-list ion-item.readonly-field {
-    --background: var(--ion-color-light-shade);
-    opacity: 0.8;
-}
-
-.profile-form-list ion-item.readonly-field ion-input {
-    --opacity: 0.7;
-    cursor: not-allowed;
-}
-
-/* Estilo para campos editables */
-.profile-form-list ion-item.editable-field {
-    --background: transparent;
-    border-bottom: 2px solid var(--ion-color-primary-shade);
-}
-
-.profile-form-list ion-item.editable-field ion-input {
-    --placeholder-opacity: 1;
-    cursor: text;
+body.dark-theme ion-item:focus-within {
+    background-color: rgba(var(--ion-color-primary-rgb), 0.1);
 }

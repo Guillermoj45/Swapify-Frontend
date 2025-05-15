@@ -14,8 +14,8 @@ import {
     IonGrid,
     IonImg,
     IonButton,
-    IonIcon,
-    IonChip,
+    IonIcon
+    , IonButtons,
 } from '@ionic/react';
 import {
     informationCircle,
@@ -26,11 +26,12 @@ import {
     eyeOutline,
     arrowForward,
     closeCircle,
-    sparkles
+    sparkles, arrowBackOutline
 } from 'ionicons/icons';
 import { useHistory } from "react-router-dom";
 import './SuscripcionPage.css';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import ProfileService from "../../Services/ProfileService";
 
 const SuscripcionPage: React.FC = () => {
 
@@ -59,6 +60,21 @@ const SuscripcionPage: React.FC = () => {
 
     const history = useHistory();
 
+    const [isPremium, setIsPremium] = useState(false);
+
+    useEffect(() => {
+        const checkPremiumStatus = async () => {
+            try {
+                const premiumStatus = await ProfileService.isPremium();
+                setIsPremium(premiumStatus);
+            } catch (error) {
+                console.error("Error al verificar el estado premium:", error);
+            }
+        };
+
+        checkPremiumStatus();
+    }, []);
+
     // Al inicio, obtener el estado inicial del modo oscuro
     const [isDarkMode, setDarkMode] = useState(() => {
         const storedMode = sessionStorage.getItem('modoOscuroClaro');
@@ -71,18 +87,23 @@ const SuscripcionPage: React.FC = () => {
         document.body.classList.add(isDarkMode ? 'dark' : 'light');
     }, [isDarkMode]);
 
+
+
     return (
         <IonPage>
             <IonHeader>
                 <IonToolbar color="primary" className="main-toolbar">
+                    <IonButtons slot="start">
+                        <IonButton onClick={() => (window.location.href = '/products')}>
+                            <IonIcon icon={arrowBackOutline} style={{ color: 'white', fontSize: '24px' }} />
+                        </IonButton>
+                    </IonButtons>
+
                     <IonTitle className="toolbar-title">
                         <span className="title-text">Suscripción</span>
-                        <IonChip className="upgrade-chip">
-                            <IonIcon icon={sparkles} />
-                            <IonLabel>Mejora tu experiencia</IonLabel>
-                        </IonChip>
                     </IonTitle>
                 </IonToolbar>
+
             </IonHeader>
             <IonContent className="ion-padding subscription-content">
                 {/* Premium banner */}
@@ -182,9 +203,9 @@ const SuscripcionPage: React.FC = () => {
                                 <IonButton
                                     expand="block"
                                     className="premium-button"
-                                    onClick={() => history.push('/paymentGateway')}
+                                    onClick={() => history.push(isPremium ? '/products' : '/paymentGateway')}
                                 >
-                                    Suscribirse ahora
+                                    {isPremium ? 'Ya eres premium' : 'Suscribirse ahora'}
                                     <IonIcon icon={arrowForward} slot="end" />
                                 </IonButton>
                             </IonCardContent>
