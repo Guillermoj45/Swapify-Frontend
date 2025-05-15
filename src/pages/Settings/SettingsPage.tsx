@@ -37,7 +37,7 @@ import {
     colorPaletteOutline,
     notificationsOutline, arrowBackOutline,
 } from 'ionicons/icons';
-import './Settings.css';
+import './Settings2.css';
 import { Settings as SettingsService } from '../../Services/SettingsService';
 import cloudinaryImage from "../../Services/CloudinaryService";
 import { ProfileSettings } from '../../Models/ProfileSettings';
