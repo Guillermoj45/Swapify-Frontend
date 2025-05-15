@@ -450,12 +450,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px;
-    border-bottom: 1px solid var(--border-color);
-    position: sticky;
-    top: 0;
-    background-color: var(--card-background);
-    z-index: 10;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--ion-border-color);
 }
 
 .sidebar-header ion-title {
@@ -465,7 +461,7 @@
 }
 
 .close-sidebar-btn {
-    --color: var(--text-color);
+    font-size: 24px;
 }
 
 /* Estilos para la barra de búsqueda */
@@ -711,8 +707,247 @@
     font-size: 14px;
 }
 
+/* Estilos mejorados para el panel lateral de productos */
+.product-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 320px;
+    background-color: var(--card-background);
+    box-shadow: -2px 0 15px var(--shadow-color);
+    z-index: 1000;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-sidebar.visible {
+    transform: translateX(0);
+}
+
+.product-sidebar .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--header-bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.product-sidebar .sidebar-header ion-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+    padding: 0;
+}
+
+.product-sidebar .close-sidebar-btn {
+    --padding-start: 8px;
+    --padding-end: 8px;
+    --color: var(--text-secondary);
+    margin: 0;
+}
+
+.product-sidebar .close-sidebar-btn ion-icon {
+    font-size: 24px;
+}
+
+.product-info-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    flex: 1;
+}
+
+.product-image-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.product-image {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 12px;
+    transition: transform 0.3s ease;
+}
+
+.product-image:hover {
+    transform: scale(1.02);
+}
+
+.product-name {
+    margin-top: 8px;
+}
+
+.product-name h2 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-color);
+    text-align: center;
+    letter-spacing: -0.3px;
+}
+
+.product-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #3a76dc, #2760c0);
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 16px;
+    margin: 4px 4px 12px 0;
+    box-shadow: 0 2px 5px rgba(58, 118, 220, 0.25);
+}
+
+.product-price {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent-color);
+    text-align: center;
+    margin: 16px 0;
+}
+
+.product-description {
+    background-color: var(--searchbar-bg);
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: inset 0 1px 3px var(--shadow-color);
+}
+
+.product-description p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.product-actions {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    position: sticky;
+    bottom: 0;
+    background-color: var(--card-background);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -4px 10px var(--shadow-color);
+}
+
+.product-action-button {
+    margin: 0;
+    height: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    --border-radius: 10px;
+    --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    position: relative;
+}
+
+.product-action-button::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(45deg);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.product-action-button:active::after {
+    opacity: 1;
+}
+
+.product-action-button.cancel-button {
+    --background: transparent;
+    --color: var(--accent-color);
+    --border-color: var(--accent-color);
+    --border-style: solid;
+    --border-width: 2px;
+    --box-shadow: none;
+}
+
+.product-action-button.cancel-button:hover {
+    --background: rgba(58, 118, 220, 0.08);
+}
+
+.product-action-button.confirm-button {
+    --background: linear-gradient(135deg, #3a76dc, #2760c0);
+}
+
+.ai-chat-page:not(.light-mode) .product-action-button.confirm-button {
+    box-shadow: 0 0 15px rgba(58, 118, 220, 0.4);
+}
+
+.product-specs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.spec-item {
+    background-color: var(--searchbar-bg);
+    padding: 12px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.spec-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.spec-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+/* Efectos adicionales para modo oscuro */
+.ai-chat-page:not(.light-mode) .product-image-container {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(58, 118, 220, 0.15);
+}
+
+.ai-chat-page:not(.light-mode) .product-badge {
+    box-shadow: 0 2px 8px rgba(58, 118, 220, 0.4);
+}
+
 /* Ajustes responsivos para la barra lateral */
 @media (min-width: 768px) {
+    .ai-chat-page.product-sidebar-active .ai-chat-content,
+    .ai-chat-page.product-sidebar-active .ai-chat-header ion-toolbar,
+    .ai-chat-page.product-sidebar-active .ai-chat-footer {
+        width: calc(100% - 300px);
+        margin-right: 300px;
+    }
+
+    .product-sidebar {
+        top: 56px; /* Ajusta según la altura de tu header */
+    }
+
     .custom-side-content {
         transform: translateX(0);
         width: 320px;
@@ -747,6 +982,24 @@
         --background: var(--searchbar-bg);
         --border-radius: 50%;
         margin-right: 8px;
+    }
+    .product-sidebar {
+        width: 100%;
+        top: 0;
+    }
+
+    .product-actions {
+        padding: 16px;
+    }
+
+    .product-sidebar.visible {
+        width: 90%; /* O un ancho fijo como 300px */
+        transform: translateX(0);
+        box-shadow: -3px 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .product-sidebar.collapsed {
+        display: none;
     }
 }
 

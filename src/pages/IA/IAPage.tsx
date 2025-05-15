@@ -35,8 +35,6 @@ import {
     trash,
     checkmark,
     menuOutline,
-    sunny,
-    moon,
     chatboxEllipses,
     add,
     chevronBack,
@@ -130,6 +128,13 @@ const AIChatPage: React.FC = () => {
     const textareaRef = useRef<HTMLIonTextareaElement>(null);
     const sidebarRef = useRef<HTMLDivElement>(null);
 
+    const [showProductSidebar, setShowProductSidebar] = useState<boolean>(false);
+    const [productInfo, setProductInfo] = useState({
+        name: '',
+        image: '',
+        description: ''
+    });
+
     // Detectar cambios en el tamaño de la pantalla
     useEffect(() => {
         const handleResize = () => {
@@ -183,6 +188,24 @@ const AIChatPage: React.FC = () => {
             }
         }, 500);
     }, []);
+
+    const handleProductAction = (action: 'upload' | 'cancel') => {
+        if (action === 'upload') {
+            presentToast({
+                message: 'Producto subido correctamente',
+                duration: 2000,
+                color: 'success'
+            });
+        } else {
+            presentToast({
+                message: 'Operación cancelada',
+                duration: 2000,
+                color: 'medium'
+            });
+        }
+        // Cierra el panel lateral después de la acción
+        setShowProductSidebar(false);
+    };
 
     const handleSend = async (): Promise<void> => {
         if (inputText.trim() === '' && selectedImages.length === 0) return;
@@ -251,6 +274,17 @@ const AIChatPage: React.FC = () => {
                     timestamp: new Date(lastAIMessage.createdAt || response.createdAt || Date.now()),
                     images: messageImages.length > 0 ? messageImages : undefined
                 };
+
+                if (response && response.product) {
+                    // Extraer info del producto si existe
+                    setProductInfo({
+                        name: response.product.name || 'Producto detectado',
+                        image: response.product.points || '/api/placeholder/200/200',
+                        description: response.product.description || 'IA ha detectado un posible producto basado en tu imagen.'
+                    });
+                    // Mostrar el panel lateral
+                    setShowProductSidebar(true);
+                }
 
                 const finalMessages = [...updatedMessages, aiResponse];
                 setMessages(finalMessages);
@@ -594,6 +628,55 @@ const AIChatPage: React.FC = () => {
         </IonPopover>
     );
 
+    const ProductSidePanel = () => (
+        <div className={`product-sidebar ${showProductSidebar ? 'visible' : 'collapsed'}`}>
+            <div className="sidebar-header">
+                <IonTitle>Producto Detectado</IonTitle>
+                <IonButton
+                    fill="clear"
+                    className="close-sidebar-btn"
+                    onClick={() => setShowProductSidebar(false)}
+                >
+                    <IonIcon icon={closeCircle}/>
+                </IonButton>
+            </div>
+
+            <div className="product-info-container">
+                <div className="product-image-container">
+                    <img src={productInfo.image || "/api/placeholder/200/200"} alt={productInfo.name} className="product-image" />
+                </div>
+
+                <div className="product-name">
+                    <h2>{productInfo.name}</h2>
+                </div>
+
+                <div className="product-description">
+                    <p>{productInfo.description}</p>
+                </div>
+            </div>
+
+            <div className="product-actions">
+                <IonButton
+                    expand="block"
+                    color="danger"
+                    className="product-action-button"
+                    onClick={() => handleProductAction('cancel')}
+                >
+                    Cancelar
+                </IonButton>
+
+                <IonButton
+                    expand="block"
+                    color="success"
+                    className="product-action-button"
+                    onClick={() => handleProductAction('upload')}
+                >
+                    Subir Producto
+                </IonButton>
+            </div>
+        </div>
+    );
+
     return (
         <>
             <Navegacion isDesktop={isDesktop} isChatView={true} />
@@ -681,6 +764,8 @@ const AIChatPage: React.FC = () => {
                         )}
                     </div>
                 </SideContent>
+
+                <ProductSidePanel />
 
                 <IonHeader className="ai-chat-header">
                     <IonToolbar>
