@@ -822,14 +822,15 @@
     margin: 16px 0;
 }
 
-.product-description {
+.product-description-IA {
+    height: auto;
     background-color: var(--searchbar-bg);
     padding: 16px;
     border-radius: 12px;
     box-shadow: inset 0 1px 3px var(--shadow-color);
 }
 
-.product-description p {
+.product-description-IA p {
     font-size: 14px;
     line-height: 1.6;
     color: var(--text-color);

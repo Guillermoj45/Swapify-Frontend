@@ -38,7 +38,7 @@ import {
     chatboxEllipses,
     add,
     chevronBack,
-    createOutline,
+    createOutline, star, time, pricetag, checkmarkCircle,
 } from 'ionicons/icons';
 import './IA.css';
 import Navegacion from '../../components/Navegation';
@@ -71,6 +71,22 @@ interface SideContentProps {
     className?: string;
     collapsed?: boolean;
     children?: React.ReactNode;
+}
+
+interface ProductSidePanelProps {
+    showProductSidebar: boolean;
+    setShowProductSidebar: (show: boolean) => void;
+    productInfo: {
+        name: string;
+        image: string;
+        price: string;
+        description: string;
+        rating?: string;
+        delivery?: string;
+        discount?: string;
+        stock?: string;
+    };
+    handleProductAction: (action: 'upload' | 'cancel') => void;
 }
 
 // Create a custom component to replace IonSideContent
@@ -119,7 +135,7 @@ const AIChatPage: React.FC = () => {
             messages: [initialAIMessage],
         }
     ]);
-    const [activeChatId, setActiveChatId] = useState<string>();
+    const [activeChatId, setActiveChatId] = useState<string>('default');
     const [showNewChatAlert, setShowNewChatAlert] = useState<boolean>(false);
     const [newChatTitle, setNewChatTitle] = useState<string>('');
 
@@ -130,9 +146,10 @@ const AIChatPage: React.FC = () => {
 
     const [showProductSidebar, setShowProductSidebar] = useState<boolean>(false);
     const [productInfo, setProductInfo] = useState({
-        name: '',
-        image: '',
-        description: ''
+        name: "Auriculares Premium XM4",
+        image: "/assets/images/product-headphones.jpg", // Ruta a tu imagen
+        price: "€149,99",
+        description: "Auriculares inalámbricos con cancelación de ruido activa, hasta 30 horas de batería y sonido de alta resolución. Perfectos para trabajo y ocio.",
     });
 
     // Detectar cambios en el tamaño de la pantalla
@@ -168,7 +185,7 @@ const AIChatPage: React.FC = () => {
     useEffect(() => {
         const activeChat = chatSessions.find(chat => chat.id === activeChatId);
         if (activeChat) {
-            setMessages(activeChat.messages);
+            setMessages([...activeChat.messages]);
             setCurrentChatId(activeChat.id);
         }
     }, [activeChatId, chatSessions]);
@@ -279,7 +296,8 @@ const AIChatPage: React.FC = () => {
                     // Extraer info del producto si existe
                     setProductInfo({
                         name: response.product.name || 'Producto detectado',
-                        image: response.product.points || '/api/placeholder/200/200',
+                        image: response.product.points || 'src/pages/IA/img.png',
+                        price: response.product.points || productInfo.price,
                         description: response.product.description || 'IA ha detectado un posible producto basado en tu imagen.'
                     });
                     // Mostrar el panel lateral
@@ -628,7 +646,7 @@ const AIChatPage: React.FC = () => {
         </IonPopover>
     );
 
-    const ProductSidePanel = () => (
+    const ProductSidePanel: React.FC<ProductSidePanelProps> = ({ showProductSidebar, setShowProductSidebar, productInfo, handleProductAction }) => (
         <div className={`product-sidebar ${showProductSidebar ? 'visible' : 'collapsed'}`}>
             <div className="sidebar-header">
                 <IonTitle>Producto Detectado</IonTitle>
@@ -643,23 +661,57 @@ const AIChatPage: React.FC = () => {
 
             <div className="product-info-container">
                 <div className="product-image-container">
-                    <img src={productInfo.image || "/api/placeholder/200/200"} alt={productInfo.name} className="product-image" />
+                    <img src={productInfo.image || "/api/placeholder/400/220"} alt={productInfo.name} className="product-image" />
                 </div>
 
                 <div className="product-name">
-                    <h2>{productInfo.name}</h2>
+                    <h2>{productInfo.name || "Producto Premium"}</h2>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                        <span className="product-badge">Nuevo</span>
+                        <span className="product-badge">Premium</span>
+                    </div>
                 </div>
 
-                <div className="product-description">
-                    <p>{productInfo.description}</p>
+                <div className="product-price">
+                    {productInfo.price || "€149,99"}
+                </div>
+
+                {
+                    /*
+                    * <div className="product-specs">
+                    <div className="spec-item">
+                        <IonIcon icon={star} color="warning" style={{ fontSize: '20px', marginBottom: '5px' }} />
+                        <span className="spec-label">Valoración</span>
+                        <span className="spec-value">{productInfo.rating || "4.8/5"}</span>
+                    </div>
+                    <div className="spec-item">
+                        <IonIcon icon={time} color="primary" style={{ fontSize: '20px', marginBottom: '5px' }} />
+                        <span className="spec-label">Envío</span>
+                        <span className="spec-value">{productInfo.delivery || "24-48h"}</span>
+                    </div>
+                    <div className="spec-item">
+                        <IonIcon icon={pricetag} color="success" style={{ fontSize: '20px', marginBottom: '5px' }} />
+                        <span className="spec-label">Descuento</span>
+                        <span className="spec-value">{productInfo.discount || "15%"}</span>
+                    </div>
+                    <div className="spec-item">
+                        <IonIcon icon={checkmarkCircle} color="tertiary" style={{ fontSize: '20px', marginBottom: '5px' }} />
+                        <span className="spec-label">Stock</span>
+                        <span className="spec-value">{productInfo.stock || "Disponible"}</span>
+                    </div>
+                </div>
+                    * */
+                }
+                <div className="product-description-IA">
+                    <p>{productInfo.description || "Este producto premium ofrece características excepcionales diseñadas para satisfacer tus necesidades. Fabricado con materiales de alta calidad y acabados profesionales, garantiza durabilidad y rendimiento superior. Perfecto para uso diario o profesional."}</p>
                 </div>
             </div>
 
             <div className="product-actions">
                 <IonButton
                     expand="block"
-                    color="danger"
-                    className="product-action-button"
+                    fill="outline"
+                    className="product-action-button cancel-button"
                     onClick={() => handleProductAction('cancel')}
                 >
                     Cancelar
@@ -667,8 +719,7 @@ const AIChatPage: React.FC = () => {
 
                 <IonButton
                     expand="block"
-                    color="success"
-                    className="product-action-button"
+                    className="product-action-button confirm-button"
                     onClick={() => handleProductAction('upload')}
                 >
                     Subir Producto
@@ -765,7 +816,12 @@ const AIChatPage: React.FC = () => {
                     </div>
                 </SideContent>
 
-                <ProductSidePanel />
+                <ProductSidePanel
+                    showProductSidebar={showProductSidebar}
+                    setShowProductSidebar={setShowProductSidebar}
+                    productInfo={productInfo}
+                    handleProductAction={handleProductAction}
+                />
 
                 <IonHeader className="ai-chat-header">
                     <IonToolbar>
