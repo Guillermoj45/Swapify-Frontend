@@ -50,6 +50,22 @@ export const ProfileService = {
         }
     },
 
+    getProfileById: async (profileId: string): Promise<ProfileDTO> => {
+        try {
+            const response = await API.get(`/profile/${profileId}`);
+            if (response.data && response.data.avatar) {
+                response.data.avatar = cloudinaryImage(response.data.avatar);
+            }
+            if (response.data && response.data.banner) {
+                response.data.banner = cloudinaryImage(response.data.banner);
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Error al obtener información del perfil por ID:', error);
+            throw error;
+        }
+    },
+
     getUserProducts: async (): Promise<ProductDTO[]> => {
         try {
             const response = await API.get('/profile/myProducts');
@@ -110,7 +126,7 @@ export const ProfileService = {
             console.error('Error al obtener los productos guardados:', error);
             throw error;
         }
-    },
+    }, // <- Coma agregada aquí
 
     updateBanner: async (imageFile: File): Promise<{ success: boolean, imageUrl: string }> => {
         try {

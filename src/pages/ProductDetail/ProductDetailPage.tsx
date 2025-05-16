@@ -441,7 +441,7 @@ const ProductDetailPage: React.FC = () => {
                             </div>
 
                             {/* Información de usuario */}
-                            <div className="product-detail-user">
+                            <div className="product-detail-user" >
                                 {product.profile && (
                                     <>
                                         <div className="user-avatar">
@@ -487,7 +487,7 @@ const ProductDetailPage: React.FC = () => {
                                     className="main-action-button"
                                     onClick={() => {
                                         // Aquí iría la lógica para iniciar un chat con el vendedor
-                                        history.push(`/profile?profileId=${product.profile.id}&productId=${product.id}`);
+                                        history.push(`/profile?profileId=${product.profile.id}`);
                                     }}
                                 >
                                     <IonIcon slot="start" icon={chatbubbleOutline}/>

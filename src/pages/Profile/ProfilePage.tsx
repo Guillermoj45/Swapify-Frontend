@@ -76,20 +76,30 @@ export default function ProfilePage() {
                 return;
             }
 
+            const profileId = new URLSearchParams(location.search).get('token');
+
             try {
                 setLoading(true);
-                const profileInfo = await ProfileService.getProfileInfo();
-                setProfileData(profileInfo);
-                setBannerImage(profileInfo.banner)
 
-                const products = await ProfileService.getUserProducts();
-                setUserProducts(products);
+                if (profileId) {
+                    // Cargar perfil del vendedor
+                    const sellerProfile = await ProfileService.getProfileById(profileId);
+                    setProfileData(sellerProfile);
 
-                setUserInfo(prev => ({
-                    ...prev,
-                    name: profileInfo.nickname || "Usuario",
-                    itemsForSale: products.length
-                }));
+                } else {
+                    // Cargar perfil del usuario autenticado
+                    const profileInfo = await ProfileService.getProfileInfo();
+                    setProfileData(profileInfo);
+
+                    const products = await ProfileService.getUserProducts();
+                    setUserProducts(products);
+
+                    setUserInfo(prev => ({
+                        ...prev,
+                        name: profileInfo.nickname || "Usuario",
+                        itemsForSale: products.length
+                    }));
+                }
 
                 setShowAllProducts(false);
             } catch (error) {

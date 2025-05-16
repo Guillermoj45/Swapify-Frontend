@@ -14,7 +14,6 @@ import {
     IonLabel,
     IonToggle,
     IonListHeader,
-    IonAvatar,
     IonAlert,
     IonToast,
     IonActionSheet,
@@ -191,13 +190,27 @@ const Settings: React.FC = () => {
 
     // Función para aplicar el tema de forma consistente
     const applyTheme = (isDark: boolean): void => {
+        const body = document.body;
+        const root = document.documentElement;
+
         if (isDark) {
-            document.body.classList.add('dark');
-            document.documentElement.setAttribute('data-theme', 'dark');
+            body.classList.add('dark-theme');
+            body.classList.remove('light-theme');
+            root.setAttribute('data-theme', 'dark');
         } else {
-            document.body.classList.remove('dark');
-            document.documentElement.setAttribute('data-theme', 'light');
+            body.classList.add('light-theme');
+            body.classList.remove('dark-theme');
+            root.setAttribute('data-theme', 'light');
         }
+
+        // Forzar re-renderización al cambiar el tema
+        setProfile(prevProfile => ({
+            ...prevProfile,
+            preferencias: {
+                ...prevProfile.preferencias,
+                modo_oscuro: isDark
+            }
+        }));
 
         // Guardar preferencia en sessionStorage
         sessionStorage.setItem('modoOscuroClaro', isDark.toString());
@@ -510,17 +523,17 @@ const Settings: React.FC = () => {
                                 }
                             }}
                         />
-                        <IonAvatar>
-                            <img src={getAvatarUrl(profile.avatar)} alt="User profile" />
-                        </IonAvatar>
-                        <div className="edit-badge">
+
+                        <img src={getAvatarUrl(profile.avatar)} alt="User profile" />
+
+                        <div className={`edit-badge ${profile.preferencias?.modo_oscuro ? '' : 'light-mode-icon'}`}>
                             <IonIcon icon={camera} />
                         </div>
                     </div>
 
                     <div className="user-info">
                         <h2>{profile.nickname}</h2>
-                        <p>{profile.email}</p>
+                        <p style={{color: "black"}}>{profile.email}</p>
                     </div>
                 </div>
 
