@@ -30,7 +30,7 @@ import {
 } from 'ionicons/icons';
 import { ProductService, Product } from '../../Services/ProductService';
 import cloudinaryImage from '../../Services/CloudinaryService';
-import './ProductDetailPage2.css';
+import './ProductDetailPage.css';
 
 interface ProductDetailPageParams {
     id: string;

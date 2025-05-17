@@ -44,14 +44,21 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
         };
     }, [darkMode]);
 
-    // Función para manejar la navegación
+    // Función para manejar la navegación con un enfoque más directo
     const navigateTo = (path: string) => {
-        history.push(path);
+        if (path === '/chat') {
+            history.replace(path);
+            setTimeout(() => {
+                history.go(0);
+            }, 10);
+        } else {
+            history.push(path);
+        }
     };
 
-    // Verificar si una ruta está activa
+    // Verificar si una ruta está activa (ahora con comparación insensible a mayúsculas/minúsculas)
     const isActive = (path: string) => {
-        return location.pathname === path;
+        return location.pathname.toLowerCase() === path.toLowerCase();
     };
 
     return (
@@ -78,7 +85,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => (window.location.href = '/profile')} detail={false}>
+                                <IonItem button onClick={() => navigateTo('/profile')} detail={false}>
                                     <IonIcon slot="start" icon={personCircle} />
                                     <IonLabel>Perfil</IonLabel>
                                 </IonItem>
@@ -134,7 +141,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                             <IonIcon icon={addOutline} />
                             <IonLabel>IA</IonLabel>
                         </IonTabButton>
-                        <IonTabButton tab="chat" onClick={() => navigateTo('/chat')} selected={isActive('/Chat')}>
+                        <IonTabButton tab="chat" onClick={() => navigateTo('/chat')} selected={isActive('/chat')}>
                             <IonIcon icon={mailOutline} />
                             <IonLabel>Chats</IonLabel>
                         </IonTabButton>

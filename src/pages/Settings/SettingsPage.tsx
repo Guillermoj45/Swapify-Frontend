@@ -21,6 +21,7 @@ import {
     IonCardHeader,
     IonCardContent,
     IonInput,
+    IonMenuButton,
     InputCustomEvent
 } from '@ionic/react';
 import {
@@ -34,12 +35,14 @@ import {
     eyeOutline,
     createOutline,
     colorPaletteOutline,
-    notificationsOutline, arrowBackOutline,
+    notificationsOutline,
+    menuOutline,
 } from 'ionicons/icons';
 import './Settings2.css';
 import { Settings as SettingsService } from '../../Services/SettingsService';
 import cloudinaryImage from "../../Services/CloudinaryService";
 import { ProfileSettings } from '../../Models/ProfileSettings';
+import Navegacion from "../../components/Navegation";
 
 // Definimos una interfaz para nuestro estado de perfil
 interface ProfileState {
@@ -86,6 +89,9 @@ const Settings: React.FC = () => {
     const [showToast, setShowToast] = useState<boolean>(false);
     const [toastMessage, setToastMessage] = useState<string>('');
 
+    // Estado para detectar si es escritorio
+    const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768);
+
     // Alert states
     const [showLogoutAlert, setShowLogoutAlert] = useState<boolean>(false);
     const [showDeleteAccountAlert, setShowDeleteAccountAlert] = useState<boolean>(false);
@@ -106,6 +112,16 @@ const Settings: React.FC = () => {
             modo_oscuro: false,
         },
     });
+
+    // Detectar cambios en el tamaño de la pantalla
+    useEffect(() => {
+        const handleResize = () => {
+            setIsDesktop(window.innerWidth >= 768);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Navigation options
     const accountOptions: AccountOption[] = [
@@ -476,232 +492,238 @@ const Settings: React.FC = () => {
     };
 
     return (
-        <IonPage className={profile.preferencias?.modo_oscuro ? 'dark-theme' : 'light-theme'}>
-            <IonHeader className="ion-no-border">
-                <IonToolbar>
-                    <IonButtons slot="start">
-                        <IonButton onClick={() => (window.location.href = '/products')} slot="start">
-                            <IonIcon icon={arrowBackOutline} />
-                        </IonButton>
-                    </IonButtons>
-                    <IonTitle>Ajustes</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={() => setShowAboutAlert(true)}>
-                            <IonIcon slot="icon-only" icon={informationCircleOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+        <>
+            <Navegacion isDesktop={isDesktop} />
 
-            <IonContent className="settings-content">
-                <div className="user-profile-section">
-                    <div className="user-avatar" onClick={() => document.getElementById('fileInput')?.click()}>
-                        <input
-                            type="file"
-                            id="fileInput"
-                            hidden
-                            accept="image/*"
-                            onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                    setProfile(prev => ({
-                                        ...prev,
-                                        avatar: file
-                                    }));
+            <IonPage id="main-content" className={profile.preferencias?.modo_oscuro ? 'dark-theme' : 'light-theme'}>
+                <IonHeader className="ion-no-border">
+                    <IonToolbar color="primary" className="main-toolbar">
+                        <IonButtons slot="start">
+                            <IonMenuButton>
+                                <IonIcon icon={menuOutline} style={{ color: 'white', fontSize: '24px' }} />
+                            </IonMenuButton>
+                        </IonButtons>
+                        <IonTitle className="toolbar-title">
+                            <span className="title-text">Ajustes</span>
+                        </IonTitle>
+                        <IonButtons slot="end">
+                            <IonButton onClick={() => setShowAboutAlert(true)}>
+                                <IonIcon slot="icon-only" icon={informationCircleOutline} />
+                            </IonButton>
+                        </IonButtons>
+                    </IonToolbar>
+                </IonHeader>
 
-                                    try {
-                                        await SettingsService.updateProfileSettings({
-                                            ...profile,
+                <IonContent className="settings-content">
+                    <div className="user-profile-section">
+                        <div className="user-avatar" onClick={() => document.getElementById('fileInput')?.click()}>
+                            <input
+                                type="file"
+                                id="fileInput"
+                                hidden
+                                accept="image/*"
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        setProfile(prev => ({
+                                            ...prev,
                                             avatar: file
-                                        });
-                                        await loadSettings();
-                                        displayToast('Imagen actualizada correctamente');
-                                    } catch (error) {
-                                        console.error('Error al actualizar la imagen:', error);
-                                        displayToast('Error al actualizar la imagen');
+                                        }));
+
+                                        try {
+                                            await SettingsService.updateProfileSettings({
+                                                ...profile,
+                                                avatar: file
+                                            });
+                                            await loadSettings();
+                                            displayToast('Imagen actualizada correctamente');
+                                        } catch (error) {
+                                            console.error('Error al actualizar la imagen:', error);
+                                            displayToast('Error al actualizar la imagen');
+                                        }
                                     }
-                                }
-                            }}
-                        />
+                                }}
+                            />
 
-                        <img src={getAvatarUrl(profile.avatar)} alt="User profile" />
+                            <img src={getAvatarUrl(profile.avatar)} alt="User profile" />
 
-                        <div className={`edit-badge ${profile.preferencias?.modo_oscuro ? '' : 'light-mode-icon'}`}>
-                            <IonIcon icon={camera} />
+                            <div className={`edit-badge ${profile.preferencias?.modo_oscuro ? '' : 'light-mode-icon'}`}>
+                                <IonIcon icon={camera} />
+                            </div>
+                        </div>
+
+                        <div className="user-info">
+                            <h2>{profile.nickname}</h2>
+                            <p style={{color: "black"}}>{profile.email}</p>
                         </div>
                     </div>
 
-                    <div className="user-info">
-                        <h2>{profile.nickname}</h2>
-                        <p style={{color: "black"}}>{profile.email}</p>
-                    </div>
-                </div>
+                    {/* Secciones activas */}
+                    {activeSection === 'profile' && <ProfileSection onClose={closeActiveSection} />}
+                    {activeSection === 'security' && <SecuritySection onClose={closeActiveSection} />}
 
-                {/* Secciones activas */}
-                {activeSection === 'profile' && <ProfileSection onClose={closeActiveSection} />}
-                {activeSection === 'security' && <SecuritySection onClose={closeActiveSection} />}
+                    {/* Account Settings */}
+                    <IonListHeader className="section-header">
+                        <IonLabel>Cuenta</IonLabel>
+                    </IonListHeader>
+                    <IonList className="settings-list" lines="full">
+                        {accountOptions.map((option, index) => (
+                            <IonItem key={index} button detail onClick={() => openAccountOption(option.action)}>
+                                <IonIcon icon={option.icon} slot="start" className="settings-icon" />
+                                <IonLabel>{option.label}</IonLabel>
+                            </IonItem>
+                        ))}
+                    </IonList>
 
-                {/* Account Settings */}
-                <IonListHeader className="section-header">
-                    <IonLabel>Cuenta</IonLabel>
-                </IonListHeader>
-                <IonList className="settings-list" lines="full">
-                    {accountOptions.map((option, index) => (
-                        <IonItem key={index} button detail onClick={() => openAccountOption(option.action)}>
-                            <IonIcon icon={option.icon} slot="start" className="settings-icon" />
-                            <IonLabel>{option.label}</IonLabel>
+                    {/* Preferences */}
+                    <IonListHeader className="section-header">
+                        <IonLabel>Preferencias</IonLabel>
+                    </IonListHeader>
+                    <IonList className="settings-list" lines="full">
+                        <IonItem>
+                            <IonIcon icon={notificationsOutline} slot="start" className="settings-icon" />
+                            <IonLabel>Notificaciones</IonLabel>
+                            <IonToggle
+                                checked={profile.preferencias?.notificaciones}
+                                onIonChange={(e) => handlePreferenceChange(e, 'notificaciones')}
+                            />
                         </IonItem>
-                    ))}
-                </IonList>
 
-                {/* Preferences */}
-                <IonListHeader className="section-header">
-                    <IonLabel>Preferencias</IonLabel>
-                </IonListHeader>
-                <IonList className="settings-list" lines="full">
-                    <IonItem>
-                        <IonIcon icon={notificationsOutline} slot="start" className="settings-icon" />
-                        <IonLabel>Notificaciones</IonLabel>
-                        <IonToggle
-                            checked={profile.preferencias?.notificaciones}
-                            onIonChange={(e) => handlePreferenceChange(e, 'notificaciones')}
-                        />
-                    </IonItem>
+                        <IonItem>
+                            <IonIcon icon={colorPaletteOutline} slot="start" className="settings-icon" />
+                            <IonLabel>Modo oscuro</IonLabel>
+                            <IonToggle
+                                checked={profile.preferencias?.modo_oscuro}
+                                onIonChange={(e) => handlePreferenceChange(e, 'modo_oscuro')}
+                            />
+                        </IonItem>
+                    </IonList>
 
-                    <IonItem>
-                        <IonIcon icon={colorPaletteOutline} slot="start" className="settings-icon" />
-                        <IonLabel>Modo oscuro</IonLabel>
-                        <IonToggle
-                            checked={profile.preferencias?.modo_oscuro}
-                            onIonChange={(e) => handlePreferenceChange(e, 'modo_oscuro')}
-                        />
-                    </IonItem>
-                </IonList>
+                    {/* Danger Zone */}
+                    <IonCard className="danger-zone">
+                        <IonCardHeader>
+                            <IonLabel className="danger-zone-title">Zona peligrosa</IonLabel>
+                        </IonCardHeader>
+                        <IonCardContent>
+                            <IonButton
+                                expand="block"
+                                color="light"
+                                className="logout-button"
+                                onClick={() => setShowLogoutAlert(true)}
+                            >
+                                <IonIcon icon={logOutOutline} slot="start" />
+                                Cerrar sesión
+                            </IonButton>
 
-                {/* Danger Zone */}
-                <IonCard className="danger-zone">
-                    <IonCardHeader>
-                        <IonLabel className="danger-zone-title">Zona peligrosa</IonLabel>
-                    </IonCardHeader>
-                    <IonCardContent>
-                        <IonButton
-                            expand="block"
-                            color="light"
-                            className="logout-button"
-                            onClick={() => setShowLogoutAlert(true)}
-                        >
-                            <IonIcon icon={logOutOutline} slot="start" />
-                            Cerrar sesión
-                        </IonButton>
+                            <IonButton
+                                expand="block"
+                                color="danger"
+                                className="delete-account-button"
+                                onClick={() => setShowDeleteAccountAlert(true)}
+                            >
+                                <IonIcon icon={trashOutline} slot="start" />
+                                Eliminar cuenta
+                            </IonButton>
+                        </IonCardContent>
+                    </IonCard>
 
-                        <IonButton
-                            expand="block"
-                            color="danger"
-                            className="delete-account-button"
-                            onClick={() => setShowDeleteAccountAlert(true)}
-                        >
-                            <IonIcon icon={trashOutline} slot="start" />
-                            Eliminar cuenta
-                        </IonButton>
-                    </IonCardContent>
-                </IonCard>
+                    <div className="app-version">
+                        <p>MiApp v1.0.0</p>
+                    </div>
 
-                <div className="app-version">
-                    <p>MiApp v1.0.0</p>
-                </div>
-
-                {/* Alerts */}
-                <IonAlert
-                    isOpen={showLogoutAlert}
-                    onDidDismiss={() => setShowLogoutAlert(false)}
-                    header="Cerrar sesión"
-                    message="¿Estás seguro de que deseas cerrar la sesión?"
-                    buttons={[
-                        {
-                            text: 'Cancelar',
-                            role: 'cancel'
-                        },
-                        {
-                            text: 'Sí, cerrar sesión',
-                            handler: logout
-                        }
-                    ]}
-                />
-
-                <IonAlert
-                    isOpen={showDeleteAccountAlert}
-                    onDidDismiss={() => setShowDeleteAccountAlert(false)}
-                    header="¡Advertencia!"
-                    message="¿Realmente deseas eliminar tu cuenta? Esta acción no se puede deshacer."
-                    buttons={[
-                        {
-                            text: 'Cancelar',
-                            role: 'cancel'
-                        },
-                        {
-                            text: 'Eliminar cuenta',
-                            cssClass: 'danger-button',
-                            handler: () => {
-                                SettingsService.deleteAccount();
-                                displayToast('Cuenta eliminada');
-                                history.push('/login');
+                    {/* Alerts */}
+                    <IonAlert
+                        isOpen={showLogoutAlert}
+                        onDidDismiss={() => setShowLogoutAlert(false)}
+                        header="Cerrar sesión"
+                        message="¿Estás seguro de que deseas cerrar la sesión?"
+                        buttons={[
+                            {
+                                text: 'Cancelar',
+                                role: 'cancel'
+                            },
+                            {
+                                text: 'Sí, cerrar sesión',
+                                handler: logout
                             }
-                        }
-                    ]}
-                />
+                        ]}
+                    />
 
-                <IonAlert
-                    isOpen={showAboutAlert}
-                    onDidDismiss={() => setShowAboutAlert(false)}
-                    header="Acerca de"
-                    subHeader="MiApp v1.0.0"
-                    message="Desarrollado con React e Ionic.<br>© 2025 MiEmpresa. Todos los derechos reservados."
-                    buttons={['OK']}
-                />
-
-                <IonToast
-                    isOpen={showToast}
-                    onDidDismiss={() => setShowToast(false)}
-                    message={toastMessage}
-                    duration={2000}
-                    position="bottom"
-                    color="dark"
-                    buttons={[
-                        {
-                            icon: closeOutline,
-                            role: 'cancel'
-                        }
-                    ]}
-                />
-
-                <IonActionSheet
-                    isOpen={showActionSheet}
-                    onDidDismiss={() => setShowActionSheet(false)}
-                    header={`Opciones de ${actionSheetTitle}`}
-                    buttons={[
-                        {
-                            text: `Ver ${actionSheetTitle}`,
-                            icon: eyeOutline,
-                            handler: () => {
-                                console.log(`View ${actionSheetTitle}`);
+                    <IonAlert
+                        isOpen={showDeleteAccountAlert}
+                        onDidDismiss={() => setShowDeleteAccountAlert(false)}
+                        header="¡Advertencia!"
+                        message="¿Realmente deseas eliminar tu cuenta? Esta acción no se puede deshacer."
+                        buttons={[
+                            {
+                                text: 'Cancelar',
+                                role: 'cancel'
+                            },
+                            {
+                                text: 'Eliminar cuenta',
+                                cssClass: 'danger-button',
+                                handler: () => {
+                                    SettingsService.deleteAccount();
+                                    displayToast('Cuenta eliminada');
+                                    history.push('/login');
+                                }
                             }
-                        },
-                        {
-                            text: `Editar ${actionSheetTitle}`,
-                            icon: createOutline,
-                            handler: () => {
-                                console.log(`Edit ${actionSheetTitle}`);
+                        ]}
+                    />
+
+                    <IonAlert
+                        isOpen={showAboutAlert}
+                        onDidDismiss={() => setShowAboutAlert(false)}
+                        header="Acerca de"
+                        subHeader="MiApp v1.0.0"
+                        message="Desarrollado con React e Ionic.<br>© 2025 MiEmpresa. Todos los derechos reservados."
+                        buttons={['OK']}
+                    />
+
+                    <IonToast
+                        isOpen={showToast}
+                        onDidDismiss={() => setShowToast(false)}
+                        message={toastMessage}
+                        duration={2000}
+                        position="bottom"
+                        color="dark"
+                        buttons={[
+                            {
+                                icon: closeOutline,
+                                role: 'cancel'
                             }
-                        },
-                        {
-                            text: 'Cancelar',
-                            icon: closeOutline,
-                            role: 'cancel'
-                        }
-                    ]}
-                />
-            </IonContent>
-        </IonPage>
+                        ]}
+                    />
+
+                    <IonActionSheet
+                        isOpen={showActionSheet}
+                        onDidDismiss={() => setShowActionSheet(false)}
+                        header={`Opciones de ${actionSheetTitle}`}
+                        buttons={[
+                            {
+                                text: `Ver ${actionSheetTitle}`,
+                                icon: eyeOutline,
+                                handler: () => {
+                                    console.log(`View ${actionSheetTitle}`);
+                                }
+                            },
+                            {
+                                text: `Editar ${actionSheetTitle}`,
+                                icon: createOutline,
+                                handler: () => {
+                                    console.log(`Edit ${actionSheetTitle}`);
+                                }
+                            },
+                            {
+                                text: 'Cancelar',
+                                icon: closeOutline,
+                                role: 'cancel'
+                            }
+                        ]}
+                    />
+                </IonContent>
+            </IonPage>
+        </>
     );
 };
 

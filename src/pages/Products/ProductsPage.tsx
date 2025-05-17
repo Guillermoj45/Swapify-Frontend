@@ -29,7 +29,7 @@ import {
     star,
     starOutline, informationCircleOutline
 } from 'ionicons/icons';
-import './ProductsPage3.css';
+import './ProductsPage.css';
 import { useHistory, useLocation } from "react-router-dom";
 import { ProductService, RecommendDTO, Product } from '../../Services/ProductService';
 import { ProfileService, SaveProductDTO } from '../../Services/ProfileService';
