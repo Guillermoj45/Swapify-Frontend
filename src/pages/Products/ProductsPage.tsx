@@ -27,14 +27,16 @@ import {
     arrowForward,
     arrowBack,
     star,
-    starOutline
+    starOutline, informationCircleOutline
 } from 'ionicons/icons';
 import './ProductsPage3.css';
 import { useHistory, useLocation } from "react-router-dom";
 import { ProductService, RecommendDTO, Product } from '../../Services/ProductService';
 import { ProfileService, SaveProductDTO } from '../../Services/ProfileService';
-import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
+//import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
 import { Settings as SettingsService } from '../../Services/SettingsService';
+import {driver} from "driver.js"
+import "driver.js/dist/driver.css";
 
 interface CustomLocationState {
     token?: string;
@@ -70,6 +72,62 @@ interface Favorites {
 }
 
 const ProductsPage = () => {
+
+    const startProductsTour = () => {
+        const driverObj = driver({
+            showProgress: true,
+            steps: [
+                {
+                    element: '.shopify-searchbar',
+                    popover: {
+                        title: 'Barra de búsqueda',
+                        description: 'Busca productos por nombre o descripción',
+                        side: "bottom",
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '.filters-container',
+                    popover: {
+                        title: 'Filtros por categoría',
+                        description: 'Filtra los productos por categorías específicas',
+                        side: "bottom"
+                    }
+                },
+                {
+                    element: '.slider-container',
+                    popover: {
+                        title: 'Ofertas destacadas',
+                        description: 'Descubre nuestras ofertas y productos especiales',
+                        side: "bottom"
+                    }
+                },
+                {
+                    element: '.product-card',
+                    popover: {
+                        title: 'Tarjeta de producto',
+                        description: 'Haz clic para ver más detalles del producto. Usa las flechas para ver más imágenes',
+                        side: "left"
+                    }
+                },
+                {
+                    element: '.favorite-button',
+                    popover: {
+                        title: 'Guardar favoritos',
+                        description: 'Guarda los productos que te interesen en tu lista de favoritos',
+                        side: "right"
+                    }
+                }
+            ],
+            nextBtnText: 'Siguiente',
+            prevBtnText: 'Anterior',
+            doneBtnText: 'Finalizar'
+        });
+
+        driverObj.drive();
+    };
+
+
     const history = useHistory();
     const location = useLocation<CustomLocationState>();
 
@@ -466,7 +524,7 @@ const ProductsPage = () => {
         }
     }, []);
 
-    interface PreferenceUpdate {
+    /*interface PreferenceUpdate {
         key: 'modo_oscuro' | 'notificaciones';
         value: boolean;
     }
@@ -494,7 +552,7 @@ const ProductsPage = () => {
         } catch (error) {
             console.error('Error al actualizar modo oscuro:', error);
         }
-    };
+    };*/
 
     // Slider items
     const sliderItems: SliderItem[] = [
@@ -634,6 +692,8 @@ const ProductsPage = () => {
             setIsSearching(false);
             setFilteredProducts([]);
             return;
+
+
         }
 
         setIsSearching(true);
@@ -873,11 +933,19 @@ const ProductsPage = () => {
                                     </IonList>
                                 </div>
                             )}
-                            <IonButtons slot="end" className="header-buttons">
+                            {/*<IonButtons slot="end" className="header-buttons">
                                 <IonButton className="theme-toggle-button">
                                     <SwitchDark darkMode={darkMode} toggleDarkMode={toggleDarkMode}/>
                                 </IonButton>
-                            </IonButtons>
+                            </IonButtons>*/}
+
+
+
+
+                            <IonButton onClick={startProductsTour}>
+                                <IonIcon slot="start" icon={informationCircleOutline} />
+                                Ver tour
+                            </IonButton>
                         </div>
                     </IonToolbar>
                 </IonHeader>

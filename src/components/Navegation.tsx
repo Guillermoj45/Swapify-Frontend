@@ -27,7 +27,7 @@ import './Navegation.css';
 
 const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDesktop, isChatView = false }) => {
     // Estado para el modo oscuro/claro
-    const [darkMode, setDarkMode] = useState(true);
+    const [darkMode] = useState(true);
     const history = useHistory();
     const location = useLocation();
 
@@ -78,7 +78,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => navigateTo('/profile')} detail={false}>
+                                <IonItem button onClick={() => (window.location.href = '/profile')} detail={false}>
                                     <IonIcon slot="start" icon={personCircle} />
                                     <IonLabel>Perfil</IonLabel>
                                 </IonItem>

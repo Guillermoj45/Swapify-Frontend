@@ -167,7 +167,12 @@ export default function ProfilePage() {
     };
 
     // Handlers
-    const handleBannerClick = () => fileInputRef.current?.click();
+    const handleBannerClick = () => {
+        const profileId = new URLSearchParams(location.search).get('profileId');
+        if (!profileId) {
+            fileInputRef.current?.click();
+        }
+    };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
