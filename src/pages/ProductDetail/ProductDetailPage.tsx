@@ -26,7 +26,7 @@ import {
     starOutline,
     star,
     arrowBack,
-    arrowForward
+    arrowForward, arrowBackOutline
 } from 'ionicons/icons';
 import { ProductService, Product } from '../../Services/ProductService';
 import cloudinaryImage from '../../Services/CloudinaryService';
@@ -486,8 +486,8 @@ const ProductDetailPage: React.FC = () => {
                                     expand="block"
                                     className="main-action-button"
                                     onClick={() => {
-                                        // Aquí iría la lógica para iniciar un chat con el vendedor
-                                        history.push(`/profile?profileId=${product.profile.id}`);
+                                        // Redirigir al perfil del vendedor
+                                        window.location.href = `/profile?profileId=${product.profile.id}`;
                                     }}
                                 >
                                     <IonIcon slot="start" icon={chatbubbleOutline}/>

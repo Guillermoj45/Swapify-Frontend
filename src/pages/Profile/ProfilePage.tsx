@@ -26,7 +26,6 @@ import {
 } from "@ionic/react";
 
 import {
-    bookmarkOutline,
     cartOutline,
     chatbubbleOutline,
     heartOutline,
@@ -76,20 +75,25 @@ export default function ProfilePage() {
                 return;
             }
 
-            const profileId = new URLSearchParams(location.search).get('token');
+            const profileId = new URLSearchParams(location.search).get('profileId');
+            setLoading(true);
 
             try {
-                setLoading(true);
-
                 if (profileId) {
                     // Cargar perfil del vendedor
-                    const sellerProfile = await ProfileService.getProfileById(profileId);
-                    setProfileData(sellerProfile);
+                    const profileInfo = await ProfileService.getProfileByIdAlternative(profileId);
+                    setProfileData(profileInfo);
+                    setBannerImage(profileInfo.banner);
 
+                    setUserInfo(prev => ({
+                        ...prev,
+                        name: profileInfo.nickname || "Vendedor"
+                    }));
                 } else {
                     // Cargar perfil del usuario autenticado
                     const profileInfo = await ProfileService.getProfileInfo();
                     setProfileData(profileInfo);
+                    setBannerImage(profileInfo.banner);
 
                     const products = await ProfileService.getUserProducts();
                     setUserProducts(products);
@@ -100,17 +104,16 @@ export default function ProfilePage() {
                         itemsForSale: products.length
                     }));
                 }
-
-                setShowAllProducts(false);
             } catch (error) {
                 console.error("Error loading profile or products:", error);
             } finally {
                 setLoading(false);
+                setShowAllProducts(false);
             }
         };
 
         checkAuth();
-    }, [history]);
+    }, [location.search, history]);
 
     useEffect(() => {
         if (activeTab === "deseados") {
@@ -202,10 +205,6 @@ export default function ProfilePage() {
         ));
 
     // Static reviews sample
-    const reviews = [
-        { id: 1, product: "Samsung DS2 5G", comment: "Todo perfecto", reviewer: "rafa", rating: 5, date: "26 Aug 2024", image: "/placeholder.svg?height=40&width=40" },
-        { id: 2, product: "Apple AirPods", comment: "Excelente servicio", reviewer: "maria", rating: 4, date: "15 Sep 2024", image: "/placeholder.svg?height=40&width=40" }
-    ];
 
     // Tab content renderer
     const renderTabContent = () => {
@@ -294,27 +293,6 @@ export default function ProfilePage() {
         }
 
         // Reseñas por defecto
-        return (
-            <div className="tab-content reviews-tab">
-                {reviews.map(review => (
-                    <div key={review.id} className="review-card">
-                        <div className="review-user">
-                            <img src={review.image} alt={review.reviewer} className="reviewer-img" />
-                            <div className="review-product">
-                                <h4>{review.product}</h4>
-                                <p>{review.comment}</p>
-                                <span className="reviewer-name">Por {review.reviewer}</span>
-                            </div>
-                        </div>
-                        <div className="review-meta">
-                            <div className="review-stars">{renderStars(review.rating)}</div>
-                            <div className="review-date">{review.date}</div>
-                            <IonIcon icon={bookmarkOutline} className="bookmark-icon" />
-                        </div>
-                    </div>
-                ))}
-            </div>
-        );
     };
 
     const isPremium = profileData?.premium !== "FREE";

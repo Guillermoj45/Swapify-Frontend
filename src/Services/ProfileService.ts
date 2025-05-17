@@ -158,6 +158,23 @@ export const ProfileService = {
             console.error('Error al verificar el estado premium:', error);
             return false; // En caso de error, retorna false
         }
+    },
+
+    getProfileByIdAlternative: async (profileId: string): Promise<ProfileDTO> => {
+        try {
+            const params = new URLSearchParams({ profileId });
+            const response = await API.get(`/profile?${profileId}`, { params });
+            if (response.data && response.data.avatar) {
+                response.data.avatar = cloudinaryImage(response.data.avatar);
+            }
+            if (response.data && response.data.banner) {
+                response.data.banner = cloudinaryImage(response.data.banner);
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Error al obtener información del perfil por ID:', error);
+            throw error;
+        }
     }
 };
 
