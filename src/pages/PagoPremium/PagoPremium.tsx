@@ -1,3 +1,4 @@
+
 import {
     IonPage,
     IonHeader,
@@ -21,16 +22,8 @@ import {
     IonToast
 } from '@ionic/react';
 import { lockClosedOutline, checkmarkCircleOutline, closeCircleOutline, homeOutline } from 'ionicons/icons';
-import PagoService from '../../Services/PagoService';
 
 import { useState, useEffect } from 'react';
-import { loadStripe, StripeCardElement } from '@stripe/stripe-js';
-import {
-    CardElement,
-    Elements,
-    useStripe,
-    useElements
-} from '@stripe/react-stripe-js';
 import './PagoPremium.css';
 import UIverseCard from "../../components/UIVerseCard/UIverseCard";
 import { useHistory } from 'react-router-dom';
@@ -38,10 +31,6 @@ import { useHistory } from 'react-router-dom';
 // Define types
 type PaymentMethod = 'card' | 'paypal' | 'applepay';
 type PaymentStatus = 'pending' | 'success' | 'error';
-
-interface StripeError {
-    message?: string;
-}
 
 // Payment Result Component
 const PaymentResult: React.FC<{
@@ -90,13 +79,8 @@ const PaymentResult: React.FC<{
     );
 };
 
-// Initialize Stripe with your publishable key
-const stripePromise = loadStripe('pk_test_51RKFEVQBTir074R6Acu86WcAsYYkYgN7Yrjz8CcCvUoQVeQdG2PL8lGHe4RKT0JdMSjNX88YOtdub71zB8flH8Al00BXPeO515');
-
-// Checkout Form Component (separated to use Stripe hooks inside Elements provider)
+// Checkout Form Component
 const CheckoutForm: React.FC = () => {
-    const stripe = useStripe();
-    const elements = useElements();
     const history = useHistory();
 
     // Form state
@@ -113,9 +97,6 @@ const CheckoutForm: React.FC = () => {
     const [showToast, setShowToast] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending');
     const [countdown, setCountdown] = useState(5);
-
-    // Stripe payment intent client secret
-    const [clientSecret] = useState('');
 
     // Handle countdown for success redirect
     useEffect(() => {
@@ -146,45 +127,34 @@ const CheckoutForm: React.FC = () => {
         }
     };
 
-    const createPaymentIntent = async (): Promise<void> => {
+    const handlePayment = async (): Promise<void> => {
+        setLoading(true);
+
         try {
-            // Primero validamos el formulario
+            // Validate inputs
             const validation = validateForm();
             if (!validation.isValid) {
-                setMessage(validation.errorMessage || 'Por favor, completa todos los campos correctamente');
-                setShowToast(true);
-                return;
-            }
-
-            setLoading(true);
-
-            // Crear el Payment Intent
-            const data = await PagoService.createPaymentIntent({
-                priceId: 'price_1RKFLoQBTir074R6yJjLZDKf',
-                quantity: 1,
-                paymentData: {
-                    cardName,
-                    cardNumber: cardNumber.replace(/\s/g, ''),
-                    expiryDate: expiryDate.replace(/\s/g, ''),
-                    cvc
-                }
-            });
-
-            if (data.success && data.url) {
-                // Redirigir al usuario a la página de pago de Stripe
-                window.location.href = data.url;
-            } else {
-                setPaymentStatus('error');
-                setMessage(data.error || 'Error al procesar el pago. Por favor, inténtalo más tarde.');
+                setMessage(validation.errorMessage);
                 setIsSuccess(false);
+                setShowToast(true);
+                setLoading(false);
+                return;  // Importante: retornar aquí para evitar continuar con el pago
             }
-        } catch (error: unknown) {
-            console.error('Error al crear el intent de pago:', error);
-            setPaymentStatus('error');
-            setMessage(error instanceof Error
-                ? error.message
-                : 'Error al procesar el pago. Por favor, inténtalo de nuevo.');
+
+            // Simulate payment processing
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Process payment based on selected method
+            if (paymentMethod === 'card') {
+                setPaymentStatus('success');
+                setMessage('¡Pago completado con éxito! Tu cuenta premium está activa.');
+                setIsSuccess(true);
+            }
+        } catch (error: Error | unknown) {
+            console.error('Payment error:', error);
+            setMessage(error instanceof Error ? error.message : 'Error al procesar el pago. Inténtalo de nuevo.');
             setIsSuccess(false);
+            setShowToast(true);
         } finally {
             setLoading(false);
         }
@@ -236,25 +206,66 @@ const CheckoutForm: React.FC = () => {
     };
 
     // Validate form inputs
-    const validateForm = (): { isValid: boolean; errorMessage?: string } => {
-        // Validar que los campos no estén vacíos
+    const validateForm = (): { isValid: boolean; errorMessage: string } => {
         if (!cardName || cardName.trim() === '') {
-            return { isValid: false, errorMessage: 'El nombre en la tarjeta es obligatorio' };
+            return {
+                isValid: false,
+                errorMessage: 'Por favor, introduce el nombre que aparece en tu tarjeta'
+            };
         }
 
-        if (!cardNumber || cardNumber.replace(/\s/g, '').length !== 16) {
-            return { isValid: false, errorMessage: 'Introduce un número de tarjeta válido de 16 dígitos' };
+        if (!cardNumber) {
+            return {
+                isValid: false,
+                errorMessage: 'Por favor, introduce el número de tarjeta'
+            };
         }
 
-        if (!expiryDate || !expiryDate.match(/^\d{2}\s\/\s\d{2}$/)) {
-            return { isValid: false, errorMessage: 'Introduce una fecha de caducidad válida (MM / AA)' };
+        if (cardNumber.replace(/\s/g, '').length !== 16) {
+            return {
+                isValid: false,
+                errorMessage: 'El número de tarjeta debe tener 16 dígitos'
+            };
         }
 
-        if (!cvc || !cvc.match(/^\d{3}$/)) {
-            return { isValid: false, errorMessage: 'El código CVC debe tener 3 dígitos' };
+        if (!expiryDate) {
+            return {
+                isValid: false,
+                errorMessage: 'Por favor, introduce la fecha de caducidad'
+            };
         }
 
-        return { isValid: true };
+        if (!expiryDate.match(/^\d{2}\s\/\s\d{2}$/)) {
+            return {
+                isValid: false,
+                errorMessage: 'La fecha de caducidad debe tener el formato MM/AA'
+            };
+        }
+
+        if (!cvc) {
+            return {
+                isValid: false,
+                errorMessage: 'Por favor, introduce el código CVC'
+            };
+        }
+
+        if (!cvc.match(/^\d{3}$/)) {
+            return {
+                isValid: false,
+                errorMessage: 'El CVC debe ser un número de 3 dígitos'
+            };
+        }
+
+        const expParts = expiryDate.split(' / ');
+        const month = parseInt(expParts[0]);
+        if (month < 1 || month > 12) {
+            return {
+                isValid: false,
+                errorMessage: 'El mes debe estar entre 01 y 12'
+            };
+        }
+
+        return { isValid: true, errorMessage: '' };
     };
 
     // If payment status is not pending, show result screen
@@ -310,15 +321,7 @@ const CheckoutForm: React.FC = () => {
                                             <path fill="#d50000" d="M16 10A14 14 0 1 0 16 38A14 14 0 1 0 16 10Z"></path>
                                             <path fill="#ff3d00" d="M18,24c0,4.755,2.376,8.95,6,11.48c3.624-2.53,6-6.725,6-11.48s-2.376-8.95-6-11.48 C20.376,15.05,18,19.245,18,24z"></path>
                                         </svg>
-                                        <svg version="1.1" className="chip" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="30px" height="30px" viewBox="0 0 50 50" xmlSpace="preserve">
-                                            <image id="image0" width="50" height="50" x="0" y="0" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAB6VBMVEUAAACNcTiVeUKVeUOYfEaafEeUeUSYfEWZfEaykleyklaXe0SWekSZZjOYfEWYe0WXfUWXe0WcgEicfkiXe0SVekSXekSWekKYe0a9nF67m12ZfUWUeEaXfESVekOdgEmVeUWWekSniU+VeUKVeUOrjFKYfEWliE6WeESZe0GS
-e0WYfES7ml2Xe0WXeESUeEOWfEWcf0eWfESXe0SXfEWYekSVeUKXfEWxklawkVaZfEWWekOUekOWekSYfESZe0eXekWYfEWZe0WZe0eVeUSWeETAnmDCoWLJpmbxy4P1zoXwyoLIpWbjvXjivnjgu3bfu3beunWvkFWxkle/nmDivXiWekTnwXvkwHrCoWOuj1SXe0TEo2TDo2PlwHrbt3KZfEbQrWvPrWuafUfbt3PJp2agg0v0zYX0zYSfgkvKp2frxX7mwHrlv3rsxn/yzIPgvHfduXWXe0XuyIDzzISsjVO1lVm0lFitjVPzzIPqxX7duna0lVncuHTLqGjvyIHeuXXxyYGZfUayk1iyk1e2lln1zYTEomO2llrb
-tnOafkjFpGSbfkfZtXLhvHfkv3nqxH3mwXujhU3KqWizlFilh06khk2fgkqsjlPHpWXJp2erjVOhg0yWe0SliE+XekShhEvAn2D///+gx8TWAAAARnRSTlMACVCTtsRl7Pv7+vxkBab7pZv5+ZlL/UnU/f3SJCVe+Fx39naA9/75XSMh0/3SSkia+pil/KRj7Pr662JPkrbP7OLQ0JFOijI1MwAAAAFiS0dEorDd34wAAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfnAg0IDx2lsiuJAAACLElEQVRIx2Ng
-GAXkAUYmZhZWPICFmYkRVQcbOwenmzse4MbFzc6DpIGXj8PD04sA8PbhF+CFaxEU8iWkAQT8hEVgOkTF/InR4eUVICYO1SIhCRMLDAoKDvFDVhUaEhwUFAjjSUlDdMiEhcOEItzdI6OiYxA6YmODIt3dI2DcuDBZsBY5eVTr4xMSYcyk5BRUOXkFsBZFJTQnp6alQxgZmVloUkrKYC0qqmji2WE5EEZuWB6alKoKdi35YQUQRkFYPpFaCouKIYzi6EDitJSUlsGY5RWVRGjJLyxNy4ZxqtIqqvOxaVELQwZFZdkI
-JVU1RSiSalAt6rUwUBdWG1CP6pT6gNqwOrgCdQyHNYR5YQFhDXj8MiK1IAeyN6aORiyBjByVTc0FqBoKWpqwRCVSgilOaY2OaUPw29qjOzqLvTAchpos47u6EZyYnngUSRwpuTe6D+6qaFQdOPNLRzOM1dzhRZyW+CZouHk3dWLXglFcFIflQhj9YWjJGlZcaKAVSvjyPrRQ0oQVKDAQHlYFYUwIm4gqExGmBSkutaVQJeomwViTJqPK6OhCy2Q9sQBk8cY0DxjTJw0lAQWK6cOKfgNhpKK7ZMpUeF3jPa28BCET
-amiEqJKM+X1gxvWXpoUjVIVPnwErw71nmpgiqiQGBjNzbgs3j1nus+fMndc+Cwm0T52/oNR9lsdCS24ra7Tq1cbWjpXV3sHRCb1idXZ0sGdltXNxRateRwHRAACYHutzk/2I5QAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMy0wMi0xM1QwODoxNToyOSswMDowMEUnN7UAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjMtMDItMTNUMDg6MTU6MjkrMDA6MDA0eo8JAAAAKHRFWHRkYXRlOnRpbWVzdGFtcAAyMDIzLTAy
-LTEzVDA4OjE1OjI5KzAwOjAwY2+u1gAAAABJRU5ErkJggg=="></image>
-                                        </svg>
+
                                         <svg version="1.1" className="contactless" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20px" height="20px" viewBox="0 0 50 50" xmlSpace="preserve">
                                             <image id="image0" width="50" height="50" x="0" y="0" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAQAAAC0NkA6AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA/4ePzL8AAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfnAg0IEzgIwaKTAAADDklEQVRYw+1XS0iUURQ+f5qPyjQflGRFEEFK76koKGxRbWyVVLSOgsCgwjZBJJYuKogSIoOonUK4q3U0WVBWFPZYiIE6kuArG3VGzK/FfPeMM/MLt99/NuHdfPd888/57jn3nvsQWWj/VcMlvMMd5KRTogqx9iCdIjUUmcGR9ImUYowyP3xN
 GQJoRLVaZ2DaZf8kyjEJALhI28ELioyiwC+Rc3QZwRYyO/DH51hQgWm6DMIh10KmD4u9O16K49it1oPOAmcGAWWOepXIRScAoJZ2Frro8oN+EyTT6lWkkg6msZfMSR35QTJmjU0g15tIGSJ08ZZMJkJkHpNZgSkyXosS13TkJpZ62mPIJvOSzC1bp8vRhhCakEk7G9/o4gmZdbpsTcKu0m63FbnBP9Qrc15z
@@ -328,7 +331,6 @@ cUIjO0Dm7HwvErEr0YxeibL1StSh37STafE4I7zcBdRq1DiOkdmlTJVnkQTBTS7X1FYyvfO4piaInKbD
 OjU2KzAwOjAw0ssWdwAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyMy0wMi0xM1QwODoxOTo1Nisw MDowMIXeN6gAAAAASUVORK5CYII="></image>
                                         </svg>
                                         <p className="number">{cardNumber || '9759 2484 5269 6576'}</p>
-                                        <p className="valid_thru">VALID THRU</p>
                                         <p className="date_8264">{expiryDate || '12/24'}</p>
                                         <p className="name">{cardName || 'NOMBRE APELLIDO'}</p>
                                     </div>
@@ -406,34 +408,10 @@ OjU2KzAwOjAw0ssWdwAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyMy0wMi0xM1QwODoxOTo1Nisw MDo
                                             </IonItem>
                                         </IonCol>
                                     </IonRow>
-
-                                    {/* Stripe Card Element */}
-                                    <IonRow className="ion-margin-top">
-                                        <IonCol>
-                                            <div className="stripe-card-element">
-                                                <CardElement
-                                                    options={{
-                                                        style: {
-                                                            base: {
-                                                                fontSize: '16px',
-                                                                color: '#424770',
-                                                                '::placeholder': {
-                                                                    color: '#aab7c4',
-                                                                },
-                                                            },
-                                                            invalid: {
-                                                                color: '#9e2146',
-                                                            },
-                                                        },
-                                                    }}
-                                                />
-                                            </div>
-                                        </IonCol>
-                                    </IonRow>
                                 </div>
 
                                 <div className="ui-card-container">
-                                    <UIverseCard onClick={createPaymentIntent} />
+                                    <UIverseCard onClick={handlePayment} />
                                 </div>
                             </IonCardContent>
                         </IonCard>
@@ -460,9 +438,7 @@ const PagoPremium: React.FC = () => {
 
             {/* Content */}
             <IonContent className="ion-padding" color="light">
-                <Elements stripe={stripePromise}>
-                    <CheckoutForm />
-                </Elements>
+                <CheckoutForm />
                 <div className="page-spacer"></div>
             </IonContent>
 

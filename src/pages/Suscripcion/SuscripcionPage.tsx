@@ -279,12 +279,6 @@ const SuscripcionPage: React.FC = () => {
                                 </IonCardContent>
                             </IonCard>
                         </div>
-
-                        <div className="testimonial-section">
-                            <div className="quote-mark"></div>
-                            <p className="testimonial-text">La suscripción premium mejoró totalmente mi experiencia. Los productos se venden mucho más rápido.</p>
-                            <div className="testimonial-author">- María G., Cliente Premium</div>
-                        </div>
                     </div>
                 </IonContent>
             </IonPage>

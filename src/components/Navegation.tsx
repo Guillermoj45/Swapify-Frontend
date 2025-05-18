@@ -85,7 +85,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => navigateTo('/profile')} detail={false}>
+                                <IonItem button onClick={() => (window.location.href = '/profile')} detail={false}>
                                     <IonIcon slot="start" icon={personCircle} />
                                     <IonLabel>Perfil</IonLabel>
                                 </IonItem>
@@ -103,9 +103,9 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => navigateTo('/premiumSuscribe')} detail={false}>
-                                    <IonIcon slot="start" icon={shieldCheckmark} />
-                                    <IonLabel>Suscripción</IonLabel>
+                                <IonItem button onClick={() => (window.location.href = '/premiumSuscribe')} detail={false}>
+                                    <IonIcon slot="start" icon={personCircle} />
+                                    <IonLabel>Premium</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>

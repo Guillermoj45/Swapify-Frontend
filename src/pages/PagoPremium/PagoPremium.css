@@ -40,26 +40,10 @@
     margin: 20px 0;
 }
 
-.input-item {
-    border-radius: 8px;
-    margin-bottom: 12px;
-}
-
-.input-item {
-    --padding-start: 0;
-    --padding-end: 0;
-    --padding-top: 8px;
-    margin-bottom: 20px;
-}
-
-.input-item ion-label {
-    margin-bottom: 10px;
-}
-
 .input-item ion-input {
     --padding-top: 12px;
     --padding-bottom: 12px;
-    margin-top: 8px;
+    margin-top: 15px;
 }
 
 .pay-button {
