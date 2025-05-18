@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './Chat.css';
-import { IonIcon, IonSpinner } from '@ionic/react';
+import {
+    IonIcon,
+    IonSpinner,
+    IonButtons,
+    IonMenuButton
+} from '@ionic/react';
 import {
     chatbubbleEllipsesOutline,
     sunnyOutline,
@@ -14,7 +19,8 @@ import {
     imageOutline,
     sendOutline,
     micOutline,
-    chatbubblesOutline
+    chatbubblesOutline,
+    menuOutline
 } from 'ionicons/icons';
 import Navegacion from '../../components/Navegation';
 import { WebSocketService } from "../../Services/websocket";
@@ -46,24 +52,6 @@ const ChatPage: React.FC = () => {
     const [isConnected, setIsConnected] = useState(false);
     const currentUserId = sessionStorage.getItem('userId') || 'user';
     const currentUserName = sessionStorage.getItem('nickname') || 'Usuario';
-
-    //const ChatView: React.FC = () => {
-    //const web = new WebSocketService()
-
-    //web.connect().then(() => {
-    //    const mensaje = {
-    //        type: 'chat',
-    //        content: 'Hola mundo',
-    //        timestamp: new Date().toISOString(),
-    //        roomId: 'sala1'  // Si necesitas especificar una sala
-    //    };
-    //    web.subscribeToRoom( 'bcc107d2-79a9-4d86-a4ec-59d7906be5e2', '1ff84f03-e1aa-4ce3-b458-ced67dcaeb9f', '45552e96-18ad-4115-9859-986f591441a8');
-    //    web.setMessageCallback((message) => {
-    //        console.log('Mensaje recibido:', message);
-    //    });
-
-    //    web.sendMessage('sala1', 'idProduct', 'idProfileProduct','idProfile', JSON.stringify(mensaje));
-    //})
 
     // Estado para los chats
     const [chats, setChats] = useState<Chat[]>([
@@ -384,6 +372,14 @@ const ChatPage: React.FC = () => {
             <div className={`chat-sidebar ${showChatPanel ? 'hidden-mobile' : ''}`}>
                 <div className="sidebar-header">
                     <div className="user-profile">
+                        {/* Agregar botón de menú hamburguesa para dispositivos móviles */}
+                        {!isMobile && (
+                            <IonButtons slot="start" className="hamburger-menu-button">
+                                <IonMenuButton>
+                                    <IonIcon icon={menuOutline} style={{ color: darkMode ? 'white' : 'black', fontSize: '24px' }} />
+                                </IonMenuButton>
+                            </IonButtons>
+                        )}
                         <div className="user-avatar">U</div>
                         <h3>{currentUserName}</h3>
                     </div>
@@ -436,7 +432,7 @@ const ChatPage: React.FC = () => {
                 {/* Navegación de pie de página solo para móvil y solo en la vista de lista de chats */}
                 {shouldShowNavigation && (
                     <div className="chat-mobile-footer">
-                        <Navegacion isDesktop={false} isChatView={false} />
+                        <Navegacion isDesktop={false} isChatView={true} />
                     </div>
                 )}
             </div>

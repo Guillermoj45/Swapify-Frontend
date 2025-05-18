@@ -27,13 +27,13 @@ import {
     arrowForward,
     arrowBack,
     star,
-    starOutline, informationCircleOutline
+    informationCircleOutline
 } from 'ionicons/icons';
 import './ProductsPage.css';
 import { useHistory, useLocation } from "react-router-dom";
 import { ProductService, RecommendDTO, Product } from '../../Services/ProductService';
 import { ProfileService, SaveProductDTO } from '../../Services/ProfileService';
-//import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
+import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
 import { Settings as SettingsService } from '../../Services/SettingsService';
 import {driver} from "driver.js"
 import "driver.js/dist/driver.css";
@@ -174,23 +174,6 @@ const ProductsPage = () => {
 
     const resumeSlider = () => {
         setSliderPaused(false);
-    };
-
-    const handleIndicatorClick = (index: number) => {
-        setCurrentSlide(index);
-
-        // Scroll to the selected slide smoothly
-        if (sliderRef.current) {
-            const scrollAmount = sliderRef.current.offsetWidth * index;
-            sliderRef.current.scrollTo({
-                left: scrollAmount,
-                behavior: 'smooth'
-            });
-        }
-
-        // Pause slider temporarily when user interacts with indicators
-        pauseSlider();
-        setTimeout(resumeSlider, 5000); // Resume auto-sliding after 5 seconds
     };
 
     // Function to handle image navigation
@@ -524,7 +507,7 @@ const ProductsPage = () => {
         }
     }, []);
 
-    /*interface PreferenceUpdate {
+    interface PreferenceUpdate {
         key: 'modo_oscuro' | 'notificaciones';
         value: boolean;
     }
@@ -552,38 +535,61 @@ const ProductsPage = () => {
         } catch (error) {
             console.error('Error al actualizar modo oscuro:', error);
         }
-    };*/
+    };
 
     // Slider items
     const sliderItems: SliderItem[] = [
         {
             id: 1,
-            title: 'Buy and sell second-hand items.',
-            description: 'Find unique products at incredible prices.',
-            buttonText: 'Sell now',
-            backgroundColor: darkMode ? '#0d1f15' : '#f1ffe8',
-            textColor: darkMode ? '#64ffa9' : '#0e5741',
-            buttonColor: darkMode ? '#12b687' : '#0e5741'
+            title: 'Descuentos Flash - 24h',
+            description: 'Aprovecha ofertas especiales con hasta 70% de descuento solo por hoy',
+            buttonText: 'Ver ofertas',
+            backgroundColor: darkMode ? 'linear-gradient(135deg, #1a3a63, #0f2541)' : 'linear-gradient(135deg, #e4edff, #d1e2ff)',
+            textColor: darkMode ? '#5c8fee' : '#4a80e4',
+            buttonColor: darkMode ? '#6495fa' : '#4a80e4'
         },
         {
             id: 2,
-            title: 'Discover special offers',
-            description: 'Thousands of products with great discounts.',
-            buttonText: 'View offers',
-            backgroundColor: darkMode ? '#0d1b30' : '#e8f0ff',
-            textColor: darkMode ? '#64aaff' : '#1a56a5',
-            buttonColor: darkMode ? '#1a56a5' : '#1a56a5'
+            title: 'Categorías destacadas',
+            description: 'Explora nuestras colecciones más populares del momento',
+            buttonText: 'Explorar',
+            backgroundColor: darkMode ? 'linear-gradient(135deg, #1e1a3a, #2a1a45)' : 'linear-gradient(135deg, #eee6ff, #dfd6ff)',
+            textColor: darkMode ? '#a48aff' : '#7e5cff',
+            buttonColor: darkMode ? '#a48aff' : '#7e5cff'
         },
         {
             id: 3,
-            title: 'Sell what you no longer use',
-            description: 'Give your objects a second life and earn extra money.',
-            buttonText: 'Post now',
-            backgroundColor: darkMode ? '#301a0d' : '#fff0e8',
-            textColor: darkMode ? '#ffa964' : '#a54c1a',
-            buttonColor: darkMode ? '#a54c1a' : '#a54c1a'
+            title: 'Vende rápido con Premium',
+            description: 'Destaca tu producto por solo 9.99€/mes y véndelo hasta 5 veces más rápido',
+            buttonText: 'Promocionar',
+            backgroundColor: darkMode ? 'linear-gradient(135deg, #3a1a2a, #45152a)' : 'linear-gradient(135deg, #ffe4ee, #ffd6e6)',
+            textColor: darkMode ? '#ff8ab2' : '#e64a8a',
+            buttonColor: darkMode ? '#ff8ab2' : '#e64a8a'
         }
     ];
+
+    const handleSliderButtonClick = (slideId: number) => {
+        switch (slideId) {
+            case 1: // Descuentos Flash
+                // Filtrar productos con descuento
+                setSelectedCategories(['Ofertas', 'Descuentos']);
+                break;
+            case 2: // Categorías destacadas
+                // Mostrar categorías populares o destacadas
+                if (availableCategories.length > 0) {
+                    // Tomar las 3 primeras categorías como ejemplo de destacadas
+                    const featuredCategories = availableCategories.slice(0, 3);
+                    setSelectedCategories(featuredCategories);
+                }
+                break;
+            case 3: // Vende rápido con Premium
+                // Redirigir a la página de crear anuncio con opción premium preseleccionada
+                history.push('/premiumSuscribe');
+                break;
+            default:
+                break;
+        }
+    };
 
     // Effect to set up auto-scroll of slider
     useEffect(() => {
@@ -719,7 +725,7 @@ const ProductsPage = () => {
     };
 
     // Function to truncate and format description
-    const truncateDescription = (description: string | undefined, maxLength: number = 85): string => {
+    const truncateDescription = (description: string | undefined, maxLength: number = 65): string => {
         if (!description) return '';
         if (description.length <= maxLength) return description;
 
@@ -742,7 +748,7 @@ const ProductsPage = () => {
 
     // Function to render premium badge if applicable
     const renderPremiumBadge = (premium: string | undefined) => {
-        if (premium === 'PREMIUN') {
+        if (premium === 'PREMIUM') {
             return (
                 <IonBadge color="warning" className="premium-badge">
                     <IonIcon icon={star} /> Premium
@@ -750,27 +756,6 @@ const ProductsPage = () => {
             );
         }
         return null;
-    };
-
-    // Function to render star rating
-    const renderStarRating = (points: number) => {
-        // Normalize points to a 5-star scale
-        // Assuming points are on a scale of 0-1000
-        const normalizedRating = Math.min(Math.max(points / 200, 0), 5);
-        const fullStars = Math.floor(normalizedRating);
-        const hasHalfStar = normalizedRating - fullStars >= 0.5;
-
-        return (
-            <div className="star-rating">
-                {[...Array(5)].map((_, i) => (
-                    <IonIcon
-                        key={i}
-                        icon={i < fullStars || (i === fullStars && hasHalfStar) ? star : starOutline}
-                        className={i < fullStars ? "star-filled" : "star-empty"}
-                    />
-                ))}
-            </div>
-        );
     };
 
     // Function to render a product card with image navigation
@@ -866,33 +851,28 @@ const ProductsPage = () => {
                         {product.profile && renderPremiumBadge(product.profile.premium)}
                     </div>
 
-                    <div className="product-rating">
-                        {renderStarRating(product.points)}
-                        <span className="product-points">{formatPoints(product.points)}</span>
-                    </div>
+                    {/* Descripción ahora es más corta y va antes del rating */}
+                    <p className="product-description">{truncateDescription(product.description, 65)}</p>
 
-                    <p className="product-description">{truncateDescription(product.description)}</p>
+                    {/* Rating ahora es un IonChip */}
+                    <IonChip className="rating-chip" color="primary">
+                        <span className="product-points">{formatPoints(product.points)}</span>
+                    </IonChip>
 
                     <div className="product-meta">
-                        <div className="product-profile">
+                        <div className="seller-info">
                             {product.profile && (
-                                <div className="seller-info">
-                                    <span className="seller-name">{product.profile.nickname}</span>
-                                    {product.profile.newUser && <span className="new-user-badge">New</span>}
-                                </div>
+                                <>
+                                    <IonChip className="seller-chip custom-chip" outline={true}>
+                                        <span className="seller-name">{product.profile.nickname}</span>
+                                        {product.profile.newUser && <span className="new-user-badge">New</span>}
+                                    </IonChip>
+                                    <IonChip className="date-chip custom-chip" outline={true}>
+                                        <span>{formatDate(product.createdAt)}</span>
+                                    </IonChip>
+                                </>
                             )}
                         </div>
-                        <div className="product-date">
-                            Publicado: {formatDate(product.createdAt)}
-                        </div>
-                    </div>
-
-                    <div className="product-categories">
-                        {product.categories && product.categories.map((category, idx) => (
-                            <span key={idx} className="category-tag">
-                                {category.name}
-                            </span>
-                        ))}
                     </div>
                 </div>
             </div>
@@ -933,14 +913,11 @@ const ProductsPage = () => {
                                     </IonList>
                                 </div>
                             )}
-                            {/*<IonButtons slot="end" className="header-buttons">
+                            <IonButtons slot="end" className="header-buttons">
                                 <IonButton className="theme-toggle-button">
                                     <SwitchDark darkMode={darkMode} toggleDarkMode={toggleDarkMode}/>
                                 </IonButton>
-                            </IonButtons>*/}
-
-
-
+                            </IonButtons>
 
                             <IonButton onClick={startProductsTour}>
                                 <IonIcon slot="start" icon={informationCircleOutline} />
@@ -981,60 +958,49 @@ const ProductsPage = () => {
 
                 {!isSearching && (
                     <>
-                        {/* Banner Slider - Only show if not searching */}
-                        <div className="slider-container">
-                            <div
-                                className={`slider-track ${sliderPaused ? 'paused' : ''}`}
-                                ref={sliderRef}
-                                onScroll={handleScroll}
-                                onMouseEnter={pauseSlider}
-                                onMouseLeave={resumeSlider}
-                                onTouchStart={handleTouchStart}
-                                onTouchMove={handleTouchMove}
-                                onTouchEnd={handleTouchEnd}
-                            >
-                                {sliderItems.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="slider-item"
-                                        style={{backgroundColor: item.backgroundColor}}
-                                    >
-                                        <div className="slider-content">
-                                            <div className="slider-text" style={{color: item.textColor}}>
-                                                <h2 className="slider-title">{item.title}</h2>
-                                                <p className="slider-description">{item.description}</p>
-                                                <button
-                                                    className="slider-button"
-                                                    style={{backgroundColor: item.buttonColor}}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        // Add navigation or action for this button
-                                                        console.log(`Button clicked: ${item.buttonText}`);
-                                                    }}
-                                                >
-                                                    <IonIcon icon={add} className="button-icon"/>
-                                                    {item.buttonText}
-                                                </button>
-                                            </div>
-                                            <div className="slider-image">
-                                                {/* Here you could add a dynamic image for each slide */}
-                                            </div>
+                    {/* Banner Slider - Only show if not searching */}
+                    <div className="slider-container">
+                        <div
+                            className={`slider-track ${sliderPaused ? 'paused' : ''}`}
+                            ref={sliderRef}
+                            onScroll={handleScroll}
+                            onMouseEnter={pauseSlider}
+                            onMouseLeave={resumeSlider}
+                            onTouchStart={handleTouchStart}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
+                        >
+                            {sliderItems.map((item) => (
+                                <div
+                                    key={item.id}
+                                    className={`slider-item slide-${item.id}`}
+                                    style={{backgroundColor: item.backgroundColor}}
+                                >
+                                    <div className="slider-content">
+                                        <div className="slider-text" style={{color: item.textColor}}>
+                                            <h2 className="slider-title">{item.title}</h2>
+                                            <p className="slider-description">{item.description}</p>
+                                            <button
+                                                className="slider-button"
+                                                style={{backgroundColor: item.buttonColor}}
+                                                onClick={() => handleSliderButtonClick(item.id)}
+                                            >
+                                                <IonIcon icon={add} className="button-icon"/>
+                                                {item.buttonText}
+                                            </button>
+                                        </div>
+                                        <div className="slider-image">
+                                            {/* Aquí podrías agregar imágenes relevantes para cada slide */}
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                            <div className="slider-indicators">
-                                {sliderItems.map((_, index) => (
-                                    <div
-                                        key={index}
-                                        className={`slider-indicator ${index === currentSlide ? 'active' : ''}`}
-                                        onClick={() => handleIndicatorClick(index)}
-                                    ></div>
-                                ))}
-                            </div>
+                                </div>
+                            ))}
                         </div>
+
+                    </div>
+
                     </>
-                )}
+                    )}
 
                     {/* Filter chips - Show always to allow filtering */}
                     <div className="filters-container-wrapper">
@@ -1043,12 +1009,12 @@ const ProductsPage = () => {
                             onClick={() => {
                                 if (document.querySelector('.filters-container')) {
                                     const container = document.querySelector('.filters-container') as HTMLElement;
-                                    container.scrollBy({ left: -200, behavior: 'smooth' });
+                                    container.scrollBy({left: -200, behavior: 'smooth'});
                                 }
                             }}
                             aria-label="Scroll left"
                         >
-                            <IonIcon icon={arrowBack} />
+                            <IonIcon icon={arrowBack}/>
                         </button>
 
                         <div className="filters-container">
