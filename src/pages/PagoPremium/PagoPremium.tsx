@@ -1,4 +1,3 @@
-
 import {
     IonPage,
     IonHeader,
@@ -27,6 +26,7 @@ import { useState, useEffect } from 'react';
 import './PagoPremium.css';
 import UIverseCard from "../../components/UIVerseCard/UIverseCard";
 import { useHistory } from 'react-router-dom';
+import pagoService, { CreatePaymentIntentRequest } from "../../Services/PagoService";
 
 // Define types
 type PaymentMethod = 'card' | 'paypal' | 'applepay';
@@ -120,12 +120,41 @@ const CheckoutForm: React.FC = () => {
     const handleRedirect = () => {
         // Redirect to home or payment page based on status
         if (paymentStatus === 'success') {
-            history.push('/home'); // Change to your main menu route
+            history.push('/products'); // Change to your main menu route
         } else {
             // Reset the payment form
             setPaymentStatus('pending');
         }
     };
+
+    const createPaymentInBackend = async (): Promise<boolean> => {
+        try {
+            // Definir los datos para la solicitud de pago
+            const paymentData: CreatePaymentIntentRequest = {
+                priceId: "price_1RKFLoQBTir074R6yJjLZDKf", // Ajusta según tu configuración en Stripe
+                quantity: 1
+            };
+
+            // Llamar al servicio de pago
+            const response = await pagoService.createPaymentIntent(paymentData);
+
+            // Verificar si la respuesta fue exitosa
+            if (response.success) {
+                return true;
+            } else {
+                setMessage(response.error || 'Error al procesar el pago con el servidor');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error al crear intent de pago:', error);
+            if (error instanceof Error) {
+                setMessage(error.message);
+            } else {
+                setMessage('Error inesperado al procesar el pago');
+            }
+            return false;
+        }
+    }
 
     const handlePayment = async (): Promise<void> => {
         setLoading(true);
@@ -142,16 +171,26 @@ const CheckoutForm: React.FC = () => {
             }
 
             // Simulate payment processing
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Process payment based on selected method
             if (paymentMethod === 'card') {
-                setPaymentStatus('success');
-                setMessage('¡Pago completado con éxito! Tu cuenta premium está activa.');
-                setIsSuccess(true);
+                // Enviar la solicitud de pago al backend
+                const paymentSuccessful = await createPaymentInBackend();
+
+                if (paymentSuccessful) {
+                    setPaymentStatus('success');
+                    setMessage('¡Pago completado con éxito! Tu cuenta premium está activa.');
+                    setIsSuccess(true);
+                } else {
+                    setPaymentStatus('error');
+                    setIsSuccess(false);
+                    // El mensaje se establece en createPaymentInBackend si hay error
+                }
             }
-        } catch (error: Error | unknown) {
+        } catch (error) {
             console.error('Payment error:', error);
+            setPaymentStatus('error');
             setMessage(error instanceof Error ? error.message : 'Error al procesar el pago. Inténtalo de nuevo.');
             setIsSuccess(false);
             setShowToast(true);
