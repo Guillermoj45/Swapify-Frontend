@@ -73,6 +73,7 @@ interface Favorites {
 
 const ProductsPage = () => {
 
+
     const startProductsTour = () => {
         const driverObj = driver({
             showProgress: true,
@@ -283,6 +284,9 @@ const ProductsPage = () => {
     // Load user profile and saved products
     useEffect(() => {
         const loadUserProfile = async () => {
+            let modo = await SettingsService.getModoOcuro()
+            sessionStorage.setItem('modoOscuroClaro', modo.toString());
+
             // Obtener el valor del modo oscuro del sessionStorage
             const modoOscuroStorage = sessionStorage.getItem('modoOscuroClaro');
 

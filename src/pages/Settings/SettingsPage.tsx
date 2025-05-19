@@ -113,6 +113,67 @@ const Settings: React.FC = () => {
         },
     });
 
+    useEffect(() => {
+        const initializeTheme = async () => {
+            if (!sessionStorage.getItem('token')) {
+                history.push('/login');
+                return;
+            }
+
+            try {
+                // 1. Primero obtenemos y aplicamos el tema del sessionStorage
+                const savedDarkMode = sessionStorage.getItem('modoOscuroClaro');
+                const initialDarkMode = savedDarkMode === 'true';
+
+                // 2. Aplicamos el tema inmediatamente
+                const body = document.body;
+                const root = document.documentElement;
+
+                body.classList.remove('dark-theme', 'light-theme');
+                body.classList.add(initialDarkMode ? 'dark-theme' : 'light-theme');
+                root.setAttribute('data-theme', initialDarkMode ? 'dark' : 'light');
+
+                // 3. Actualizamos el estado del switch
+                setProfile(prev => ({
+                    ...prev,
+                    preferencias: {
+                        ...prev.preferencias,
+                        modo_oscuro: initialDarkMode
+                    }
+                }));
+
+                // 4. Luego cargamos el resto de configuraciones
+                const profileSettings = await SettingsService.getProfileSettings();
+                const avatarUrl = profileSettings.avatar
+                    ? cloudinaryImage(profileSettings.avatar)
+                    : '';
+
+                setProfile(prev => ({
+                    ...prev,
+                    nickname: profileSettings.nickname || '',
+                    email: profileSettings.email || '',
+                    avatar: avatarUrl,
+                    premium: profileSettings.premium || '',
+                    preferencias: {
+                        notificaciones: profileSettings.preferencias?.notificaciones ?? true,
+                        modo_oscuro: initialDarkMode, // Mantenemos el valor del sessionStorage
+                    },
+                }));
+
+            } catch (error) {
+                console.error('Error loading settings:', error);
+                displayToast('Error al cargar configuraciones');
+
+                // En caso de error, aseguramos el tema claro por defecto
+                document.body.classList.remove('dark-theme');
+                document.body.classList.add('light-theme');
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        };
+
+        initializeTheme();
+    }, []);
+
     // Detectar cambios en el tamaño de la pantalla
     useEffect(() => {
         const handleResize = () => {
@@ -209,6 +270,8 @@ const Settings: React.FC = () => {
         const body = document.body;
         const root = document.documentElement;
 
+        body.classList.remove('dark-theme', 'light-theme');
+
         if (isDark) {
             body.classList.add('dark-theme');
             body.classList.remove('light-theme');
@@ -276,22 +339,7 @@ const Settings: React.FC = () => {
         }
     };
 
-    // Load profile settings on component mount
-    useEffect(() => {
-        if (!sessionStorage.getItem('token')){
-            history.push('/login');
-        } else {
-            loadSettings();
 
-            // También aplicamos el tema basado en el sessionStorage
-            // por si hay un valor ya guardado
-            const savedDarkMode = sessionStorage.getItem('modoOscuroClaro');
-            if (savedDarkMode !== null) {
-                const isDark = savedDarkMode === 'true';
-                applyTheme(isDark);
-            }
-        }
-    }, []);
 
     const ProfileSection: React.FC<SectionProps> = ({ onClose }) => {
         const handleInputChange = (e: InputCustomEvent, field: keyof ProfileState): void => {

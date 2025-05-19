@@ -53,6 +53,31 @@ body, ion-content, ion-toolbar, ion-item, ion-card, ion-list, ion-label, ion-inp
     color: black;
 }
 
+.light-theme {
+    --ion-background-color: #ffffff;
+    --ion-text-color: #000000;
+}
+
+.dark-theme {
+    --ion-background-color: #121212;
+    --ion-text-color: #ffffff;
+}
+
+/* Asegurar que los textos sean legibles en ambos modos */
+.light-theme ion-label,
+.light-theme ion-title,
+.light-theme .user-info h2,
+.light-theme .user-info p {
+    color: var(--ion-text-color);
+}
+
+.dark-theme ion-label,
+.dark-theme ion-title,
+.dark-theme .user-info h2,
+.dark-theme .user-info p {
+    color: var(--ion-text-color);
+}
+
 /* Light theme (default) */
 body {
     --ion-background-color: var(--light-background);
@@ -236,9 +261,6 @@ body.dark-theme .edit-badge:hover {
     object-position: center center; /* Centrado real */
     border-radius: 50%;
 }
-
-
-
 
 .user-info h2 {
     margin: 0 0 4px;

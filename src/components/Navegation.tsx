@@ -79,7 +79,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                     <IonContent>
                         <IonList className="menu-list">
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => navigateTo('/products')} detail={false}>
+                                <IonItem button onClick={() => (window.location.href = '/products')} detail={false}>
                                     <IonIcon slot="start" icon={homeOutline} />
                                     <IonLabel>Inicio</IonLabel>
                                 </IonItem>
@@ -91,13 +91,13 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => navigateTo('/IA')} detail={false}>
+                                <IonItem button onClick={() => (window.location.href = '/IA')} detail={false}>
                                     <IonIcon slot="start" icon={addOutline} />
                                     <IonLabel>IA</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => navigateTo('/chat')} detail={false}>
+                                <IonItem button onClick={() => (window.location.href = '/chat')} detail={false}>
                                     <IonIcon slot="start" icon={mailOutline} />
                                     <IonLabel>Chats</IonLabel>
                                 </IonItem>
@@ -109,7 +109,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => navigateTo('/settings')} detail={false}>
+                                <IonItem button onClick={() => ( window.location.href ='/settings')} detail={false}>
                                     <IonIcon slot="start" icon={settings} />
                                     <IonLabel>Ajustes</IonLabel>
                                 </IonItem>
