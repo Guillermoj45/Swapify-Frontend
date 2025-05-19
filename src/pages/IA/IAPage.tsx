@@ -38,7 +38,7 @@ import {
     chatboxEllipses,
     add,
     chevronBack,
-    createOutline, star, time, pricetag, checkmarkCircle,
+    createOutline,
 } from 'ionicons/icons';
 import './IA.css';
 import Navegacion from '../../components/Navegation';
@@ -79,12 +79,8 @@ interface ProductSidePanelProps {
     productInfo: {
         name: string;
         image: string;
-        price: string;
+        price: number;
         description: string;
-        rating?: string;
-        delivery?: string;
-        discount?: string;
-        stock?: string;
     };
     handleProductAction: (action: 'upload' | 'cancel') => void;
 }
@@ -147,8 +143,8 @@ const AIChatPage: React.FC = () => {
     const [showProductSidebar, setShowProductSidebar] = useState<boolean>(false);
     const [productInfo, setProductInfo] = useState({
         name: "Auriculares Premium XM4",
-        image: "/assets/images/product-headphones.jpg", // Ruta a tu imagen
-        price: "€149,99",
+        image: 0,
+        price: 0,
         description: "Auriculares inalámbricos con cancelación de ruido activa, hasta 30 horas de batería y sonido de alta resolución. Perfectos para trabajo y ocio.",
     });
 
@@ -296,7 +292,7 @@ const AIChatPage: React.FC = () => {
                     // Extraer info del producto si existe
                     setProductInfo({
                         name: response.product.name || 'Producto detectado',
-                        image: response.product.points || 'src/pages/IA/img.png',
+                        image: response.product.points || 0,
                         price: response.product.points || productInfo.price,
                         description: response.product.description || 'IA ha detectado un posible producto basado en tu imagen.'
                     });

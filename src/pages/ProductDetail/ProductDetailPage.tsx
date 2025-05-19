@@ -16,17 +16,15 @@ import {
     IonBadge,
     IonAvatar
 } from '@ionic/react';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams, useHistory, useLocation } from 'react-router-dom';
 import {
     shareOutline,
     chatbubbleOutline,
     timeOutline,
     locationOutline,
     personOutline,
-    starOutline,
-    star,
     arrowBack,
-    arrowForward, arrowBackOutline
+    arrowForward
 } from 'ionicons/icons';
 import { ProductService, Product } from '../../Services/ProductService';
 import cloudinaryImage from '../../Services/CloudinaryService';
@@ -34,12 +32,13 @@ import './ProductDetailPage.css';
 
 interface ProductDetailPageParams {
     id: string;
-    profileId: string; // Added profileId parameter
+    profileId: string;
 }
 
 const ProductDetailPage: React.FC = () => {
     const { id, profileId } = useParams<ProductDetailPageParams>();
     const history = useHistory();
+    const location = useLocation();
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -49,6 +48,11 @@ const ProductDetailPage: React.FC = () => {
     const [darkMode, setDarkMode] = useState<boolean>(false);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+    const [sharingInProgress, setSharingInProgress] = useState<boolean>(false);
+
+    // Extraer el token de acceso público de la URL si existe
+    const urlParams = new URLSearchParams(location.search);
+    const publicToken = urlParams.get('token');
 
     // Check user's preferred color scheme on component mount
     useEffect(() => {
@@ -70,22 +74,32 @@ const ProductDetailPage: React.FC = () => {
             try {
                 setLoading(true);
 
-                // Use the profile ID from URL parameters
-                // If profileId is not available in URL, fall back to session storage
-                const effectiveProfileId = profileId || sessionStorage.getItem('profileId') || 'f708820d-a3eb-43ba-b9d0-e9bc749ae686';
+                // Usar el token público si está disponible, de lo contrario usar el profileId
+                let productData;
 
-                // Fetch the product using the real service
-                const productData = await ProductService.getProductById(id, effectiveProfileId);
+                if (publicToken) {
+                    // Si hay un token público, usarlo para la petición
+                    productData = await ProductService.getProductByIdWithToken(id, publicToken);
+                } else {
+                    // Si no, usar el profileId del URL o de la sesión
+                    const effectiveProfileId = profileId || sessionStorage.getItem('profileId') || 'f708820d-a3eb-43ba-b9d0-e9bc749ae686';
+                    const sessionToken = sessionStorage.getItem('token');
+
+                    if (!sessionToken) {
+                        // Si no hay token en sessionStorage y tampoco hay token público, mostrar error
+                        throw new Error('No hay token de autenticación disponible');
+                    }
+
+                    productData = await ProductService.getProductById(id, effectiveProfileId);
+                }
+
                 setProduct(productData);
 
-                // Fetch related products in a real app
-                // Here we'll use dummy data
                 setRelatedProducts([]);
 
                 // Try to fetch related products based on categories
                 try {
                     // This would be a real API call in production
-                    // For now, we're just simulating it
                     setTimeout(() => {
                         const mockRelatedProducts: Product[] = Array(4).fill(null).map((_, index) => ({
                             id: `rel-${id}-${index}`,
@@ -115,7 +129,7 @@ const ProductDetailPage: React.FC = () => {
         };
 
         fetchProductDetail();
-    }, [id, profileId]);
+    }, [id, profileId, publicToken]);
 
     // Effect para controlar los indicadores de scroll de categorías
     useEffect(() => {
@@ -150,31 +164,129 @@ const ProductDetailPage: React.FC = () => {
         }
     }, [product]);
 
-    // Share product function - Copy product URL to clipboard
-    const shareProduct = () => {
-        try {
-            // Create the shareable URL
-            const productUrl = `${window.location.origin}/product/${id}/${profileId}`;
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
 
-            // Copy to clipboard
-            navigator.clipboard.writeText(productUrl)
-                .then(() => {
-                    // Show success toast
-                    setToastMessage("¡Enlace copiado al portapapeles!");
-                    setToastColor("success");
-                    setShowToast(true);
-                })
-                .catch((err) => {
-                    console.error("Error al copiar al portapapeles:", err);
-                    setToastMessage("No se pudo copiar el enlace");
-                    setToastColor("danger");
-                    setShowToast(true);
+        if (token) {
+            sessionStorage.setItem("token", token);
+            console.log("Token público guardado en sessionStorage");
+        }
+    }, []);
+
+    /* useEffect(() => {
+        const fetchProduct = async () => {
+            try {
+                const token = sessionStorage.getItem('token');
+                if (!token) {
+                    throw new Error("No hay token en sessionStorage");
+                }
+
+                const baseUrl = ProductService.getBaseUrl(); // Usa esto si ya lo tienes
+                const response = await fetch(`${baseUrl}/product/${id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
-        } catch (err) {
+
+                if (!response.ok) {
+                    throw new Error("Error al obtener el producto");
+                }
+
+                const productData = await response.json();
+                setProduct(productData); // Asegúrate de tener setProduct definido con useState
+            } catch (error: any) {
+                console.error("Error al cargar el producto:", error.message);
+                setToastMessage(`Error al cargar el producto: ${error.message}`);
+                setToastColor("danger");
+                setShowToast(true);
+            }
+        };
+
+        fetchProduct();
+    }, [id]); */
+
+    const shareProduct = async () => {
+        if (sharingInProgress) return; // Prevent multiple requests
+
+        try {
+            setSharingInProgress(true);
+
+            // Check if the product exists
+            if (!product || !id) {
+                throw new Error("No hay información suficiente para compartir el producto");
+            }
+
+            // Obtener el ID de perfil efectivo (usando el ID del perfil del producto si no hay profileId en la URL)
+            const effectiveProfileId = profileId || product.profile.id;
+            if (!effectiveProfileId) {
+                throw new Error("No se puede determinar el ID del perfil");
+            }
+
+            // Get the session token
+            const sessionToken = sessionStorage.getItem('token');
+            if (!sessionToken && !publicToken) {
+                throw new Error("No hay token de autenticación disponible");
+            }
+
+            // 1. Obtener el token temporal desde el backend
+            const baseUrl = ProductService.getBaseUrl();
+            // La ruta correcta según tu implementación backend
+            const tokenEndpoint = `${baseUrl}/public-token/product/${id}`;
+
+            console.log("Solicitando token público a:", tokenEndpoint);
+
+            const response = await fetch(tokenEndpoint, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${publicToken || sessionToken}`
+                }
+            });
+
+            if (!response.ok) {
+                let errorMessage;
+                try {
+                    // Intentar leer el error como JSON primero
+                    const errorJson = await response.json();
+                    errorMessage = errorJson.message || "Error desconocido";
+                } catch (e) {
+                    // Si no es JSON, leer como texto
+                    const errorText = await response.text();
+                    errorMessage = errorText || "Error desconocido";
+                }
+                console.error("Server response error:", errorMessage);
+                throw new Error(`Error al generar token (${response.status}): ${errorMessage}`);
+            }
+
+            // 2. Obtener el token directamente de la respuesta
+            const token = await response.text();
+
+            if (!token) {
+                throw new Error("El servidor no devolvió un token válido");
+            }
+
+            console.log("Token recibido correctamente");
+
+            // 3. Crear la URL con token como query param
+            const productUrl = `${window.location.origin}/product/${id}/${effectiveProfileId}?token=${token}`;
+
+            // 4. Copiar al portapapeles
+            await navigator.clipboard.writeText(productUrl);
+
+            // 5. Mostrar éxito
+            setToastMessage("¡Enlace copiado al portapapeles!");
+            setToastColor("success");
+            setShowToast(true);
+        } catch (err: any) {
             console.error("Error al compartir el producto:", err);
-            setToastMessage("Error al compartir el producto");
+            setToastMessage(`Error al compartir: ${err.message || "Error desconocido"}`);
             setToastColor("danger");
             setShowToast(true);
+        } finally {
+            setSharingInProgress(false);
         }
     };
 
@@ -241,25 +353,30 @@ const ProductDetailPage: React.FC = () => {
         }
     };
 
-    // Function to render star rating
-    const renderStarRating = (points: number) => {
-        // Normalize points to a 5-star scale
-        // Assuming points are on a scale of 0-1000
-        const normalizedRating = Math.min(Math.max(points / 200, 0), 5);
-        const fullStars = Math.floor(normalizedRating);
-        const hasHalfStar = normalizedRating - fullStars >= 0.5;
+    // Manejar acción de contacto con el vendedor, incluyendo el token si existe
+    const handleContactSeller = () => {
+        // Determinar la URL base para el chat
+        let chatUrl = `/Chat?profileId=${product?.profile.id}&productId=${id}&question=true`;
 
-        return (
-            <div className="star-rating">
-                {[...Array(5)].map((_, i) => (
-                    <IonIcon
-                        key={i}
-                        icon={i < fullStars || (i === fullStars && hasHalfStar) ? star : starOutline}
-                        className={i < fullStars ? "star-filled" : "star-empty"}
-                    />
-                ))}
-            </div>
-        );
+        // Si existe un token público, añadirlo para mantener la sesión
+        if (publicToken) {
+            chatUrl += `&token=${publicToken}`;
+        }
+
+        window.location.href = chatUrl;
+    };
+
+    // Manejar acción de ver perfil del vendedor, incluyendo el token si existe
+    const handleViewProfile = () => {
+        // Determinar la URL base para el perfil
+        let profileUrl = `/profile?profileId=${product?.profile.id}`;
+
+        // Si existe un token público, añadirlo para mantener la sesión
+        if (publicToken) {
+            profileUrl += `&token=${publicToken}`;
+        }
+
+        window.location.href = profileUrl;
     };
 
     return (
@@ -271,7 +388,7 @@ const ProductDetailPage: React.FC = () => {
                     </IonButtons>
                     <IonTitle>Detalles del producto</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton onClick={shareProduct}>
+                        <IonButton onClick={shareProduct} disabled={sharingInProgress}>
                             <IonIcon icon={shareOutline} />
                         </IonButton>
                     </IonButtons>
@@ -367,7 +484,6 @@ const ProductDetailPage: React.FC = () => {
                             <h1 className="product-detail-title">{product.name}</h1>
                             <div className="product-detail-meta">
                                 <div className="product-detail-rating">
-                                    {renderStarRating(product.points)}
                                     <span>{formatPoints(product.points)}</span>
                                 </div>
                                 <div className="product-detail-time">
@@ -390,34 +506,7 @@ const ProductDetailPage: React.FC = () => {
                                         </IonChip>
                                     )}
                                 </div>
-                                {product.categories && product.categories.length > 3 && (
-                                    <div className="categories-nav-buttons">
-                                        <button
-                                            className="categories-nav-button categories-nav-prev"
-                                            onClick={() => {
-                                                const container = document.getElementById('categories-slider');
-                                                if (container) {
-                                                    container.scrollBy({left: -100, behavior: 'smooth'});
-                                                }
-                                            }}
-                                            aria-label="Previous categories"
-                                        >
-                                            <IonIcon icon={arrowBack}/>
-                                        </button>
-                                        <button
-                                            className="categories-nav-button categories-nav-next"
-                                            onClick={() => {
-                                                const container = document.getElementById('categories-slider');
-                                                if (container) {
-                                                    container.scrollBy({left: 100, behavior: 'smooth'});
-                                                }
-                                            }}
-                                            aria-label="Next categories"
-                                        >
-                                            <IonIcon icon={arrowForward}/>
-                                        </button>
-                                    </div>
-                                )}
+
                             </div>
 
                             {/* Descripción */}
@@ -432,12 +521,7 @@ const ProductDetailPage: React.FC = () => {
                                     <span className="date-label">Publicado:</span>
                                     <span className="date-value">{formatDate(product.createdAt)}</span>
                                 </div>
-                                {product.createdAt !== product.updatedAt && (
-                                    <div className="date-item">
-                                        <span className="date-label">Actualizado:</span>
-                                        <span className="date-value">{formatDate(product.updatedAt)}</span>
-                                    </div>
-                                )}
+                                <p></p>
                             </div>
 
                             {/* Información de usuario */}
@@ -485,10 +569,7 @@ const ProductDetailPage: React.FC = () => {
                                 <IonButton
                                     expand="block"
                                     className="main-action-button"
-                                    onClick={() => {
-                                        // Redirigir al perfil del vendedor
-                                        window.location.href = `/profile?profileId=${product.profile.id}`;
-                                    }}
+                                    onClick={handleContactSeller}
                                 >
                                     <IonIcon slot="start" icon={chatbubbleOutline}/>
                                     Hacer una pregunta
@@ -497,12 +578,8 @@ const ProductDetailPage: React.FC = () => {
                                     expand="block"
                                     fill="outline"
                                     className="secondary-action-button"
-                                    onClick={() => {
-                                        // Aquí iría la lógica para hacer una pregunta
-                                        history.push(`/Chat?profileId=${product.profile.id}&productId=${product.id}&question=true`);
-                                    }}
+                                    onClick={handleViewProfile}
                                 >
-
                                     Perfil del usuario
                                 </IonButton>
                             </div>
@@ -515,8 +592,9 @@ const ProductDetailPage: React.FC = () => {
                                 <div className="items-scroll-container">
                                     {relatedProducts.map((relProduct) => (
                                         <div key={relProduct.id} className="product-card" onClick={() => {
-                                            // Update the link to include the profile ID when navigating to related products
-                                            history.push(`/product/${relProduct.id}/${relProduct.profile.id}`);
+                                            // Incluir el token en la navegación a productos relacionados
+                                            const relatedUrl = `/product/${relProduct.id}/${relProduct.profile.id}${publicToken ? `?token=${publicToken}` : ''}`;
+                                            history.push(relatedUrl);
                                         }}>
                                             <div className="product-image">
                                                 {relProduct.imagenes && relProduct.imagenes.length > 0 ? (

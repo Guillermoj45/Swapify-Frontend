@@ -1,5 +1,3 @@
-// src/Services/ProductService.ts
-
 import cloudinaryImage from "./CloudinaryService";
 import api from "./api";
 
@@ -37,6 +35,12 @@ export interface RecommendDTO {
 export class ProductService {
     private static baseUrl = api.getUri(); // Adjust this to your backend URL
 
+    /**
+     * Get the base URL for API requests
+     */
+    static getBaseUrl(): string {
+        return this.baseUrl;
+    }
 
     /**
      * Get recommended products from the backend
@@ -96,11 +100,16 @@ export class ProductService {
      */
     static async getProductById(productId: string, profileId: string): Promise<Product> {
         try {
+            const sessionToken = sessionStorage.getItem('token');
+            if (!sessionToken) {
+                throw new Error('No hay token de autenticación disponible');
+            }
+
             const response = await fetch(`${this.baseUrl}/product/get?idProduct=${productId}&IdProfileProduct=${profileId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+                    'Authorization': `Bearer ${sessionToken}`
                 }
             });
 
@@ -112,6 +121,28 @@ export class ProductService {
             return data;
         } catch (error) {
             console.error(`Error fetching product with ID ${productId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtener un producto usando un token público temporal
+     */
+    static async getProductByIdWithToken(productId: string, publicToken: string): Promise<Product> {
+        try {
+            const response = await fetch(`${this.baseUrl}/api/public/products/${productId}`, {
+                headers: {
+                    'Authorization': `Bearer ${publicToken}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error al obtener el producto con token público: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error en getProductByIdWithToken:', error);
             throw error;
         }
     }
