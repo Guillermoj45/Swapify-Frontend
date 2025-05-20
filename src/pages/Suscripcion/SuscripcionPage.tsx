@@ -35,8 +35,11 @@ import './SuscripcionPage.css';
 import React, { useState, useEffect } from 'react';
 import ProfileService from "../../Services/ProfileService";
 import Navegacion from "../../components/Navegation";
+import useAuthRedirect from "../../Services/useAuthRedirect";
 
 const SuscripcionPage: React.FC = () => {
+
+    useAuthRedirect()
 
     const premiumFeatures = [
         {

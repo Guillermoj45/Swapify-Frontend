@@ -16,7 +16,7 @@ import {
     IonBadge,
     IonAvatar
 } from '@ionic/react';
-import { useParams, useHistory, useLocation } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import {
     shareOutline,
     chatbubbleOutline,
@@ -29,6 +29,7 @@ import {
 import { ProductService, Product } from '../../Services/ProductService';
 import cloudinaryImage from '../../Services/CloudinaryService';
 import './ProductDetailPage.css';
+import useAuthRedirect from "../../Services/useAuthRedirect";
 
 interface ProductDetailPageParams {
     id: string;
@@ -36,9 +37,11 @@ interface ProductDetailPageParams {
 }
 
 const ProductDetailPage: React.FC = () => {
+
+    useAuthRedirect()
+
     const { id, profileId } = useParams<ProductDetailPageParams>();
     const history = useHistory();
-    const location = useLocation();
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -47,12 +50,9 @@ const ProductDetailPage: React.FC = () => {
     const [toastColor, setToastColor] = useState<string>("danger");
     const [darkMode, setDarkMode] = useState<boolean>(false);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+    const [relatedProductsLoading, setRelatedProductsLoading] = useState<boolean>(false);
     const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
     const [sharingInProgress, setSharingInProgress] = useState<boolean>(false);
-
-    // Extraer el token de acceso público de la URL si existe
-    const urlParams = new URLSearchParams(location.search);
-    const publicToken = urlParams.get('token');
 
     // Check user's preferred color scheme on component mount
     useEffect(() => {
@@ -74,51 +74,15 @@ const ProductDetailPage: React.FC = () => {
             try {
                 setLoading(true);
 
-                // Usar el token público si está disponible, de lo contrario usar el profileId
-                let productData;
+                const effectiveProfileId = profileId || sessionStorage.getItem('profileId') || 'f708820d-a3eb-43ba-b9d0-e9bc749ae686';
+                const sessionToken = sessionStorage.getItem('token');
 
-                if (publicToken) {
-                    // Si hay un token público, usarlo para la petición
-                    productData = await ProductService.getProductByIdWithToken(id, publicToken);
-                } else {
-                    // Si no, usar el profileId del URL o de la sesión
-                    const effectiveProfileId = profileId || sessionStorage.getItem('profileId') || 'f708820d-a3eb-43ba-b9d0-e9bc749ae686';
-                    const sessionToken = sessionStorage.getItem('token');
-
-                    if (!sessionToken) {
-                        // Si no hay token en sessionStorage y tampoco hay token público, mostrar error
-                        throw new Error('No hay token de autenticación disponible');
-                    }
-
-                    productData = await ProductService.getProductById(id, effectiveProfileId);
+                if (!sessionToken) {
+                    throw new Error('No hay token de autenticación disponible');
                 }
 
+                const productData = await ProductService.getProductById(id, effectiveProfileId);
                 setProduct(productData);
-
-                setRelatedProducts([]);
-
-                // Try to fetch related products based on categories
-                try {
-                    // This would be a real API call in production
-                    setTimeout(() => {
-                        const mockRelatedProducts: Product[] = Array(4).fill(null).map((_, index) => ({
-                            id: `rel-${id}-${index}`,
-                            name: `Producto relacionado ${index + 1}`,
-                            description: `Descripción corta del producto relacionado ${index + 1}.`,
-                            points: Math.floor(Math.random() * 5) + 1,
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString(),
-                            imagenes: [],
-                            profile: productData.profile,
-                            categories: []
-                        }));
-                        setRelatedProducts(mockRelatedProducts);
-                    }, 500);
-                } catch (relatedErr) {
-                    console.error('Error fetching related products:', relatedErr);
-                    // Don't set an error - it's not critical
-                }
-
                 setLoading(false);
             } catch (err) {
                 console.error('Error al cargar los detalles del producto:', err);
@@ -129,7 +93,40 @@ const ProductDetailPage: React.FC = () => {
         };
 
         fetchProductDetail();
-    }, [id, profileId, publicToken]);
+    }, [id, profileId]);
+
+    // Fetch related products when product is loaded
+    useEffect(() => {
+        const fetchRelatedProducts = async () => {
+            if (!product || !product.categories || product.categories.length === 0) {
+                return;
+            }
+
+            try {
+                setRelatedProductsLoading(true);
+
+                // Extraer los nombres de las categorías
+                const categoryNames = product.categories.map(cat => cat.name);
+
+                // Obtener productos relacionados
+                const related = await ProductService.getRelatedProductsByCategories(
+                    categoryNames,
+                    product.id,
+                    4
+                );
+
+                setRelatedProducts(related);
+            } catch (err) {
+                console.error('Error al cargar productos relacionados:', err);
+                // No mostramos error al usuario para productos relacionados, solo log
+                setRelatedProducts([]);
+            } finally {
+                setRelatedProductsLoading(false);
+            }
+        };
+
+        fetchRelatedProducts();
+    }, [product]);
 
     // Effect para controlar los indicadores de scroll de categorías
     useEffect(() => {
@@ -164,119 +161,28 @@ const ProductDetailPage: React.FC = () => {
         }
     }, [product]);
 
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get("token");
-
-        if (token) {
-            sessionStorage.setItem("token", token);
-            console.log("Token público guardado en sessionStorage");
-        }
-    }, []);
-
-    /* useEffect(() => {
-        const fetchProduct = async () => {
-            try {
-                const token = sessionStorage.getItem('token');
-                if (!token) {
-                    throw new Error("No hay token en sessionStorage");
-                }
-
-                const baseUrl = ProductService.getBaseUrl(); // Usa esto si ya lo tienes
-                const response = await fetch(`${baseUrl}/product/${id}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error("Error al obtener el producto");
-                }
-
-                const productData = await response.json();
-                setProduct(productData); // Asegúrate de tener setProduct definido con useState
-            } catch (error: any) {
-                console.error("Error al cargar el producto:", error.message);
-                setToastMessage(`Error al cargar el producto: ${error.message}`);
-                setToastColor("danger");
-                setShowToast(true);
-            }
-        };
-
-        fetchProduct();
-    }, [id]); */
-
     const shareProduct = async () => {
-        if (sharingInProgress) return; // Prevent multiple requests
+        if (sharingInProgress) return; // Evitar solicitudes múltiples
 
         try {
             setSharingInProgress(true);
 
-            // Check if the product exists
             if (!product || !id) {
                 throw new Error("No hay información suficiente para compartir el producto");
             }
 
-            // Obtener el ID de perfil efectivo (usando el ID del perfil del producto si no hay profileId en la URL)
             const effectiveProfileId = profileId || product.profile.id;
             if (!effectiveProfileId) {
                 throw new Error("No se puede determinar el ID del perfil");
             }
 
-            // Get the session token
-            const sessionToken = sessionStorage.getItem('token');
-            if (!sessionToken && !publicToken) {
-                throw new Error("No hay token de autenticación disponible");
-            }
+            // 1. Construir la URL pública (sin token)
+            const productUrl = `${window.location.origin}/product/${id}/${effectiveProfileId}`;
 
-            // 1. Obtener el token temporal desde el backend
-            const baseUrl = ProductService.getBaseUrl();
-            // La ruta correcta según tu implementación backend
-            const tokenEndpoint = `${baseUrl}/public-token/product/${id}`;
-
-            console.log("Solicitando token público a:", tokenEndpoint);
-
-            const response = await fetch(tokenEndpoint, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${publicToken || sessionToken}`
-                }
-            });
-
-            if (!response.ok) {
-                let errorMessage;
-                try {
-                    // Intentar leer el error como JSON primero
-                    const errorJson = await response.json();
-                    errorMessage = errorJson.message || "Error desconocido";
-                } catch (e) {
-                    // Si no es JSON, leer como texto
-                    const errorText = await response.text();
-                    errorMessage = errorText || "Error desconocido";
-                }
-                console.error("Server response error:", errorMessage);
-                throw new Error(`Error al generar token (${response.status}): ${errorMessage}`);
-            }
-
-            // 2. Obtener el token directamente de la respuesta
-            const token = await response.text();
-
-            if (!token) {
-                throw new Error("El servidor no devolvió un token válido");
-            }
-
-            console.log("Token recibido correctamente");
-
-            // 3. Crear la URL con token como query param
-            const productUrl = `${window.location.origin}/product/${id}/${effectiveProfileId}?token=${token}`;
-
-            // 4. Copiar al portapapeles
+            // 2. Copiar al portapapeles
             await navigator.clipboard.writeText(productUrl);
 
-            // 5. Mostrar éxito
+            // 3. Mostrar mensaje de éxito
             setToastMessage("¡Enlace copiado al portapapeles!");
             setToastColor("success");
             setShowToast(true);
@@ -355,28 +261,20 @@ const ProductDetailPage: React.FC = () => {
 
     // Manejar acción de contacto con el vendedor, incluyendo el token si existe
     const handleContactSeller = () => {
-        // Determinar la URL base para el chat
-        let chatUrl = `/Chat?profileId=${product?.profile.id}&productId=${id}&question=true`;
-
-        // Si existe un token público, añadirlo para mantener la sesión
-        if (publicToken) {
-            chatUrl += `&token=${publicToken}`;
-        }
-
+        const chatUrl = `/Chat?profileId=${product?.profile.id}&productId=${id}&question=true`;
         window.location.href = chatUrl;
     };
 
     // Manejar acción de ver perfil del vendedor, incluyendo el token si existe
     const handleViewProfile = () => {
-        // Determinar la URL base para el perfil
-        let profileUrl = `/profile?profileId=${product?.profile.id}`;
-
-        // Si existe un token público, añadirlo para mantener la sesión
-        if (publicToken) {
-            profileUrl += `&token=${publicToken}`;
-        }
-
+        const profileUrl = `/profile?profileId=${product?.profile.id}`;
         window.location.href = profileUrl;
+    };
+
+    // Handle related product click
+    const handleRelatedProductClick = (relatedProduct: Product) => {
+        const relatedUrl = `/product/${relatedProduct.id}/${relatedProduct.profile.id}`;
+        history.push(relatedUrl);
     };
 
     return (
@@ -506,7 +404,6 @@ const ProductDetailPage: React.FC = () => {
                                         </IonChip>
                                     )}
                                 </div>
-
                             </div>
 
                             {/* Descripción */}
@@ -586,53 +483,75 @@ const ProductDetailPage: React.FC = () => {
                         </div>
 
                         {/* Productos relacionados */}
-                        {relatedProducts.length > 0 && (
+                        {(relatedProducts.length > 0 || relatedProductsLoading) && (
                             <div className="related-products">
                                 <h2>Productos relacionados</h2>
-                                <div className="items-scroll-container">
-                                    {relatedProducts.map((relProduct) => (
-                                        <div key={relProduct.id} className="product-card" onClick={() => {
-                                            // Incluir el token en la navegación a productos relacionados
-                                            const relatedUrl = `/product/${relProduct.id}/${relProduct.profile.id}${publicToken ? `?token=${publicToken}` : ''}`;
-                                            history.push(relatedUrl);
-                                        }}>
-                                            <div className="product-image">
-                                                {relProduct.imagenes && relProduct.imagenes.length > 0 ? (
-                                                    <img
-                                                        src={getImageUrl(relProduct.imagenes[0]) || ''}
-                                                        alt={relProduct.name}
-                                                        className="product-image-img"
-                                                        onError={(e) => {
-                                                            const target = e.target as HTMLImageElement;
-                                                            target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23cccccc"/%3E%3Ctext x="50" y="50" font-family="Arial" font-size="20" text-anchor="middle" dominant-baseline="middle" fill="%23ffffff"%3E' + relProduct.name.charAt(0) + '%3C/text%3E%3C/svg%3E';
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div
-                                                        className="product-image-placeholder"
-                                                        style={{
-                                                            backgroundColor: `#${relProduct.id.substring(0, 6)}`,
-                                                            minHeight: '150px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            color: '#fff',
-                                                            fontSize: '1.5rem',
-                                                            fontWeight: 'bold'
-                                                        }}
-                                                    >
-                                                        {relProduct.name.charAt(0)}
-                                                    </div>
-                                                )}
-
+                                {relatedProductsLoading ? (
+                                    <div className="loading-container">
+                                        <IonSpinner name="circular" />
+                                        <p>Cargando productos relacionados...</p>
+                                    </div>
+                                ) : (
+                                    <div className="items-scroll-container">
+                                        {relatedProducts.map((relProduct) => (
+                                            <div
+                                                key={relProduct.id}
+                                                className="product-card"
+                                                onClick={() => handleRelatedProductClick(relProduct)}
+                                            >
+                                                <div className="product-image">
+                                                    {relProduct.imagenes && relProduct.imagenes.length > 0 ? (
+                                                        <img
+                                                            src={relProduct.imagenes[0] || ''}
+                                                            alt={relProduct.name}
+                                                            className="product-image-img"
+                                                            onError={(e) => {
+                                                                const target = e.target as HTMLImageElement;
+                                                                target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23cccccc"/%3E%3Ctext x="50" y="50" font-family="Arial" font-size="20" text-anchor="middle" dominant-baseline="middle" fill="%23ffffff"%3E' + relProduct.name.charAt(0) + '%3C/text%3E%3C/svg%3E';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div
+                                                            className="product-image-placeholder"
+                                                            style={{
+                                                                backgroundColor: `#${relProduct.id.substring(0, 6)}`,
+                                                                minHeight: '150px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                color: '#fff',
+                                                                fontSize: '1.5rem',
+                                                                fontWeight: 'bold'
+                                                            }}
+                                                        >
+                                                            {relProduct.name.charAt(0)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="product-info">
+                                                    <h3 className="product-name">{relProduct.name}</h3>
+                                                    <p className="product-points">{formatPoints(relProduct.points)}</p>
+                                                    {/* Mostrar categorías compartidas */}
+                                                    {relProduct.categories && relProduct.categories.length > 0 && (
+                                                        <div className="product-categories">
+                                                            {relProduct.categories.slice(0, 2).map((category, idx) => (
+                                                                <IonChip key={idx} color="primary" >
+                                                                    <IonLabel>{category.name}</IonLabel>
+                                                                </IonChip>
+                                                            ))}
+                                                            {relProduct.categories.length > 2 && (
+                                                                <span className="more-categories">+{relProduct.categories.length - 2} más</span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="product-info">
-                                                <h3 className="product-name">{relProduct.name}</h3>
-                                                <p className="product-points">{formatPoints(relProduct.points)}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {relatedProducts.length === 0 && !relatedProductsLoading && product && product.categories && product.categories.length > 0 && (
+                                    <p className="no-related-products">No se encontraron productos relacionados en las mismas categorías.</p>
+                                )}
                             </div>
                         )}
                     </div>
