@@ -311,19 +311,17 @@ const ChatPage: React.FC = () => {
 
         const messageToSend = {
             content: inputMessage,
-            userId: currentUserId,
             senderName: currentUserName,
-            idProduct: activeChat.idProduct,
-            idProfileProduct: activeChat.idProfileProduct,
-            idProfile: activeChat.idProfile,
+            token: sessionStorage.getItem('token'),
             timestamp: new Date().toISOString(),
             type: 'chat'
         };
 
-        for (let i = 0; i < 1000; i++) {
-            // Enviar el mensaje a través de WebSocket
-            webSocketService.sendMessage(activeChat.idProduct, activeChat.idProfileProduct, activeChat.idProfile, messageToSend);
-        }
+        console.log("Mensaje a enviar:", messageToSend);
+
+        // Enviar el mensaje a través de WebSocket
+        webSocketService.sendMessage(activeChat.idProduct, activeChat.idProfileProduct, activeChat.idProfile, messageToSend);
+
         // Añadir el mensaje a la UI inmediatamente (optimistic update)
         const newMessage: Message = {
             id: Date.now().toString(),

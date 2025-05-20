@@ -1,6 +1,8 @@
 import {Client, Message, StompSubscription} from '@stomp/stompjs';
 
-type MessageCallback = (message: { content: string, roomId: string }) => void;
+type MessageCallback = (
+    message: { content: string, roomId: string })
+    => void;
 
 export class WebSocketService {
   private client: Client | null = null;
@@ -54,9 +56,9 @@ export class WebSocketService {
     if (!this.client) return;
 
     try {
-      await this.client.publish({
+      this.client.publish({
         destination: `/app/chat/${idProduct}/${idProfileProduct}/${idProfile}`,
-        body: message,
+        body: JSON.stringify(message), // Asegura que el mensaje se envía como JSON,
       });
     } catch (error) {
       console.error('Error al enviar el mensaje:', error);
