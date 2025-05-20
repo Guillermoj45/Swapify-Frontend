@@ -43,6 +43,7 @@ import { Settings as SettingsService } from '../../Services/SettingsService';
 import cloudinaryImage from "../../Services/CloudinaryService";
 import { ProfileSettings } from '../../Models/ProfileSettings';
 import Navegacion from "../../components/Navegation";
+import useAuthRedirect from "../../Services/useAuthRedirect";
 
 // Definimos una interfaz para nuestro estado de perfil
 interface ProfileState {
@@ -82,6 +83,9 @@ interface ProfileWithFile extends Omit<ProfileSettings, 'avatar'> {
 }
 
 const Settings: React.FC = () => {
+
+    useAuthRedirect()
+
     const history = useHistory();
 
     // UI states

@@ -37,6 +37,7 @@ import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
 import { Settings as SettingsService } from '../../Services/SettingsService';
 import {driver} from "driver.js"
 import "driver.js/dist/driver.css";
+import useAuthRedirect from "../../Services/useAuthRedirect";
 
 interface CustomLocationState {
     token?: string;
@@ -73,6 +74,7 @@ interface Favorites {
 
 const ProductsPage = () => {
 
+    useAuthRedirect()
 
     const startProductsTour = () => {
         const driverObj = driver({
@@ -328,18 +330,6 @@ const ProductsPage = () => {
             loadUserProfile();
         }
     }, []);
-
-    useEffect(() => {
-        const mensaje = new URLSearchParams(location.search).get('token');
-        if (mensaje){
-            sessionStorage.setItem("token", mensaje);
-            history.push("/products");
-        }
-
-        if (!sessionStorage.getItem("token")) {
-            history.push("/login");
-        }
-    }, [history, location]);
 
     // Load recommended data from backend
     useEffect(() => {

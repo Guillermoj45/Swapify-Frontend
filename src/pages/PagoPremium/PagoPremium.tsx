@@ -27,6 +27,7 @@ import './PagoPremium.css';
 import UIverseCard from "../../components/UIVerseCard/UIverseCard";
 import { useHistory } from 'react-router-dom';
 import pagoService, { CreatePaymentIntentRequest } from "../../Services/PagoService";
+import useAuthRedirect from "../../Services/useAuthRedirect";
 
 // Define types
 type PaymentMethod = 'card' | 'paypal' | 'applepay';
@@ -81,6 +82,9 @@ const PaymentResult: React.FC<{
 
 // Checkout Form Component
 const CheckoutForm: React.FC = () => {
+
+    useAuthRedirect()
+
     const history = useHistory();
 
     // Form state

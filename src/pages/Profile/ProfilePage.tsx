@@ -37,11 +37,13 @@ import { Building, MapPin } from "lucide-react";
 
 import ProfileService, { ProfileDTO, ProductDTO } from "../../Services/ProfileService";
 import "./ProfilePage.css";
+import useAuthRedirect from "../../Services/useAuthRedirect";
 
 export default function ProfilePage() {
     const history = useHistory();
 
-    // State
+    useAuthRedirect()
+
     const [loading, setLoading] = useState(true);
     const [loadingSaved, setLoadingSaved] = useState(false);
     const [profileData, setProfileData] = useState<ProfileDTO | null>(null);

@@ -42,7 +42,8 @@ import {
 } from 'ionicons/icons';
 import './IA.css';
 import Navegacion from '../../components/Navegation';
-import { IAChat } from '../../Services/IAService'; // Importamos el servicio
+import { IAChat } from '../../Services/IAService';
+import useAuthRedirect from "../../Services/useAuthRedirect"; // Importamos el servicio
 
 // Definir interfaces para una escritura TypeScript adecuada
 interface Message {
@@ -95,6 +96,9 @@ const SideContent: React.FC<SideContentProps> = ({ children, className, collapse
 };
 
 const AIChatPage: React.FC = () => {
+
+    useAuthRedirect()
+
     const initialAIMessage: Message = {
         id: 1,
         text: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
