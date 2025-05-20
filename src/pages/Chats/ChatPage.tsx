@@ -37,7 +37,9 @@ interface Message {
 }
 
 interface Chat {
-    id: string;
+    idProduct: string; //UUID del producto
+    idProfileProduct: string; //UUID del perfil del producto
+    idProfile: string; //UUID del perfil
     name: string;
     avatar: string;
     lastMessage: string;
@@ -56,7 +58,9 @@ const ChatPage: React.FC = () => {
     // Estado para los chats
     const [chats, setChats] = useState<Chat[]>([
         {
-            id: 'sala1',
+            idProduct: 'bcc107d2-79a9-4d86-a4ec-59d7906be5e2',
+            idProfileProduct: '1ff84f03-e1aa-4ce3-b458-ced67dcaeb9f',
+            idProfile: '45552e96-18ad-4115-9859-986f591441a8',
             name: 'Chat General',
             avatar: 'G',
             lastMessage: 'Bienvenido al chat general',
@@ -242,7 +246,7 @@ const ChatPage: React.FC = () => {
             webSocketService.unsubscribeFromRoom();
 
             // Suscribirse a la nueva sala
-            webSocketService.subscribeToRoom(activeChat.id);
+            webSocketService.subscribeToRoom(activeChat.idProduct, activeChat.idProfileProduct, activeChat.idProfile);
 
             // Cargar mensajes del chat (esto podría ser una llamada API en una implementación real)
             // Por ahora, lo simulamos con mensajes de bienvenida
@@ -295,15 +299,16 @@ const ChatPage: React.FC = () => {
 
         const messageToSend = {
             content: inputMessage,
-            userId: currentUserId,
             senderName: currentUserName,
-            roomId: activeChat.id,
+            token: sessionStorage.getItem('token'),
             timestamp: new Date().toISOString(),
             type: 'chat'
         };
 
+        console.log("Mensaje a enviar:", messageToSend);
+
         // Enviar el mensaje a través de WebSocket
-        webSocketService.sendMessage(activeChat.id, JSON.stringify(messageToSend));
+        webSocketService.sendMessage(activeChat.idProduct, activeChat.idProfileProduct, activeChat.idProfile, messageToSend);
 
         // Añadir el mensaje a la UI inmediatamente (optimistic update)
         const newMessage: Message = {

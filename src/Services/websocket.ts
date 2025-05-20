@@ -1,7 +1,8 @@
 import {Client, Message, StompSubscription} from '@stomp/stompjs';
-import api from "./api";
 
-type MessageCallback = (message: { content: string, roomId: string }) => void;
+type MessageCallback = (
+    message: { content: string, roomId: string })
+    => void;
 
 export class WebSocketService {
   private client: Client | null = null;
@@ -40,23 +41,29 @@ export class WebSocketService {
         this.messageCallback(data);
         console.log("Hola",data)
       }
+      console.log("Hola")
     }, this.headers);
   }
 
-    unsubscribeFromRoom() {
-        if (this.subscribeChatMessages) {
-        this.subscribeChatMessages.unsubscribe();
-        this.subscribeChatMessages = undefined;
-        }
-    }
+  unsubscribeFromRoom() {
+      if (this.subscribeChatMessages) {
+      this.subscribeChatMessages.unsubscribe();
+      this.subscribeChatMessages = undefined;
+      }
+  }
 
-  sendMessage( idProduct: string, idProfileProduct: string, idProfile: string, message: string) {
+  async sendMessage(idProduct: string, idProfileProduct: string, idProfile: string, message): Promise<void> {
     if (!this.client) return;
 
-    this.client.publish({
-      destination: `/app/chat/${idProduct}/${idProfileProduct}/${idProfile}`,
-      body: JSON.stringify(message)
-    });
+    try {
+      this.client.publish({
+        destination: `/app/chat/${idProduct}/${idProfileProduct}/${idProfile}`,
+        body: JSON.stringify(message), // Asegura que el mensaje se envía como JSON,
+      });
+    } catch (error) {
+      console.error('Error al enviar el mensaje:', error);
+      throw error;
+    }
   }
 
   setMessageCallback(callback: MessageCallback) {
