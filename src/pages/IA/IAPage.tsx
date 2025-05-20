@@ -270,8 +270,8 @@ const AIChatPage: React.FC = () => {
                 }
 
                 // Obtener el último mensaje de la IA
-                const lastAIMessage = response.messagesIA[response.messagesIA.length - 1];
-
+                const lastAIMessage = response.lastMessage;
+                console.log('Respuesta de IA:', lastAIMessage);
                 if (!lastAIMessage) {
                     throw new Error('No se encontró respuesta de la IA en los mensajes');
                 }

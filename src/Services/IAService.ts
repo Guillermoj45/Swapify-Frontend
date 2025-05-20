@@ -2,13 +2,13 @@ import API from './api';
 
 // Interfaz para tipificar la respuesta
 export interface IAChatResponse {
-    messagesIA: Array<{
+    lastMessage: {
         id: string;
         message: string;
         createdAt: string;
-        images?: string[];
+        images: string[];
         user: boolean;
-    }>;
+    };
     id: string;
     nombre: string;
     createdAt: string;
@@ -21,6 +21,87 @@ export interface IAChatResponse {
         // Otros campos del producto
     };
 }
+
+const MAX_FILE_SIZE = 1024 * 1024; // 1MB en bytes
+
+const compressImage = async (file: File, maxSizeInBytes: number): Promise<File> => {
+    let quality = 1.0;
+    let compressedFile = file;
+
+    while (compressedFile.size > maxSizeInBytes && quality > 0.1) {
+        const canvas = document.createElement('canvas');
+        const img = await createImageBitmap(file);
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('No se pudo crear el contexto 2D');
+
+        ctx.drawImage(img, 0, 0);
+
+        const blob = await new Promise<Blob | null>(resolve => {
+            canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
+        });
+
+        if (!blob) throw new Error('Error al comprimir la imagen');
+
+        compressedFile = new File([blob], file.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+        });
+
+        quality -= 0.1;
+    }
+
+    return compressedFile;
+};
+
+const convertImageToPNG = async (file: File): Promise<File> => {
+    // Primero verificamos si necesitamos comprimir
+    if (file.size > MAX_FILE_SIZE) {
+        console.log('Archivo demasiado grande, comprimiendo...');
+        try {
+            const compressedFile = await compressImage(file, MAX_FILE_SIZE);
+            console.log('Archivo comprimido exitosamente');
+            return compressedFile;
+        } catch (error) {
+            console.error('Error al comprimir:', error);
+        }
+    }
+
+    // Si no necesita compresión o hubo un error, continuamos con la conversión normal
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                reject(new Error('No se pudo crear el contexto 2D'));
+                return;
+            }
+
+            ctx.drawImage(img, 0, 0);
+
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    const convertedFile = new File([blob], file.name.split('.')[0] + '.png', {
+                        type: 'image/png'
+                    });
+                    resolve(convertedFile);
+                } else {
+                    reject(new Error('Error al convertir la imagen'));
+                }
+            }, 'image/png');
+        };
+
+        img.onerror = () => reject(new Error('Error al cargar la imagen'));
+        img.src = URL.createObjectURL(file);
+    });
+};
 
 /**
  * Envía un mensaje al asistente IA con imágenes opcionales
@@ -86,21 +167,6 @@ export const IAChat = async (
         });
 
 
-        // Verificamos si la respuesta tiene la estructura esperada
-        if (!response.data.messagesIA || response.data.messagesIA.length === 0) {
-            console.warn('La respuesta no contiene mensajes IA');
-            return {
-                ...response.data,
-                messagesIA: [{
-                    id: Date.now().toString(),
-                    message: 'No se recibió respuesta del servidor',
-                    createdAt: new Date().toISOString(),
-                    images: [],
-                    user: false
-                }]
-            };
-        }
-
         return response.data;
     } catch (error: any) {
         console.error('Error en petición IAChat:', error);
@@ -115,37 +181,4 @@ export const IAChat = async (
 
         throw error;
     }
-};
-
-const convertImageToPNG = (file: File): Promise<File> => {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-
-            const ctx = canvas.getContext('2d');
-            if (!ctx) {
-                reject(new Error('No se pudo crear el contexto 2D'));
-                return;
-            }
-
-            ctx.drawImage(img, 0, 0);
-
-            canvas.toBlob((blob) => {
-                if (blob) {
-                    const convertedFile = new File([blob], file.name.split('.')[0] + '.png', {
-                        type: 'image/png'
-                    });
-                    resolve(convertedFile);
-                } else {
-                    reject(new Error('Error al convertir la imagen'));
-                }
-            }, 'image/png');
-        };
-
-        img.onerror = () => reject(new Error('Error al cargar la imagen'));
-        img.src = URL.createObjectURL(file);
-    });
 };
