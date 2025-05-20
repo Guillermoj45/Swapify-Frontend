@@ -14,6 +14,7 @@ export interface ProfileDTO {
     premium: string;
     newUser: boolean;
     banner: string;
+    ubicacion: string; // Nueva propiedad agregada
 }
 
 export interface ProductDTO {
@@ -126,7 +127,7 @@ export const ProfileService = {
             console.error('Error al obtener los productos guardados:', error);
             throw error;
         }
-    }, // <- Coma agregada aquí
+    },
 
     updateBanner: async (imageFile: File): Promise<{ success: boolean, imageUrl: string }> => {
         try {
@@ -153,10 +154,10 @@ export const ProfileService = {
     isPremium: async (): Promise<boolean> => {
         try {
             const response = await API.get('/profile/isPremium');
-            return response.data; // Asegúrate de que el backend devuelva esta propiedad
+            return response.data;
         } catch (error) {
             console.error('Error al verificar el estado premium:', error);
-            return false; // En caso de error, retorna false
+            return false;
         }
     },
 
