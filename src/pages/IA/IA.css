@@ -1,62 +1,82 @@
-/* AIChatPage.css - Con la paleta de colores adaptada de ProductsPage.css */
+/* AIChatPage.css - Con modo claro y oscuro completo */
 
-/* Estilos base */
+/*** VARIABLES Y TEMAS ***/
+:root {
+    /* Variables globales */
+    --transition-standard: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Variables tema claro y oscuro */
+.light-theme {
+    --background-color: #f8f9fc;
+    --card-background: #ffffff;
+    --text-color: #1a1c2a;
+    --text-secondary: #606478;
+    --border-color: #e4e7f2;
+    --header-bg: rgba(255, 255, 255, 0.98);
+    --searchbar-bg: #f0f2f8;
+    --chip-bg: #f0f2f8;
+    --chip-color: #505570;
+    --accent-color: #4a80e4;
+    --hover-color: #3a6fd0;
+    --shadow-color: rgba(23, 43, 99, 0.08);
+    --card-shadow: 0 6px 16px rgba(23, 43, 99, 0.06), 0 2px 6px rgba(23, 43, 99, 0.03);
+    --button-shadow: 0 4px 12px rgba(74, 128, 228, 0.3);
+    --gradient-primary: linear-gradient(135deg, #4a80e4, #5c8fee);
+    --gradient-secondary: linear-gradient(135deg, #f8f9fc, #ffffff);
+    --message-user-bg: linear-gradient(135deg, #4a80e4, #3a6fd0);
+    --typing-color: #4a80e4;
+    --delete-color: #ef4444;
+    --success-color: #10b981;
+}
+
+.dark-theme {
+    --background-color: #111219;
+    --card-background: #1a1c2a;
+    --text-color: #f0f2f8;
+    --text-secondary: #a0a4bc;
+    --border-color: #2a2d3d;
+    --header-bg: rgba(15, 16, 24, 0.98);
+    --searchbar-bg: #232536;
+    --chip-bg: #232536;
+    --chip-color: #c0c4da;
+    --accent-color: #4a80e4;
+    --hover-color: #5c8fee;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --card-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15);
+    --button-shadow: 0 4px 20px rgba(74, 128, 228, 0.45);
+    --gradient-primary: linear-gradient(135deg, #4a80e4, #6495fa);
+    --gradient-secondary: linear-gradient(135deg, #1a1c2a, #232536);
+    --message-user-bg: linear-gradient(135deg, #4a80e4, #5c8fee);
+    --typing-color: #5c8fee;
+    --delete-color: #ef4444;
+    --success-color: #10b981;
+}
+
+/*** ESTILOS BASE ***/
 .ai-chat-page {
     font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     display: flex;
     flex-direction: column;
     height: 100%;
-}
-
-/* Dark Theme Variables - Adaptado de ProductsPage.css */
-.ai-chat-page {
-    --background-color: #0a0a0a;
-    --card-background: #141414;
-    --text-color: #ffffff;
-    --text-secondary: #b0b0b0;
-    --border-color: #2c2c2c;
-    --header-bg: #000000;
-    --searchbar-bg: #1c1c1c;
-    --chip-bg: #202020;
-    --chip-color: #e0e0e0;
-    --accent-color: #3a76dc; /* Azul principal */
-    --hover-color: #2760c0; /* Azul oscuro para hover */
-    --shadow-color: rgba(0, 0, 0, 0.4);
-    --secondary-accent: #3a76dc; /* Usando el mismo azul para consistencia */
-
-    /* Fondo predeterminado */
     background-color: var(--background-color);
+    transition: var(--transition-standard);
 }
 
-/* Light Theme Variables - Para el modo claro */
-.ai-chat-page.light-mode {
-    --background-color: #f5f6f8;
-    --card-background: #ffffff;
-    --text-color: #212121;
-    --text-secondary: #757575;
-    --border-color: #e0e0e0;
-    --header-bg: #ffffff;
-    --searchbar-bg: #f5f6f8;
-    --chip-bg: #f5f6f8;
-    --chip-color: #555555;
-    --accent-color: #3a76dc; /* Azul principal */
-    --hover-color: #2760c0; /* Azul oscuro para hover */
-    --shadow-color: rgba(0, 0, 0, 0.08);
-    --secondary-accent: #3a76dc; /* Usando el mismo azul para consistencia */
-
-    /* Fondo predeterminado */
-    background-color: var(--background-color);
-}
-
+/*** HEADER ***/
 .ai-chat-header ion-toolbar {
     --background: var(--header-bg);
     --border-width: 0;
     --min-height: 60px;
-    box-shadow: 0 2px 8px var(--shadow-color);
+    box-shadow: var(--card-shadow);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 .ai-chat-header ion-toolbar ion-icon {
     color: var(--text-color);
+    transition: var(--transition-standard);
 }
 
 .ai-chat-header ion-title {
@@ -66,6 +86,7 @@
     letter-spacing: -0.2px;
 }
 
+/*** CONTENIDO PRINCIPAL ***/
 .ai-chat-content {
     --background: var(--background-color);
     --padding-bottom: 0;
@@ -85,11 +106,13 @@
     margin: 0 auto;
 }
 
+/*** MENSAJES ***/
 .message-container {
     display: flex;
     gap: 12px;
     max-width: 80%;
-    transition: all 0.2s ease;
+    transition: var(--transition-standard);
+    animation: fadeIn 0.3s ease-out;
 }
 
 .user-message {
@@ -108,24 +131,11 @@
     margin-top: 4px;
 }
 
-.ai-avatar {
-    width: 38px;
-    height: 38px;
-    background: linear-gradient(135deg, #3a76dc, #2760c0); /* Usando colores de ProductsPage */
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-    font-size: 14px;
-    box-shadow: 0 2px 6px rgba(58, 118, 220, 0.2);
-}
-
+.ai-avatar,
 .user-avatar {
     width: 38px;
     height: 38px;
-    background: linear-gradient(135deg, #3a76dc, #2760c0); /* Usando colores de ProductsPage */
+    background: var(--gradient-primary);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -133,19 +143,21 @@
     color: white;
     font-weight: 600;
     font-size: 14px;
-    box-shadow: 0 2px 6px rgba(58, 118, 220, 0.2);
+    box-shadow: var(--button-shadow);
+    transition: var(--transition-standard);
 }
 
 .message-bubble {
     background-color: var(--card-background);
     border-radius: 18px;
     padding: 14px 18px;
-    box-shadow: 0 2px 6px var(--shadow-color);
+    box-shadow: var(--card-shadow);
     position: relative;
+    transition: var(--transition-standard);
 }
 
 .user-message .message-bubble {
-    background: linear-gradient(to bottom right, #3a76dc, #2760c0); /* Usando colores de ProductsPage */
+    background: var(--message-user-bg);
     border-top-right-radius: 4px;
 }
 
@@ -160,6 +172,7 @@
     color: var(--text-color);
     white-space: pre-wrap;
     font-weight: 400;
+    transition: var(--transition-standard);
 }
 
 .ai-message .message-text {
@@ -167,7 +180,7 @@
 }
 
 .user-message .message-text {
-    color: #ffffff; /* Mantener texto blanco para mejor legibilidad en fondo azul */
+    color: #ffffff;
 }
 
 .message-time {
@@ -178,6 +191,7 @@
     font-weight: 500;
 }
 
+/*** INDICADOR DE ESCRITURA ***/
 .typing-indicator {
     padding: 10px 16px;
     min-width: 80px;
@@ -188,14 +202,18 @@
 .typing-indicator ion-spinner {
     width: 40px;
     height: 20px;
-    color: var(--accent-color);
+    color: var(--typing-color);
+    animation: pulse 1.5s infinite ease-in-out;
 }
 
+/*** FOOTER Y ENTRADA DE TEXTO ***/
 .ai-chat-footer {
     --background: var(--header-bg);
     box-shadow: 0 -2px 8px var(--shadow-color);
     padding: 0;
     margin: 0;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 .input-container {
@@ -221,11 +239,12 @@
     max-height: 120px;
     color: var(--text-color);
     box-shadow: 0 1px 3px var(--shadow-color);
+    transition: var(--transition-standard);
 }
 
 .chat-input:focus-within {
     --background: var(--searchbar-bg);
-    box-shadow: 0 0 0 2px rgba(58, 118, 220, 0.3);
+    box-shadow: 0 0 0 2px rgba(74, 128, 228, 0.3);
 }
 
 .input-buttons {
@@ -239,21 +258,24 @@
     --padding-end: 8px;
     --color: var(--text-secondary);
     height: 40px;
+    transition: var(--transition-standard);
 }
 
 .send-button {
-    --background: linear-gradient(135deg, #3a76dc, #2760c0); /* Usando colores de ProductsPage */
+    --background: var(--gradient-primary);
     --border-radius: 50%;
     --padding-start: 0;
     --padding-end: 0;
     width: 44px;
     height: 44px;
     margin-left: 4px;
-    box-shadow: 0 2px 6px rgba(58, 118, 220, 0.3);
+    box-shadow: var(--button-shadow);
+    transition: var(--transition-bounce);
 }
 
 .send-button:hover:not([disabled]) {
-    --background: linear-gradient(135deg, #2760c0, #1e4c9a); /* Versión más oscura para hover */
+    --background: linear-gradient(135deg, var(--hover-color), var(--accent-color));
+    transform: scale(1.05);
 }
 
 .send-button[disabled] {
@@ -262,10 +284,7 @@
     box-shadow: none;
 }
 
-.message-options .options-button {
-    --color: var(--text-secondary);
-}
-
+/*** SUGERENCIAS ***/
 .suggested-prompts {
     padding: 12px 16px;
     display: flex;
@@ -274,12 +293,12 @@
     white-space: nowrap;
     background-color: var(--header-bg);
     border-top: 1px solid var(--border-color);
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
     width: 100%;
 }
 
 .suggested-prompts::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Edge */
+    display: none;
 }
 
 .prompt-chip {
@@ -289,13 +308,16 @@
     padding: 4px 14px;
     font-size: 13px;
     box-shadow: 0 1px 3px var(--shadow-color);
+    transition: var(--transition-standard);
 }
 
 .prompt-chip:hover {
     --background: var(--hover-color);
     --color: #ffffff;
+    transform: translateY(-1px);
 }
 
+/*** PREVIEW E IMÁGENES ***/
 .preview-container {
     background-color: var(--header-bg);
     padding: 14px;
@@ -308,8 +330,8 @@
     flex-wrap: wrap;
     gap: 10px;
     padding: 10px;
-    background-color: var(--ion-background-color);
-    border-top: 1px solid var(--ion-color-light);
+    background-color: var(--background-color);
+    border-top: 1px solid var(--border-color);
 }
 
 .preview-image-item {
@@ -323,6 +345,7 @@
     height: 100%;
     object-fit: cover;
     border-radius: 8px;
+    transition: var(--transition-standard);
 }
 
 .clear-image-btn {
@@ -331,14 +354,15 @@
     right: -6px;
     --padding-start: 4px;
     --padding-end: 4px;
-    --color: #ef4444; /* Mantener rojo para el botón de eliminar */
+    --color: var(--delete-color);
     --background: var(--card-background);
     --border-radius: 50%;
     width: 28px;
     height: 28px;
     margin: 0;
-    box-shadow: 0 2px 4px var(--shadow-color);
+    box-shadow: var(--card-shadow);
     z-index: 2;
+    transition: var(--transition-standard);
 }
 
 .clear-image-btn.single-image {
@@ -359,7 +383,7 @@
 .clear-all-images-btn {
     margin: 5px auto;
     display: block;
-    --color: var(--ion-color-medium);
+    --color: var(--text-secondary);
 }
 
 .message-images-container {
@@ -375,6 +399,7 @@
     max-height: 150px;
     border-radius: 8px;
     object-fit: cover;
+    transition: var(--transition-standard);
 }
 
 .character-counter {
@@ -389,8 +414,9 @@
     display: inline-flex;
     align-items: center;
     margin-left: 6px;
-    color: var(--accent-color);
+    color: var(--success-color);
     font-size: 11px;
+    transition: var(--transition-standard);
 }
 
 .copied-indicator ion-icon {
@@ -398,16 +424,7 @@
     margin-right: 2px;
 }
 
-/* Efectos de neón en modo oscuro - similar a ProductsPage */
-.ai-chat-page:not(.light-mode) .send-button {
-    box-shadow: 0 0 15px rgba(58, 118, 220, 0.4);
-}
-
-.ai-chat-page:not(.light-mode) .send-button:hover:not([disabled]) {
-    box-shadow: 0 0 20px rgba(58, 118, 220, 0.6);
-}
-
-/* Estilos para la barra lateral personalizada */
+/*** SIDEBAR DE CHATS ***/
 .custom-side-content {
     position: fixed;
     z-index: 1000;
@@ -426,7 +443,6 @@
     transform: translateX(0);
 }
 
-/* Ocultar barra de desplazamiento pero mantener funcionalidad */
 .custom-side-content {
     scrollbar-width: thin;
     scrollbar-color: var(--accent-color) transparent;
@@ -445,13 +461,13 @@
     background-color: transparent;
 }
 
-/* Estilos para el encabezado de la barra lateral */
 .sidebar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 10px 16px;
-    border-bottom: 1px solid var(--ion-border-color);
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--header-bg);
 }
 
 .sidebar-header ion-title {
@@ -462,9 +478,9 @@
 
 .close-sidebar-btn {
     font-size: 24px;
+    --color: var(--text-secondary);
 }
 
-/* Estilos para la barra de búsqueda */
 .sidebar-search {
     padding: 8px 12px;
     border-bottom: 1px solid var(--border-color);
@@ -486,7 +502,6 @@
     margin: 0;
 }
 
-/* Botón para nueva conversación */
 .new-chat-button-wrapper {
     padding: 12px;
     border-bottom: 1px solid var(--border-color);
@@ -496,14 +511,21 @@
     --background: var(--accent-color);
     --color: white;
     --border-radius: 8px;
-    --box-shadow: 0 2px 6px rgba(58, 118, 220, 0.3);
+    --box-shadow: var(--button-shadow);
     margin: 0;
     font-weight: 500;
+    transition: var(--transition-standard);
 }
 
-/* Lista de chats */
+.new-chat-button:hover {
+    --background: var(--hover-color);
+    transform: translateY(-1px);
+}
+
+/*** LISTA DE CHATS ***/
 .chat-list {
     padding: 12px 0;
+    overflow-y: auto;
 }
 
 .chat-item {
@@ -512,7 +534,7 @@
     padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: var(--transition-standard);
     position: relative;
 }
 
@@ -521,7 +543,7 @@
 }
 
 .chat-item.active {
-    background-color: rgba(58, 118, 220, 0.1);
+    background-color: rgba(74, 128, 228, 0.1);
     border-left: 3px solid var(--accent-color);
 }
 
@@ -532,7 +554,7 @@
 
 .chat-item-content {
     flex: 1;
-    min-width: 0; /* Permite truncamiento de texto */
+    min-width: 0;
 }
 
 .chat-item-header {
@@ -565,12 +587,11 @@
     text-overflow: ellipsis;
 }
 
-/* Botones de acción para cada chat */
 .chat-item-actions {
     display: flex;
     gap: 8px;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: var(--transition-standard);
 }
 
 .chat-item:hover .chat-item-actions {
@@ -587,107 +608,13 @@
     margin: 0;
     --padding-start: 8px;
     --padding-end: 8px;
+    transition: var(--transition-standard);
 }
 
-/* Ajustes adicionales para iconos más grandes */
 .chat-item-actions ion-icon {
     font-size: 24px;
 }
 
-/* Estilos para el popup de nueva conversación */
-.new-chat-alert {
-    --width: 300px;
-}
-
-.new-chat-alert .alert-content {
-    padding: 16px;
-}
-
-.new-chat-alert .alert-buttons {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 16px;
-    gap: 8px;
-}
-
-/* Estilos para la lista de chats */
-.chat-list {
-    overflow-y: auto;
-    margin-top: 10px;
-}
-
-.chat-item {
-    display: flex;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 4px;
-    cursor: pointer;
-    position: relative;
-    align-items: center;
-}
-
-.chat-item.active {
-    background-color: var(--ion-color-light);
-}
-
-.chat-item-avatar {
-    margin-right: 12px;
-}
-
-.chat-item-content {
-    flex: 1;
-    overflow: hidden;
-}
-
-.chat-item-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 4px;
-}
-
-.chat-item-title {
-    font-weight: bold;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.chat-item-time {
-    font-size: 12px;
-    color: var(--ion-color-medium);
-}
-
-.chat-item-message {
-    font-size: 13px;
-    color: var(--ion-color-medium);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.chat-item-actions {
-    display: none;
-    position: absolute;
-    right: 10px;
-}
-
-.chat-item:hover .chat-item-actions {
-    display: flex;
-}
-
-.unread-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-.no-chats-message {
-    text-align: center;
-    color: var(--ion-color-medium);
-    padding: 20px;
-}
-
-/* Badge para notificaciones */
 .unread-badge {
     position: absolute;
     top: 8px;
@@ -699,7 +626,6 @@
     border-radius: 10px;
 }
 
-/* Mensaje cuando no hay conversaciones */
 .no-chats-message {
     padding: 24px 16px;
     text-align: center;
@@ -707,7 +633,26 @@
     font-size: 14px;
 }
 
-/* Estilos mejorados para el panel lateral de productos */
+.product-mode-active {
+    background: rgba(56, 128, 255, 0.1);
+    border-radius: 50%;
+}
+
+.action-button {
+    position: relative;
+}
+
+.mode-indicator {
+    position: absolute;
+    bottom: 3px;
+    right: 3px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--ion-color-primary);
+    border-radius: 50%;
+}
+
+/*** SIDEBAR DE PRODUCTOS ***/
 .product-sidebar {
     position: fixed;
     top: 0;
@@ -774,7 +719,7 @@
     position: relative;
     overflow: hidden;
     border-radius: 12px;
-    box-shadow: 0 4px 12px var(--shadow-color);
+    box-shadow: var(--card-shadow);
 }
 
 .product-image {
@@ -782,7 +727,7 @@
     max-height: 220px;
     object-fit: cover;
     border-radius: 12px;
-    transition: transform 0.3s ease;
+    transition: var(--transition-standard);
 }
 
 .product-image:hover {
@@ -804,14 +749,14 @@
 
 .product-badge {
     display: inline-block;
-    background: linear-gradient(135deg, #3a76dc, #2760c0);
+    background: var(--gradient-primary);
     color: white;
     font-size: 12px;
     font-weight: 500;
     padding: 4px 12px;
     border-radius: 16px;
     margin: 4px 4px 12px 0;
-    box-shadow: 0 2px 5px rgba(58, 118, 220, 0.25);
+    box-shadow: var(--button-shadow);
 }
 
 .product-price {
@@ -856,9 +801,10 @@
     font-weight: 600;
     letter-spacing: 0.3px;
     --border-radius: 10px;
-    --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    --box-shadow: var(--card-shadow);
     overflow: hidden;
     position: relative;
+    transition: var(--transition-bounce);
 }
 
 .product-action-button::after {
@@ -888,15 +834,18 @@
 }
 
 .product-action-button.cancel-button:hover {
-    --background: rgba(58, 118, 220, 0.08);
+    --background: rgba(74, 128, 228, 0.08);
+    transform: translateY(-2px);
 }
 
 .product-action-button.confirm-button {
-    --background: linear-gradient(135deg, #3a76dc, #2760c0);
+    --background: var(--gradient-primary);
+    box-shadow: var(--button-shadow);
 }
 
-.ai-chat-page:not(.light-mode) .product-action-button.confirm-button {
-    box-shadow: 0 0 15px rgba(58, 118, 220, 0.4);
+.product-action-button.confirm-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--button-shadow), 0 8px 25px rgba(74, 128, 228, 0.4);
 }
 
 .product-specs {
@@ -913,6 +862,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    transition: var(--transition-standard);
 }
 
 .spec-label {
@@ -927,16 +877,25 @@
     color: var(--text-color);
 }
 
-/* Efectos adicionales para modo oscuro */
-.ai-chat-page:not(.light-mode) .product-image-container {
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(58, 118, 220, 0.15);
+/*** ANIMACIONES ***/
+@keyframes pulse {
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
 }
 
-.ai-chat-page:not(.light-mode) .product-badge {
-    box-shadow: 0 2px 8px rgba(58, 118, 220, 0.4);
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-/* Ajustes responsivos para la barra lateral */
+/*** RESPONSIVE ***/
 @media (min-width: 768px) {
     .ai-chat-page.product-sidebar-active .ai-chat-content,
     .ai-chat-page.product-sidebar-active .ai-chat-header ion-toolbar,
@@ -946,7 +905,7 @@
     }
 
     .product-sidebar {
-        top: 56px; /* Ajusta según la altura de tu header */
+        top: 56px;
     }
 
     .custom-side-content {
@@ -970,69 +929,7 @@
     .close-sidebar-btn {
         display: none;
     }
-}
 
-/* Ajuste para ion-page cuando la barra lateral está activa en móvil */
-@media (max-width: 767px) {
-    .chats-sidebar.visible + ion-page {
-        transform: translateX(300px);
-    }
-
-    /* Mejora la visibilidad del botón de chat sidebar en móvil */
-    .chat-sidebar-toggle {
-        --background: var(--searchbar-bg);
-        --border-radius: 50%;
-        margin-right: 8px;
-    }
-    .product-sidebar {
-        width: 100%;
-        top: 0;
-    }
-
-    .product-actions {
-        padding: 16px;
-    }
-
-    .product-sidebar.visible {
-        width: 90%; /* O un ancho fijo como 300px */
-        transform: translateX(0);
-        box-shadow: -3px 0 10px rgba(0, 0, 0, 0.2);
-    }
-
-    .product-sidebar.collapsed {
-        display: none;
-    }
-}
-
-/* Animación para los puntos de carga */
-@keyframes pulse {
-    0% { opacity: 0.4; }
-    50% { opacity: 1; }
-    100% { opacity: 0.4; }
-}
-
-.typing-indicator ion-spinner {
-    animation: pulse 1.5s infinite ease-in-out;
-}
-
-/* Transiciones suaves para mensajes nuevos */
-.message-container {
-    animation: fadeIn 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Ajustes responsive similares a ProductsPage */
-@media (min-width: 768px) {
     .chat-container {
         max-width: 90%;
     }
@@ -1055,4 +952,83 @@
     .message-text {
         font-size: 16px;
     }
+}
+
+@media (max-width: 767px) {
+    .chats-sidebar.visible + ion-page {
+        transform: translateX(300px);
+    }
+
+    .chat-sidebar-toggle {
+        --background: var(--searchbar-bg);
+        --border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .product-sidebar {
+        width: 100%;
+        top: 0;
+    }
+
+    .product-actions {
+        padding: 16px;
+    }
+
+    .product-sidebar.visible {
+        width: 90%;
+        transform: translateX(0);
+        box-shadow: -3px 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .product-sidebar.collapsed {
+        display: none;
+    }
+}
+
+/*** EFECTOS ESPECIALES PARA MODO OSCURO ***/
+.dark-theme .send-button {
+    box-shadow: 0 0 15px rgba(74, 128, 228, 0.5);
+}
+
+.dark-theme .send-button:hover:not([disabled]) {
+    box-shadow: 0 0 20px rgba(74, 128, 228, 0.7);
+}
+
+.dark-theme .product-image-container {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(74, 128, 228, 0.15);
+}
+
+.dark-theme .product-badge {
+    box-shadow: 0 2px 8px rgba(74, 128, 228, 0.4);
+}
+
+.dark-theme .ai-avatar,
+.dark-theme .user-avatar {
+    box-shadow: 0 0 15px rgba(74, 128, 228, 0.4);
+}
+
+/*** EFECTOS ESPECIALES PARA MODO CLARO ***/
+.light-theme .send-button:hover:not([disabled]) {
+    box-shadow: 0 6px 20px rgba(74, 128, 228, 0.4);
+}
+
+.light-theme .product-image-container {
+    box-shadow: 0 8px 25px rgba(23, 43, 99, 0.12);
+}
+
+.light-theme .product-badge {
+    box-shadow: 0 4px 12px rgba(74, 128, 228, 0.25);
+}
+
+.light-theme .ai-avatar,
+.light-theme .user-avatar {
+    box-shadow: 0 4px 15px rgba(74, 128, 228, 0.3);
+}
+
+.light-theme .message-bubble {
+    border: 1px solid rgba(228, 231, 242, 0.6);
+}
+
+.light-theme .product-action-button.confirm-button:hover {
+    box-shadow: 0 8px 25px rgba(74, 128, 228, 0.35);
 }
