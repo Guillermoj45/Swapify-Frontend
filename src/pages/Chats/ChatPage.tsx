@@ -50,7 +50,7 @@ interface Chat {
 
 const ChatPage: React.FC = () => {
     // Instancia del servicio WebSocket
-    const [webSocketService] = useState(() => new WebSocketService());
+    const [webSocketService] = useState(WebSocketService)
     const [isConnected, setIsConnected] = useState(false);
     const currentUserId = sessionStorage.getItem('userId') || 'user';
     const currentUserName = sessionStorage.getItem('nickname') || 'Usuario';
@@ -125,7 +125,7 @@ const ChatPage: React.FC = () => {
     useEffect(() => {
         const connectWebSocket = async () => {
             try {
-                await webSocketService.connect();
+                await webSocketService.waitForConnection();
                 setIsConnected(true);
 
                 // Configurar el callback para recibir mensajes
@@ -246,7 +246,7 @@ const ChatPage: React.FC = () => {
             webSocketService.unsubscribeFromRoom();
 
             // Suscribirse a la nueva sala
-            webSocketService.subscribeToRoom(activeChat.idProduct, activeChat.idProfileProduct, activeChat.idProfile);
+            webSocketService.subscribeToChat(activeChat.idProduct, activeChat.idProfileProduct, activeChat.idProfile);
 
             // Cargar mensajes del chat (esto podría ser una llamada API en una implementación real)
             // Por ahora, lo simulamos con mensajes de bienvenida

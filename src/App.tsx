@@ -44,6 +44,7 @@ import SuscripcionPage from "./pages/Suscripcion/SuscripcionPage";
 import PagoPremium from "./pages/PagoPremium/PagoPremium";
 import ProductDetailPage from "./pages/ProductDetail/ProductDetailPage";
 import SettingsPage from "./pages/Settings/SettingsPage";
+import {WebSocketService} from "./Services/websocket";
 
 setupIonicReact();
 
@@ -53,6 +54,15 @@ const App: React.FC = () => {
 
     // Detectar si es vista de chat
     const [isChatView, setIsChatView] = useState(false);
+
+    WebSocketService.connect().then((conectado) => {
+        if (conectado) {
+            console.log('Conexión exitosa al WebSocket');
+            WebSocketService.subscribeToNotification().then(() => console.log("Hola")).catch((error => {console.error("Error al suscribirse a las notificaciones", error)}));
+        }
+    }).catch((error) => {
+        console.error('Error al conectar al WebSocket:', error);
+    });
 
     useEffect(() => {
         const mediaQuery = window.matchMedia('(min-width: 768px)');
