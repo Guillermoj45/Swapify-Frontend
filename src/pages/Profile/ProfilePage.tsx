@@ -37,11 +37,13 @@ import { Building, MapPin } from "lucide-react";
 
 import ProfileService, { ProfileDTO, ProductDTO } from "../../Services/ProfileService";
 import "./ProfilePage.css";
+import useAuthRedirect from "../../Services/useAuthRedirect";
 
 export default function ProfilePage() {
     const history = useHistory();
 
-    // State
+    useAuthRedirect()
+
     const [loading, setLoading] = useState(true);
     const [loadingSaved, setLoadingSaved] = useState(false);
     const [profileData, setProfileData] = useState<ProfileDTO | null>(null);
@@ -339,6 +341,20 @@ export default function ProfilePage() {
                                     </IonButton>
                                 )}
                                 <h2 className="profile-name">{userInfo.name}</h2>
+                                {/* Nueva sección para mostrar la ubicación */}
+                                {profileData?.ubicacion && (
+                                    <div className="location-info" style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        marginBottom: '10px',
+                                        color: sessionStorage.getItem('modoOscuroClaro') === 'true' ? '#ffffff' : '#000000',
+                                        fontSize: '16px',
+                                        fontWeight: '500'
+                                    }}>
+                                        <MapPin size={18} style={{ marginRight: '6px' }} />
+                                        <span>{profileData.ubicacion}</span>
+                                    </div>
+                                )}
                                 <div className="rating">
                                     <div className="stars-container">{renderStars(userInfo.rating)}</div>
                                     <IonLabel className="reviews">({userInfo.totalReviews})</IonLabel>

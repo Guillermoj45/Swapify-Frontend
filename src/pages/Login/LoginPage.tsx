@@ -78,8 +78,12 @@ const LoginPage: React.FC = () => {
 
             if (response && response.token) {
                 showToastMessage("Inicio de sesión exitoso", "success");
+
                 setTimeout(() => {
-                    window.location.href = "/products";
+                    sessionStorage.setItem("token", response.token);
+                    const redirectTo = sessionStorage.getItem("redirectAfterLogin") || "/products";
+                    sessionStorage.removeItem("redirectAfterLogin");
+                    history.replace(redirectTo);
                 }, 1000);
             } else {
                 showToastMessage(response.mensaje || "Inicio de sesión incorrecto. No se recibió un token válido.", "danger");

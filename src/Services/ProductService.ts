@@ -1,5 +1,6 @@
 import cloudinaryImage from "./CloudinaryService";
 import api from "./api";
+import API from "./api";
 
 export interface Profile {
     id: string;
@@ -126,24 +127,103 @@ export class ProductService {
     }
 
     /**
-     * Obtener un producto usando un token público temporal
+     * Get related products by categories
+     * @param categories Array of category names to search for
+     * @param excludeProductId Product ID to exclude from results (usually the current product)
+     * @param limit Maximum number of products to return
      */
-    static async getProductByIdWithToken(productId: string, publicToken: string): Promise<Product> {
+    static async getRelatedProductsByCategories(
+        categories: string[],
+        excludeProductId: string,
+        limit: number = 4
+    ): Promise<Product[]> {
         try {
-            const response = await fetch(`${this.baseUrl}/api/public/products/${productId}`, {
+            const sessionToken = sessionStorage.getItem('token');
+            if (!sessionToken) {
+                throw new Error('No hay token de autenticación disponible');
+            }
+
+            // Construir los parámetros de consulta
+            const categoryParams = categories.map(cat => `categories=${encodeURIComponent(cat)}`).join('&');
+            const queryParams = `${categoryParams}&exclude=${excludeProductId}&limit=${limit}`;
+
+            const response = await fetch(`${this.baseUrl}/product/related?${queryParams}`, {
+                method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${publicToken}`
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionToken}`
                 }
             });
 
             if (!response.ok) {
-                throw new Error(`Error al obtener el producto con token público: ${response.status}`);
+                // Si no hay endpoint específico, usar el método de fallback
+                return this.getRelatedProductsFallback(categories, excludeProductId, limit);
             }
 
-            return await response.json();
+            const data = await response.json();
+
+            // Procesar las imágenes con Cloudinary
+            const products = Array.isArray(data) ? data : data.products || [];
+            return products.map((product: Product) => ({
+                ...product,
+                imagenes: product.imagenes?.map(image => cloudinaryImage(image)) || []
+            }));
+
         } catch (error) {
-            console.error('Error en getProductByIdWithToken:', error);
-            throw error;
+            console.error('Error fetching related products, using fallback:', error);
+            // Usar método de fallback si falla la llamada principal
+            return this.getRelatedProductsFallback(categories, excludeProductId, limit);
         }
+    }
+
+    /**
+     * Fallback method to get related products using the existing recommend endpoint
+     * and filtering by categories on the frontend
+     */
+    private static async getRelatedProductsFallback(
+        categories: string[],
+        excludeProductId: string,
+        limit: number = 4
+    ): Promise<Product[]> {
+        try {
+            // Usar el endpoint de recomendaciones existente
+            const recommendData = await this.getRecommendedProducts();
+
+            // Flatten all products from all categories
+            const allProducts = recommendData.products.flat();
+
+            // Filter products that share at least one category with the current product
+            const relatedProducts = allProducts.filter(product => {
+                // Excluir el producto actual
+                if (product.id === excludeProductId) return false;
+
+                // Verificar si el producto tiene al menos una categoría en común
+                return product.categories?.some(productCategory =>
+                    categories.some(targetCategory =>
+                        productCategory.name.toLowerCase() === targetCategory.toLowerCase()
+                    )
+                );
+            });
+
+            // Shuffle y limitar los resultados
+            const shuffled = this.shuffleArray([...relatedProducts]);
+            return shuffled.slice(0, limit);
+
+        } catch (error) {
+            console.error('Error in fallback method:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Utility method to shuffle an array
+     */
+    private static shuffleArray<T>(array: T[]): T[] {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
     }
 }

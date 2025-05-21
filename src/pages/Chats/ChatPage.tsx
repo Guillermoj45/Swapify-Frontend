@@ -24,6 +24,7 @@ import {
 } from 'ionicons/icons';
 import Navegacion from '../../components/Navegation';
 import { WebSocketService } from "../../Services/websocket";
+import useAuthRedirect from "../../Services/useAuthRedirect";
 
 // Interfaces para los tipos de datos
 interface Message {
@@ -49,6 +50,9 @@ interface Chat {
 }
 
 const ChatPage: React.FC = () => {
+
+    useAuthRedirect()
+
     // Instancia del servicio WebSocket
     const [webSocketService] = useState(WebSocketService)
     const [isConnected, setIsConnected] = useState(false);
