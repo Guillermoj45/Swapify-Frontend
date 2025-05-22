@@ -14,7 +14,6 @@ import {
     IonChip,
     IonLabel,
     IonPopover,
-    IonList,
     IonItem,
     IonText,
     IonButtons,
@@ -26,12 +25,9 @@ import {
 import { TextareaChangeEventDetail } from '@ionic/core';
 import {
     camera,
-    mic,
     refresh,
     arrowUp,
     closeCircle,
-    ellipsisVertical,
-    copy,
     trash,
     checkmark,
     menuOutline,
@@ -45,6 +41,7 @@ import Navegacion from '../../components/Navegation';
 import { IAChat } from '../../Services/IAService';
 import useAuthRedirect from "../../Services/useAuthRedirect";
 import { Settings as SettingsService } from '../../Services/SettingsService';
+import {ProductService} from "../../Services/ProductService";
 
 interface Message {
     id: number | string;
@@ -303,13 +300,49 @@ const AIChatPage: React.FC = () => {
         });
     };
 
-    const handleProductAction = (action: 'upload' | 'cancel') => {
+    const handleProductAction = async (action: 'upload' | 'cancel') => {
         if (action === 'upload') {
-            presentToast({
-                message: 'Producto subido correctamente',
-                duration: 2000,
-                color: 'success'
-            });
+            if (!productId) {
+                presentToast({
+                    message: 'Error: No se encontró información del producto',
+                    duration: 3000,
+                    color: 'danger'
+                });
+                return;
+            }
+
+            try {
+                // Mostrar indicador de carga
+                presentToast({
+                    message: 'Subiendo producto...',
+                    duration: 1000,
+                    color: 'primary'
+                });
+
+                // Llamar al método activeProduct del ProductService
+                const success = await ProductService.activeProduct(productId);
+
+                if (success) {
+                    presentToast({
+                        message: 'Producto activado correctamente. Ahora es visible para otros usuarios.',
+                        duration: 3000,
+                        color: 'success'
+                    });
+                } else {
+                    presentToast({
+                        message: 'Error al activar el producto. Inténtalo de nuevo.',
+                        duration: 3000,
+                        color: 'danger'
+                    });
+                }
+            } catch (error) {
+                console.error('Error al activar producto:', error);
+                presentToast({
+                    message: 'Error al subir el producto. Verifica tu conexión e inténtalo de nuevo.',
+                    duration: 3000,
+                    color: 'danger'
+                });
+            }
         } else {
             presentToast({
                 message: 'Operación cancelada',

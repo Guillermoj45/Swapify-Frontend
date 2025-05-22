@@ -1,6 +1,5 @@
 import cloudinaryImage from "./CloudinaryService";
 import api from "./api";
-import API from "./api";
 
 export interface Profile {
     id: string;
@@ -122,6 +121,72 @@ export class ProductService {
             return data;
         } catch (error) {
             console.error(`Error fetching product with ID ${productId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Activate a product to make it visible to other users
+     * @param productId ID of the product to activate
+     * @returns Promise<boolean> indicating success
+     */
+    static async activeProduct(productId: string): Promise<boolean> {
+        try {
+            const sessionToken = sessionStorage.getItem('token');
+            if (!sessionToken) {
+                throw new Error('No hay token de autenticación disponible');
+            }
+
+            const response = await fetch(`${this.baseUrl}/product/activeProduct?idProduct=${productId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionToken}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Error ${response.status}: ${errorText}`);
+            }
+
+            const result = await response.json();
+            return result === true;
+        } catch (error) {
+            console.error(`Error activating product with ID ${productId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Deactivate a product to make it invisible to other users
+     * @param productId ID of the product to deactivate
+     * @returns Promise<boolean> indicating success
+     */
+    static async deactiveProduct(productId: string): Promise<boolean> {
+        try {
+            const sessionToken = sessionStorage.getItem('token');
+            if (!sessionToken) {
+                throw new Error('No hay token de autenticación disponible');
+            }
+
+            const response = await fetch(`${this.baseUrl}/product/desactiveProduct?idProduct=${productId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionToken}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Error ${response.status}: ${errorText}`);
+            }
+
+            const result = await response.json();
+            return result === true;
+        } catch (error) {
+            console.error(`Error deactivating product with ID ${productId}:`, error);
             throw error;
         }
     }
