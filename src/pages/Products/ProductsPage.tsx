@@ -279,6 +279,7 @@ const ProductsPage = () => {
     const [favorites, setFavorites] = useState<Favorites>({});
     const [savingFavorite, setSavingFavorite] = useState<boolean>(false);
     const [profileId, setProfileId] = useState<string>('');
+    const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
 
     // State to store available categories
     const [availableCategories, setAvailableCategories] = useState<string[]>([]);
@@ -403,6 +404,7 @@ const ProductsPage = () => {
     };
 
     // Load user profile and saved products
+    // Modifica el primer useEffect donde se carga el perfil
     useEffect(() => {
         const loadUserProfile = async () => {
             const modo = await SettingsService.getModoOcuro()
@@ -412,7 +414,6 @@ const ProductsPage = () => {
             const modoOscuroStorage = sessionStorage.getItem('modoOscuroClaro');
 
             if (modoOscuroStorage === null) {
-                // Si no hay valor en sessionStorage, llamar al backend
                 try {
                     const modoOscuroBackend = await SettingsService.getModoOcuro();
                     const modoOscuroFinal = modoOscuroBackend === true;
@@ -420,12 +421,10 @@ const ProductsPage = () => {
                     setDarkMode(modoOscuroFinal);
                 } catch (error) {
                     console.error('Error al obtener modo oscuro del backend:', error);
-                    // Valor por defecto en caso de error
                     sessionStorage.setItem('modoOscuroClaro', 'false');
                     setDarkMode(false);
                 }
             } else {
-                // Usar el valor almacenado en sessionStorage
                 setDarkMode(modoOscuroStorage === 'true');
             }
 
@@ -459,35 +458,40 @@ const ProductsPage = () => {
                 setLoading(true);
                 const data = await ProductService.getRecommendedProducts();
 
-                // Debug log - check data structure
-                console.log("Data received from backend:", data);
-
                 setRecommendedData(data);
 
-                // Extract unique categories
-                const categories = new Set<string>();
-
-                // Combine all products into a single array for search
                 if (data && data.products) {
-                    // Extract categories from titles
-                    data.titles.forEach(title => {
-                        categories.add(title);
-                    });
-
                     const combinedProducts = data.products.flat();
                     setAllProducts(combinedProducts);
 
-                    // Initialize current image index for each product
                     const initialImageIndexes: ImageIndexes = {};
                     combinedProducts.forEach(product => {
                         initialImageIndexes[product.id] = 0;
                     });
                     setCurrentImages(initialImageIndexes);
+                }
 
-                    setAvailableCategories(Array.from(categories));
+                if (sessionStorage.getItem("token")) {
+                    const [profileData, tutorialHecho] = await Promise.all([
+                        ProfileService.getProfileInfo(),
+                        ProfileService.getTutorialHecho()
+                    ]);
+
+                    setProfileId(profileData.id);
+
+                    // Carga productos guardados
+                    const savedProducts = await ProfileService.getSavedProducts();
+                    const favoritesMap: Favorites = {};
+                    savedProducts.forEach(product => {
+                        favoritesMap[product.id] = true;
+                    });
+                    setFavorites(favoritesMap);
+
+                    // Pequeño retraso para asegurar que todos los elementos estén renderizados
                 }
 
                 setLoading(false);
+                setIsInitialLoadComplete(true);
             } catch (err) {
                 console.error('Error loading recommended products:', err);
                 setError('Could not load recommended products');
@@ -498,6 +502,23 @@ const ProductsPage = () => {
 
         fetchRecommendedProducts();
     }, []);
+
+    useEffect(() => {
+        const checkTutorial = async () => {
+            if (isInitialLoadComplete && sessionStorage.getItem("token")) {
+                try {
+                    const tutorialHecho = await ProfileService.getTutorialHecho();
+                    if (!tutorialHecho) {
+                        startProductsTour();
+                    }
+                } catch (error) {
+                    console.error('Error al verificar el tutorial:', error);
+                }
+            }
+        };
+
+        checkTutorial();
+    }, [isInitialLoadComplete]);
 
     // Function to search products while typing
     const searchProducts = (query: string) => {
@@ -834,22 +855,7 @@ const ProductsPage = () => {
     }, [selectedCategories, recommendedData]);
 
 
-    useEffect(() => {
-        const checkTutorial = async () => {
-            try {
-                const tutorialHecho = await ProfileService.getTutorialHecho();
-                if (!tutorialHecho) {
-                    startProductsTour();
-                }
-            } catch (error) {
-                console.error('Error al verificar el tutorial:', error);
-            }
-        };
 
-        if (sessionStorage.getItem("token")) {
-            checkTutorial();
-        }
-    }, []);
 
     // Function to format points
     const formatPoints = (points: number): string => {
