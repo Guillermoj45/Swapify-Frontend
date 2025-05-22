@@ -43,9 +43,9 @@ import {
 import './IA.css';
 import Navegacion from '../../components/Navegation';
 import { IAChat } from '../../Services/IAService';
-import useAuthRedirect from "../../Services/useAuthRedirect"; // Importamos el servicio
+import useAuthRedirect from "../../Services/useAuthRedirect";
+import { Settings as SettingsService } from '../../Services/SettingsService';
 
-// Definir interfaces para una escritura TypeScript adecuada
 interface Message {
     id: number | string;
     text: string;
@@ -65,7 +65,6 @@ interface ChatSession {
     unread?: number;
 }
 
-// Custom type for a non-existent Ionic component
 interface SideContentProps {
     side: "start" | "end";
     contentId: string;
@@ -84,6 +83,11 @@ interface ProductSidePanelProps {
         description: string;
     };
     handleProductAction: (action: 'upload' | 'cancel') => void;
+}
+
+interface PreferenceUpdate {
+    key: 'modo_oscuro' | 'notificaciones';
+    value: boolean;
 }
 
 // Create a custom component to replace IonSideContent
@@ -152,6 +156,86 @@ const AIChatPage: React.FC = () => {
         description: "Auriculares inalámbricos con cancelación de ruido activa, hasta 30 horas de batería y sonido de alta resolución. Perfectos para trabajo y ocio.",
     });
 
+    const [productSummaryMode, setProductSummaryMode] = useState<boolean>(false);
+
+    // Configuración inicial del tema basado en sessionStorage, preferencia del sistema o backend
+    useEffect(() => {
+        const loadThemeSettings = async () => {
+            // Primero, obtener el valor del sessionStorage
+            const modoOscuroStorage = sessionStorage.getItem('modoOscuroClaro');
+
+            if (modoOscuroStorage !== null) {
+                // Si existe un valor en sessionStorage, usarlo
+                const isDarkMode = modoOscuroStorage === 'true';
+                setDarkMode(isDarkMode);
+
+                // Aplicar la clase al body inmediatamente
+                document.body.classList.remove('light-theme', 'dark-theme');
+                document.body.classList.add(isDarkMode ? 'dark-theme' : 'light-theme');
+            } else {
+                // Si no hay valor en sessionStorage, intentar obtener del backend si hay token
+                if (sessionStorage.getItem("token")) {
+                    try {
+                        const modoOscuroBackend = await SettingsService.getModoOcuro();
+                        const isDarkMode = modoOscuroBackend === true;
+
+                        // Guardar en sessionStorage
+                        sessionStorage.setItem('modoOscuroClaro', isDarkMode.toString());
+                        setDarkMode(isDarkMode);
+
+                        // Aplicar la clase al body
+                        document.body.classList.remove('light-theme', 'dark-theme');
+                        document.body.classList.add(isDarkMode ? 'dark-theme' : 'light-theme');
+                    } catch (error) {
+                        console.error('Error al obtener modo oscuro del backend:', error);
+
+                        // Usar preferencia del sistema como fallback
+                        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                        setDarkMode(prefersDark);
+
+                        document.body.classList.remove('light-theme', 'dark-theme');
+                        document.body.classList.add(prefersDark ? 'dark-theme' : 'light-theme');
+
+                        // Guardar la preferencia en sessionStorage
+                        sessionStorage.setItem('modoOscuroClaro', prefersDark.toString());
+                    }
+                } else {
+                    // Si no hay token, usar preferencia del sistema
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    setDarkMode(prefersDark);
+
+                    document.body.classList.remove('light-theme', 'dark-theme');
+                    document.body.classList.add(prefersDark ? 'dark-theme' : 'light-theme');
+
+                    // Guardar la preferencia en sessionStorage
+                    sessionStorage.setItem('modoOscuroClaro', prefersDark.toString());
+                }
+            }
+        };
+
+        loadThemeSettings();
+    }, []);
+
+    // Escuchar cambios en el sessionStorage desde otras pestañas/componentes
+    useEffect(() => {
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'modoOscuroClaro' && e.newValue !== null) {
+                const isDarkMode = e.newValue === 'true';
+                setDarkMode(isDarkMode);
+
+                // Aplicar las clases de tema al body
+                document.body.classList.remove('light-theme', 'dark-theme');
+                document.body.classList.add(isDarkMode ? 'dark-theme' : 'light-theme');
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, []);
+
     // Detectar cambios en el tamaño de la pantalla
     useEffect(() => {
         const handleResize = () => {
@@ -206,6 +290,19 @@ const AIChatPage: React.FC = () => {
         }, 500);
     }, []);
 
+    const toggleProductSummaryMode = () => {
+        setProductSummaryMode(prev => !prev);
+
+        // Opcional: Mostrar un toast para indicar el cambio de modo
+        presentToast({
+            message: productSummaryMode ?
+                'Modo resumen de producto desactivado' :
+                'Modo resumen de producto activado. La próxima respuesta incluirá un resumen del producto.',
+            duration: 2000,
+            color: productSummaryMode ? 'medium' : 'primary'
+        });
+    };
+
     const handleProductAction = (action: 'upload' | 'cancel') => {
         if (action === 'upload') {
             presentToast({
@@ -225,13 +322,18 @@ const AIChatPage: React.FC = () => {
     };
 
     const handleSend = async (): Promise<void> => {
+        // Si no hay texto ni imágenes, no enviar nada
         if (inputText.trim() === '' && selectedImages.length === 0) return;
 
         try {
+            // Guardar el texto del input antes de limpiarlo
+            const messageText = inputText.trim();
+
             // Crear mensaje de usuario para la UI
             const userMessage: Message = {
                 id: Date.now(),
-                text: inputText || (selectedImages.length > 0 ? 'Análisis de imagen' : ''),
+                // Si hay texto, usar ese texto. Si no hay texto pero hay imagen, usar "Análisis de imagen"
+                text: messageText !== '' ? messageText : (selectedImages.length > 0 ? 'Análisis de imagen' : ''),
                 sender: "user",
                 timestamp: new Date(),
                 images: previewImages.length > 0 ? previewImages : undefined
@@ -242,13 +344,14 @@ const AIChatPage: React.FC = () => {
             setMessages(updatedMessages);
 
             // Actualizar la conversación en las sesiones de chat
-            updateChatSession(activeChatId, updatedMessages, inputText || 'Análisis de imagen');
+            updateChatSession(activeChatId, updatedMessages, messageText !== '' ? messageText : 'Análisis de imagen');
 
             setIsTyping(true);
 
             // Preparar para la llamada a la API
             const files = selectedImages;
-            const message = inputText || "Analiza esta imagen";  // Mensaje por defecto si solo hay imágenes
+            // Asegurarnos de usar el texto escrito por el usuario, no el predeterminado
+            const message = messageText !== '' ? messageText : "Analiza esta imagen";  // Usar el texto guardado
 
             // Reiniciar estado de UI
             setInputText('');
@@ -300,8 +403,20 @@ const AIChatPage: React.FC = () => {
                         price: response.product.points || productInfo.price,
                         description: response.product.description || 'IA ha detectado un posible producto basado en tu imagen.'
                     });
-                    // Mostrar el panel lateral
+                    // Mostrar el panel lateral SOLO SI el modo productSummaryMode está activo
+                    if (productSummaryMode) {
+                        setShowProductSidebar(true);
+                        // Resetear el modo después de usarlo una vez
+                        setProductSummaryMode(false);
+                    }
+                }
+
+                if (productSummaryMode && response) {
+                    // Activar el panel lateral del producto automáticamente
                     setShowProductSidebar(true);
+
+                    // Resetear el modo después de usarlo una vez
+                    setProductSummaryMode(false);
                 }
 
                 const finalMessages = [...updatedMessages, aiResponse];
@@ -386,6 +501,7 @@ const AIChatPage: React.FC = () => {
     const handleKeyPress = (e: React.KeyboardEvent): void => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
+            // Asegurarse de que se envía el mensaje con el texto actual
             handleSend();
         }
     };
@@ -465,42 +581,6 @@ const AIChatPage: React.FC = () => {
         if (textareaRef.current) {
             textareaRef.current.setFocus();
         }
-    };
-
-    const handleCopyMessage = (id: number | string): void => {
-        const message = messages.find(m => m.id === id);
-        if (message) {
-            navigator.clipboard.writeText(message.text);
-
-            // Update message to show "Copied" status temporarily
-            setMessages(messages.map(m =>
-                m.id === id ? { ...m, isCopied: true } : m
-            ));
-
-            // Reset copied status after 2 seconds
-            setTimeout(() => {
-                setMessages(messages.map(m =>
-                    m.id === id ? { ...m, isCopied: false } : m
-                ));
-            }, 2000);
-        }
-        setShowOptions({ open: false, id: null });
-    };
-
-    const handleDeleteMessage = (id: number | string): void => {
-        const updatedMessages = messages.filter(m => m.id !== id);
-        setMessages(updatedMessages);
-
-        // Actualizar la sesión de chat
-        updateChatSession(
-            activeChatId,
-            updatedMessages,
-            updatedMessages.length > 0
-                ? updatedMessages[updatedMessages.length - 1].text.substring(0, 50)
-                : 'Conversación vacía'
-        );
-
-        setShowOptions({ open: false, id: null });
     };
 
     const formatTime = (date: Date): string => {
@@ -676,32 +756,6 @@ const AIChatPage: React.FC = () => {
                     {productInfo.price || "€149,99"}
                 </div>
 
-                {
-                    /*
-                    * <div className="product-specs">
-                    <div className="spec-item">
-                        <IonIcon icon={star} color="warning" style={{ fontSize: '20px', marginBottom: '5px' }} />
-                        <span className="spec-label">Valoración</span>
-                        <span className="spec-value">{productInfo.rating || "4.8/5"}</span>
-                    </div>
-                    <div className="spec-item">
-                        <IonIcon icon={time} color="primary" style={{ fontSize: '20px', marginBottom: '5px' }} />
-                        <span className="spec-label">Envío</span>
-                        <span className="spec-value">{productInfo.delivery || "24-48h"}</span>
-                    </div>
-                    <div className="spec-item">
-                        <IonIcon icon={pricetag} color="success" style={{ fontSize: '20px', marginBottom: '5px' }} />
-                        <span className="spec-label">Descuento</span>
-                        <span className="spec-value">{productInfo.discount || "15%"}</span>
-                    </div>
-                    <div className="spec-item">
-                        <IonIcon icon={checkmarkCircle} color="tertiary" style={{ fontSize: '20px', marginBottom: '5px' }} />
-                        <span className="spec-label">Stock</span>
-                        <span className="spec-value">{productInfo.stock || "Disponible"}</span>
-                    </div>
-                </div>
-                    * */
-                }
                 <div className="product-description-IA">
                     <p>{productInfo.description || "Este producto premium ofrece características excepcionales diseñadas para satisfacer tus necesidades. Fabricado con materiales de alta calidad y acabados profesionales, garantiza durabilidad y rendimiento superior. Perfecto para uso diario o profesional."}</p>
                 </div>
@@ -882,35 +936,7 @@ const AIChatPage: React.FC = () => {
                                         {message.isCopied && <span className="copied-indicator"><IonIcon icon={checkmark} /> Copiado</span>}
                                     </div>
                                 </div>
-
-                                {/* Options button for messages */}
-                                <div className="message-options">
-                                    <IonButton
-                                        fill="clear"
-                                        size="small"
-                                        className="options-button"
-                                        onClick={() => setShowOptions({ open: true, id: message.id })}
-                                    >
-                                        <IonIcon icon={ellipsisVertical} size="small" />
-                                    </IonButton>
-
-                                    <IonPopover
-                                        isOpen={showOptions.open && showOptions.id === message.id}
-                                        onDidDismiss={() => setShowOptions({ open: false, id: null })}
-                                        className="options-popover"
-                                    >
-                                        <IonList>
-                                            <IonItem button onClick={() => handleCopyMessage(message.id)}>
-                                                <IonIcon slot="start" icon={copy} />
-                                                <IonLabel>Copiar mensaje</IonLabel>
-                                            </IonItem>
-                                            <IonItem button onClick={() => handleDeleteMessage(message.id)}>
-                                                <IonIcon slot="start" icon={trash} />
-                                                <IonLabel>Eliminar mensaje</IonLabel>
-                                            </IonItem>
-                                        </IonList>
-                                    </IonPopover>
-                                </div>
+                                
                             </div>
                         ))}
 
@@ -1002,8 +1028,16 @@ const AIChatPage: React.FC = () => {
                                 <IonIcon icon={camera} />
                             </IonButton>
 
-                            <IonButton fill="clear" className="action-button">
-                                <IonIcon icon={mic} />
+                            <IonButton
+                                fill="clear"
+                                onClick={toggleProductSummaryMode}
+                                className="action-button"
+                                color={productSummaryMode ? "primary" : "medium"}
+                            >
+                                <IonIcon icon={chatboxEllipses} />
+                                {productSummaryMode && (
+                                    <div className="mode-indicator"></div>
+                                )}
                             </IonButton>
 
                             <IonButton
