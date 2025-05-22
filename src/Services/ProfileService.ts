@@ -176,7 +176,35 @@ export const ProfileService = {
             console.error('Error al obtener información del perfil por ID:', error);
             throw error;
         }
-    }
+    },
+
+    getTutorialHecho: async (): Promise<boolean> => {
+        try {
+            const response = await API.get('/profile/tutorial', {
+                headers: {
+                    'Authorization': `${sessionStorage.getItem('token')}`
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error al verificar si el tutorial fue hecho:', error);
+            return false;
+        }
+    },
+
+    setTutorialHecho: async (): Promise<boolean> => {
+        try {
+            await API.put('/profile/updateTutorial', {}, {
+                headers: {
+                    'Authorization': `${sessionStorage.getItem('token')}`
+                }
+            });
+            return true;
+        } catch (error) {
+            console.error('Error al establecer que el tutorial fue hecho:', error);
+            return false;
+        }
+    },
 };
 
 export default ProfileService;

@@ -79,43 +79,43 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                     <IonContent>
                         <IonList className="menu-list">
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => (window.location.href = '/products')} detail={false}>
+                                <IonItem className="inicio" button onClick={() => (window.location.href = '/products')} detail={false}>
                                     <IonIcon slot="start" icon={homeOutline} />
                                     <IonLabel>Inicio</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => (window.location.href = '/profile')} detail={false}>
+                                <IonItem className="perfil" button onClick={() => (window.location.href = '/profile')} detail={false}>
                                     <IonIcon slot="start" icon={personCircle} />
                                     <IonLabel>Perfil</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => (window.location.href = '/IA')} detail={false}>
+                                <IonItem className="ia" button onClick={() => (window.location.href = '/IA')} detail={false}>
                                     <IonIcon slot="start" icon={addOutline} />
                                     <IonLabel>IA</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => (window.location.href = '/chat')} detail={false}>
+                                <IonItem className="chat" button onClick={() => (window.location.href = '/chat')} detail={false}>
                                     <IonIcon slot="start" icon={mailOutline} />
                                     <IonLabel>Chats</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => (window.location.href = '/premiumSuscribe')} detail={false}>
+                                <IonItem className="premium" button onClick={() => (window.location.href = '/premiumSuscribe')} detail={false}>
                                     <IonIcon slot="start" icon={personCircle} />
                                     <IonLabel>Premium</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => ( window.location.href ='/settings')} detail={false}>
+                                <IonItem className="ajustes" button onClick={() => ( window.location.href ='/settings')} detail={false}>
                                     <IonIcon slot="start" icon={settings} />
                                     <IonLabel>Ajustes</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem button onClick={() => navigateTo('/login')} detail={false}>
+                                <IonItem className="cerrar_sesion" button onClick={() => navigateTo('/login')} detail={false}>
                                     <IonIcon slot="start" icon={logOut} />
                                     <IonLabel>Cerrar sesión</IonLabel>
                                 </IonItem>

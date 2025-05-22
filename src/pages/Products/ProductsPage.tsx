@@ -32,12 +32,14 @@ import {
 import './ProductsPage.css';
 import { useHistory, useLocation } from "react-router-dom";
 import { ProductService, RecommendDTO, Product } from '../../Services/ProductService';
-import { ProfileService, SaveProductDTO } from '../../Services/ProfileService';
-import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
+import {SaveProductDTO } from '../../Services/ProfileService';
+//import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
 import { Settings as SettingsService } from '../../Services/SettingsService';
 import {driver} from "driver.js"
 import "driver.js/dist/driver.css";
 import useAuthRedirect from "../../Services/useAuthRedirect";
+import { menuController } from '@ionic/core';
+import {ProfileService} from "../../Services/ProfileService";
 
 interface CustomLocationState {
     token?: string;
@@ -83,8 +85,8 @@ const ProductsPage = () => {
                 {
                     element: '.shopify-searchbar',
                     popover: {
-                        title: 'Barra de búsqueda',
-                        description: 'Busca productos por nombre o descripción',
+                        title: '🔍 Barra de búsqueda',
+                        description: 'Busca productos por nombre o descripción 🛍️',
                         side: "bottom",
                         align: 'start'
                     }
@@ -92,43 +94,160 @@ const ProductsPage = () => {
                 {
                     element: '.filters-container',
                     popover: {
-                        title: 'Filtros por categoría',
-                        description: 'Filtra los productos por categorías específicas',
+                        title: '🧰 Filtros por categoría',
+                        description: 'Filtra los productos por categorías específicas 📂',
                         side: "bottom"
                     }
                 },
                 {
                     element: '.slider-container',
                     popover: {
-                        title: 'Ofertas destacadas',
-                        description: 'Descubre nuestras ofertas y productos especiales',
+                        title: '🔥 Ofertas destacadas',
+                        description: 'Descubre nuestras ofertas y productos especiales 💥',
                         side: "bottom"
                     }
                 },
                 {
                     element: '.product-card',
                     popover: {
-                        title: 'Tarjeta de producto',
-                        description: 'Haz clic para ver más detalles del producto. Usa las flechas para ver más imágenes',
+                        title: '🧾 Tarjeta de producto',
+                        description: 'Haz clic para ver más detalles del producto. Usa las flechas para ver más imágenes 🖼️',
                         side: "left"
                     }
                 },
                 {
                     element: '.favorite-button',
                     popover: {
-                        title: 'Guardar favoritos',
-                        description: 'Guarda los productos que te interesen en tu lista de favoritos',
+                        title: '❤️ Guardar favoritos',
+                        description: 'Guarda los productos que te interesen en tu lista de favoritos ⭐',
+                        side: "right"
+                    }
+                },
+                {
+                    element: '.rating-chip',
+                    popover: {
+                        title: '⭐ Puntuación del producto',
+                        description: 'Muestra la puntuación del producto basada en las valoraciones de los usuarios 🗣️',
+                        side: "right"
+                    }
+                },
+                {
+                    element: '.seller-chip',
+                    popover: {
+                        title: '🛒 Vendedor del producto',
+                        description: 'Muestra el usuario que vende el producto 👤',
                         side: "right"
                     }
                 }
             ],
-            nextBtnText: 'Siguiente',
-            prevBtnText: 'Anterior',
-            doneBtnText: 'Finalizar'
+            nextBtnText: '➡️ Siguiente',
+            prevBtnText: '⬅️ Anterior',
+            doneBtnText: '🎯 Siguiente tour',
+            onDestroyed: async () => {
+                try {
+                    await menuController.enable(true);
+                    const menu = document.querySelector('ion-menu') as HTMLIonMenuElement;
+                    if (menu) {
+                        await menu.open();
+                        setTimeout(() => {
+                            startMenuTour();
+                        }, 300);
+                    }
+                } catch (error) {
+                    console.error('❌ Error al abrir el menú:', error);
+                }
+            }
         });
 
         driverObj.drive();
     };
+
+    const startMenuTour = () => {
+        const menuTour = driver({
+            showProgress: true,
+            steps: [
+                {
+                    element: '.menu-header',
+                    popover: {
+                        title: '📋 Menú principal',
+                        description: 'Accede a todas las funciones de la aplicación 🧭',
+                        side: "right"
+                    }
+                },
+                {
+                    element: '.inicio',
+                    popover: {
+                        title: '🏠 Inicio',
+                        description: 'Explora los diferentes productos 🛍️',
+                        side: "right"
+                    }
+                },
+                {
+                    element: '.perfil',
+                    popover: {
+                        title: '👤 Perfil',
+                        description: 'Visita tu perfil y mira los productos que tienes para intercambio y reseñas 🔄',
+                        side: "right"
+                    }
+                },
+                {
+                    element: '.ia',
+                    popover: {
+                        title: '🤖 IA',
+                        description: 'Accede a las funciones de inteligencia artificial, pregúntale y sube productos a través de este 🚀',
+                        side: "right"
+                    }
+                },
+                {
+                    element: '.chat',
+                    popover: {
+                        title: '💬 Chats',
+                        description: 'Chatea con otras personas para tradear 🗣️',
+                        side: "right"
+                    }
+                },
+                {
+                    element: '.premium',
+                    popover: {
+                        title: '💎 Premium',
+                        description: 'Accede a las funciones premium y suscripciones 🛡️',
+                        side: "right"
+                    }
+                },
+                {
+                    element: '.ajustes',
+                    popover: {
+                        title: '⚙️ Ajustes',
+                        description: 'Configura tu cuenta y preferencias de la aplicación 🧩',
+                        side: "right"
+                    }
+                },
+                {
+                    element: '.cerrar_sesion',
+                    popover: {
+                        title: '🚪 Cerrar sesión',
+                        description: 'Cierra tu sesión actual 🔐',
+                        side: "right"
+                    }
+                }
+            ],
+            nextBtnText: '➡️ Siguiente',
+            prevBtnText: '⬅️ Anterior',
+            doneBtnText: '✅ Finalizar',
+            onDestroyed: async () => {
+                const menu = document.querySelector('ion-menu') as HTMLIonMenuElement;
+                if (menu) {
+                    await menu.close();
+                }
+
+                await ProfileService.setTutorialHecho();
+            }
+        });
+
+        menuTour.drive();
+    };
+
+
 
 
     const history = useHistory();
@@ -286,7 +405,7 @@ const ProductsPage = () => {
     // Load user profile and saved products
     useEffect(() => {
         const loadUserProfile = async () => {
-            let modo = await SettingsService.getModoOcuro()
+            const modo = await SettingsService.getModoOcuro()
             sessionStorage.setItem('modoOscuroClaro', modo.toString());
 
             // Obtener el valor del modo oscuro del sessionStorage
@@ -330,6 +449,8 @@ const ProductsPage = () => {
             loadUserProfile();
         }
     }, []);
+
+
 
     // Load recommended data from backend
     useEffect(() => {
@@ -712,6 +833,24 @@ const ProductsPage = () => {
         setFilteredProducts(filtered);
     }, [selectedCategories, recommendedData]);
 
+
+    useEffect(() => {
+        const checkTutorial = async () => {
+            try {
+                const tutorialHecho = await ProfileService.getTutorialHecho();
+                if (!tutorialHecho) {
+                    startProductsTour();
+                }
+            } catch (error) {
+                console.error('Error al verificar el tutorial:', error);
+            }
+        };
+
+        if (sessionStorage.getItem("token")) {
+            checkTutorial();
+        }
+    }, []);
+
     // Function to format points
     const formatPoints = (points: number): string => {
         if (points < 0) return "No evaluado";
@@ -907,16 +1046,16 @@ const ProductsPage = () => {
                                     </IonList>
                                 </div>
                             )}
-                            <IonButtons slot="end" className="header-buttons">
-                                <IonButton className="theme-toggle-button">
-                                    <SwitchDark darkMode={darkMode} toggleDarkMode={toggleDarkMode}/>
-                                </IonButton>
-                            </IonButtons>
+                            {/* Botones de la barra superior - Desactivado temporalmente
+                                <IonButtons slot="end" className="header-buttons">
+                                    <IonButton className="theme-toggle-button">
+                                           <SwitchDark darkMode={darkMode} toggleDarkMode={toggleDarkMode}/>
+                                    </IonButton>
+                                </IonButtons>
+                             */}
 
-                            <IonButton onClick={startProductsTour}>
-                                <IonIcon slot="start" icon={informationCircleOutline} />
-                                Ver tour
-                            </IonButton>
+                            <IonIcon onClick={startProductsTour} slot="start" icon={informationCircleOutline} />
+
                         </div>
                     </IonToolbar>
                 </IonHeader>
