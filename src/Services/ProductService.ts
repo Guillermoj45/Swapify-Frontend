@@ -189,26 +189,29 @@ export class ProductService {
             // Usar el endpoint de recomendaciones existente
             const recommendData = await this.getRecommendedProducts();
 
-            // Flatten all products from all categories
+            // Flatten all products from all categories and remove duplicates
             const allProducts = recommendData.products.flat();
-
-            // Filter products that share at least one category with the current product
-            const relatedProducts = allProducts.filter(product => {
-                // Excluir el producto actual
-                if (product.id === excludeProductId) return false;
-
-                // Verificar si el producto tiene al menos una categoría en común
-                return product.categories?.some(productCategory =>
-                    categories.some(targetCategory =>
-                        productCategory.name.toLowerCase() === targetCategory.toLowerCase()
-                    )
-                );
+            const seenIds = new Set<string>();
+            const uniqueProducts = allProducts.filter(product => {
+                // Si ya vimos este ID o es el producto a excluir, filtrar
+                if (seenIds.has(product.id) || product.id === excludeProductId) {
+                    return false;
+                }
+                seenIds.add(product.id);
+                return true;
             });
 
-            // Shuffle y limitar los resultados
-            const shuffled = this.shuffleArray([...relatedProducts]);
-            return shuffled.slice(0, limit);
+            // Filtrar productos que comparten al menos una categoría
+            const relatedProducts = uniqueProducts.filter(product =>
+                product.categories?.some(productCategory =>
+                    categories.includes(productCategory.name)
+                )
+            ).slice(0, limit);
 
+            // Procesar las imágenes con Cloudinary
+            return relatedProducts.map(product => ({
+                ...product,
+            }));
         } catch (error) {
             console.error('Error in fallback method:', error);
             return [];
@@ -227,3 +230,4 @@ export class ProductService {
         return shuffled;
     }
 }
+
