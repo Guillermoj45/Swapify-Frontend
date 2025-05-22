@@ -93,7 +93,7 @@ const ProductDetailPage: React.FC = () => {
         };
 
         fetchProductDetail();
-    }, []);
+    }, [id, profileId]);
 
     // Fetch related products when product is loaded
     useEffect(() => {
