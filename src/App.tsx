@@ -60,6 +60,30 @@ const App: React.FC = () => {
             console.log('Conexión exitosa al WebSocket');
             WebSocketService.subscribeToNotification().then(() => console.log("Hola")).catch((error => {console.error("Error al suscribirse a las notificaciones", error)}));
         }
+
+          const connectWebSocket = async () => {
+            try {
+                await WebSocketService.waitForConnection();
+
+                // Configurar el callback para recibir mensajes
+                WebSocketService.setnotificationCallback((messageData) => {
+                        try {
+                            // Intentar parsear el mensaje si es un string
+                            const parsedData = typeof messageData === 'string'
+                                ? JSON.parse(messageData)
+                                : messageData;
+
+                            console.log('Mensaje recibido:', parsedData);
+                        } catch (error) {
+                            console.error('Error al parsear el mensaje:', error);
+                        }
+                    }
+                );
+            } catch (error) {
+                console.error('Error al conectar al WebSocket:', error);
+            }
+        }
+        connectWebSocket()
     }).catch((error) => {
         console.error('Error al conectar al WebSocket:', error);
     });

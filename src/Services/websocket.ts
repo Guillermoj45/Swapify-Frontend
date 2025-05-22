@@ -15,9 +15,10 @@ interface MensajeRecibeDTO {
 }
 
 export const WebSocketService = new class {
+
   private client: Client | null = null;
   private messageCallback: MessageCallback | null = null;
-  private notificationCallback: MessageCallback | null = null;
+  private _notificationCallback: MessageCallback | null = null;
   private headers = {
       'Authorization': `Bearer ${sessionStorage.getItem('token')}`
   };
@@ -70,6 +71,8 @@ export const WebSocketService = new class {
     return true;
   }
 
+
+
   async subscribeToNotification() {
     if (!this.client) {
       await this.waitForConnection();
@@ -81,9 +84,9 @@ export const WebSocketService = new class {
     this.subscribeChatMessages = this.client!.subscribe(
       `/topic/notification/${profile.id}`,
       (message: Message) => {
-        if (this.notificationCallback) {
+        if (this._notificationCallback) {
           const data = JSON.parse(message.body);
-          this.notificationCallback(data);
+          this._notificationCallback(data);
           console.log("Hola", data);
         }
         console.log("Hola");
@@ -128,6 +131,9 @@ export const WebSocketService = new class {
 
   setMessageCallback(callback: MessageCallback) {
     this.messageCallback = callback;
+  }
+  setnotificationCallback(value: MessageCallback) {
+    this._notificationCallback = value;
   }
 
   disconnect() {
