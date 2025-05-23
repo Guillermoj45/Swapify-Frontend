@@ -1,29 +1,27 @@
-import {Client, Message, StompSubscription} from '@stomp/stompjs';
+import { Client, Message, StompSubscription } from '@stomp/stompjs';
 import ProfileService from "./ProfileService";
+import { notificationsOutline } from "ionicons/icons";
 
-type MessageCallback = (
-    message: { content: string, roomId: string })
-    => void;
+type MessageCallback = (message: { content: string, roomId: string }) => void;
 
 interface MensajeRecibeDTO {
-  content: string;      // Contenido del mensaje
+  content: string;
   senderName: string;
-  token?: string;       // token mio (opcional)
+  token?: string;
   timestamp: string;
   type: string;
-  userName: string;     // El que envía el mensaje
+  userName: string;
 }
 
 export const WebSocketService = new class {
-
   private client: Client | null = null;
   private messageCallback: MessageCallback | null = null;
-  private _notificationCallback: MessageCallback | null = null;
+  private notificationCallback: ((newNotification: any) => void) | null = null;
   private headers = {
-      'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+    'Authorization': `Bearer ${sessionStorage.getItem('token')}`
   };
-  private subscribeChatMessages?: StompSubscription = null;
-  private isConnected: boolean = false;
+  private subscribeChatMessages?: StompSubscription;
+  private isConnected = false;
 
   connect(): Promise<boolean> {
     if (this.client) {
@@ -41,7 +39,7 @@ export const WebSocketService = new class {
         onConnect: () => {
           console.log('Conectado al WebSocket');
           this.isConnected = true;
-          return resolve(true);
+          resolve(true);
         },
         onDisconnect: () => {
           console.log('Desconectado del WebSocket');
@@ -53,93 +51,91 @@ export const WebSocketService = new class {
     });
   }
 
-  async waitForConnection(): Promise<boolean> {
+  async waitForConnection(): Promise<void> {
     if (!this.client) {
       await this.connect();
     }
 
-    // Espera a que la conexión esté activa
     await new Promise(resolve => {
-      const checkConnection = setInterval(() => {
+      const interval = setInterval(() => {
         if (this.isConnected) {
-          clearInterval(checkConnection);
+          clearInterval(interval);
           resolve(true);
         }
       }, 100);
     });
-
-    return true;
   }
 
-
-
   async subscribeToNotification() {
-    if (!this.client) {
-      await this.waitForConnection();
-    }
+    await this.waitForConnection();
 
     const profile = await ProfileService.getProfileInfo();
     if (!profile) throw new Error('No se pudo obtener el perfil');
 
-    this.subscribeChatMessages = this.client!.subscribe(
-      `/topic/notification/${profile.id}`,
-      (message: Message) => {
-        if (this._notificationCallback) {
-          const data = JSON.parse(message.body);
-          this._notificationCallback(data);
-          console.log("Hola", data);
-        }
-        console.log("Hola");
-      },
-      this.headers
+    this.client!.subscribe(
+        `/topic/notification/${profile.id}`,
+        (message: Message) => {
+          if (this.notificationCallback) {
+            const data = JSON.parse(message.body);
+            this.notificationCallback({
+              id: Date.now(),
+              title: data.title || 'Nueva notificación',
+              description: data.content || 'Sin descripción',
+              time: 'Ahora',
+              icon: notificationsOutline,
+              unread: true,
+            });
+          }
+        },
+        this.headers
     );
   }
 
-
   subscribeToChat(idProduct: string, idProfileProduct: string, idProfile: string) {
     if (!this.client) return;
-    this.subscribeChatMessages = this.client.subscribe(`/topic/messages/${idProduct}/${idProfileProduct}/${idProfile}`, (message: Message) => {
-      if (this.messageCallback) {
-        const data = JSON.parse(message.body);
-        this.messageCallback(data);
-        console.log("Hola",data)
-      }
-      console.log("Hola")
-    }, this.headers);
+
+    this.subscribeChatMessages = this.client.subscribe(
+        `/topic/messages/${idProduct}/${idProfileProduct}/${idProfile}`,
+        (message: Message) => {
+          if (this.messageCallback) {
+            const data = JSON.parse(message.body);
+            this.messageCallback(data);
+          }
+        },
+        this.headers
+    );
   }
 
   unsubscribeFromRoom() {
-      if (this.subscribeChatMessages) {
+    if (this.subscribeChatMessages) {
       this.subscribeChatMessages.unsubscribe();
       this.subscribeChatMessages = undefined;
-      }
+    }
   }
 
-  async sendMessage(idProduct: string, idProfileProduct: string, idProfile: string, message:MensajeRecibeDTO): Promise<void> {
+  async sendMessage(idProduct: string, idProfileProduct: string, idProfile: string, message: MensajeRecibeDTO): Promise<void> {
     if (!this.client) return;
 
-    try {
-      this.client.publish({
-        destination: `/app/chat/${idProduct}/${idProfileProduct}/${idProfile}`,
-        body: JSON.stringify(message), // Asegura que el mensaje se envía como JSON,
-      });
-    } catch (error) {
-      console.error('Error al enviar el mensaje:', error);
-      throw error;
-    }
+    this.client.publish({
+      destination: `/app/chat/${idProduct}/${idProfileProduct}/${idProfile}`,
+      body: JSON.stringify(message),
+    });
   }
 
   setMessageCallback(callback: MessageCallback) {
     this.messageCallback = callback;
   }
-  setnotificationCallback(value: MessageCallback) {
-    this._notificationCallback = value;
+
+  setNotificationCallback(callback: (newNotification: any) => void) {
+    this.notificationCallback = callback;
   }
 
   disconnect() {
     if (this.client) {
-      this.client.deactivate().then();
-      this.client = null;
+      this.client.deactivate().then(() => {
+        this.client = null;
+        this.isConnected = false;
+      });
     }
   }
-}
+};

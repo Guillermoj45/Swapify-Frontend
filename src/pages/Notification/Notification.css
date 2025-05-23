@@ -1,0 +1,343 @@
+/* Theme Variables */
+body.light-theme {
+    --background: #ffffff;
+    --text-color: #333333;
+    --item-background: #f8f8f8;
+    --item-hover: #f0f0f0;
+    --border-color: #e0e0e0;
+    --accent-color: #3880ff;
+    --secondary-text: #666666;
+    --unread-indicator: #3880ff;
+    --icon-background: rgba(56, 128, 255, 0.1);
+    --header-background: #ffffff;
+    --toolbar-border: #e0e0e0;
+}
+
+body.dark-theme {
+    --background: #0d1b2a;
+    --text-color: #dbe9f4;
+    --item-background: #1b263b;
+    --item-hover: #253b56;
+    --border-color: #2c3e50;
+    --accent-color: #4d9fff;
+    --secondary-text: #a0b4c7;
+    --unread-indicator: #4d9fff;
+    --icon-background: rgba(77, 159, 255, 0.15);
+    --header-background: #0d1b2a;
+    --toolbar-border: #1b263b;
+}
+
+/* General Styles */
+.notifications-content {
+    background-color: var(--background);
+    color: var(--text-color);
+    --background: var(--background);
+}
+
+/* Header Styles */
+.header-toolbar {
+    --background: var(--header-background);
+    --color: var(--text-color);
+    border-bottom: 1px solid var(--toolbar-border);
+}
+
+.notifications-title {
+    font-weight: 600;
+}
+
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.theme-icon {
+    margin-right: 8px;
+    font-size: 20px;
+    color: var(--accent-color);
+}
+
+/* Notification Header */
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.notification-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+/* Notification List */
+.notification-list {
+    padding: 8px;
+}
+
+ion-item {
+    --background: var(--item-background);
+    --color: var(--text-color);
+    border-radius: 12px;
+    margin: 8px 0;
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    --border-color: transparent;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+ion-item::part(native) {
+    padding: 0;
+}
+
+.notification-icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--icon-background);
+    margin: 12px;
+    flex-shrink: 0;
+}
+
+.notification-icon {
+    font-size: 24px;
+    color: var(--accent-color);
+}
+
+.notification-content {
+    padding: 12px 12px 12px 0;
+    flex: 1;
+    min-width: 0; /* Prevents flex items from overflowing */
+}
+
+.notification-title {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    white-space: normal; /* Allow text to wrap */
+    word-break: break-word;
+}
+
+.notification-description {
+    color: var(--secondary-text);
+    font-size: 14px;
+    margin-bottom: 8px;
+    white-space: normal; /* Allow text to wrap */
+    word-break: break-word;
+}
+
+.notification-time {
+    display: flex;
+    align-items: center;
+    color: var(--secondary-text);
+    font-size: 12px;
+}
+
+.time-icon {
+    font-size: 14px;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+/* Unread Notification Styles */
+.unread-notification {
+    --background: var(--item-background);
+    border-left: 3px solid var(--unread-indicator);
+}
+
+.unread-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--unread-indicator);
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+/* Delete Button */
+.delete-button {
+    background: transparent;
+    border: none;
+    padding: 12px;
+    margin-right: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+    touch-action: manipulation; /* Improves touch behavior */
+}
+
+.delete-button:hover {
+    background-color: var(--item-hover);
+}
+
+.delete-icon {
+    color: var(--secondary-text);
+    font-size: 20px;
+}
+
+body.light-theme .delete-button:hover .delete-icon,
+body.light-theme .delete-button:active .delete-icon {
+    color: #ff3b30;
+}
+
+body.dark-theme .delete-button:hover .delete-icon,
+body.dark-theme .delete-button:active .delete-icon {
+    color: #ff453a;
+}
+
+/* Empty state */
+.empty-notifications {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: var(--secondary-text);
+    text-align: center;
+    padding: 20px;
+}
+
+/* Responsive adjustments */
+/* Large phones and small tablets */
+@media (max-width: 768px) {
+    .notification-header h2 {
+        font-size: 16px;
+    }
+
+    .notification-icon-container {
+        width: 44px;
+        height: 44px;
+    }
+
+    .notification-icon {
+        font-size: 22px;
+    }
+}
+
+/* Medium phones */
+@media (max-width: 576px) {
+    .notification-icon-container {
+        width: 40px;
+        height: 40px;
+        margin: 10px;
+    }
+
+    .notification-icon {
+        font-size: 20px;
+    }
+
+    .notification-title {
+        font-size: 15px;
+    }
+
+    .notification-description {
+        font-size: 13px;
+    }
+
+    .delete-button {
+        padding: 10px;
+    }
+
+    .delete-icon {
+        font-size: 18px;
+    }
+
+    .notification-content {
+        padding: 10px 8px 10px 0;
+    }
+}
+
+/* Small phones */
+@media (max-width: 375px) {
+    .notification-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .notification-header h2 {
+        margin-bottom: 8px;
+    }
+
+    .notification-icon-container {
+        width: 36px;
+        height: 36px;
+        margin: 8px;
+    }
+
+    .notification-icon {
+        font-size: 18px;
+    }
+
+    .notification-title {
+        font-size: 14px;
+    }
+
+    .notification-description {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    .delete-button {
+        padding: 8px;
+    }
+
+    .delete-icon {
+        font-size: 16px;
+    }
+
+    .theme-toggle {
+        margin-right: 5px;
+    }
+
+    .theme-icon {
+        margin-right: 4px;
+        font-size: 18px;
+    }
+}
+
+/* Very small phones */
+@media (max-width: 320px) {
+    .notification-content {
+        padding: 8px 6px 8px 0;
+    }
+
+    .notification-icon-container {
+        width: 32px;
+        height: 32px;
+        margin: 6px;
+    }
+
+    .notification-icon {
+        font-size: 16px;
+    }
+
+    .notification-title {
+        font-size: 13px;
+    }
+
+    .notification-description {
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+
+    .notification-time {
+        font-size: 10px;
+    }
+
+    .time-icon {
+        font-size: 12px;
+    }
+}

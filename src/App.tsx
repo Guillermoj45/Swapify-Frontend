@@ -45,6 +45,7 @@ import PagoPremium from "./pages/PagoPremium/PagoPremium";
 import ProductDetailPage from "./pages/ProductDetail/ProductDetailPage";
 import SettingsPage from "./pages/Settings/SettingsPage";
 import {WebSocketService} from "./Services/websocket";
+import Notification from "./pages/Notification/Notification";
 
 setupIonicReact();
 
@@ -55,38 +56,17 @@ const App: React.FC = () => {
     // Detectar si es vista de chat
     const [isChatView, setIsChatView] = useState(false);
 
-    WebSocketService.connect().then((conectado) => {
-        if (conectado) {
-            console.log('Conexión exitosa al WebSocket');
-            WebSocketService.subscribeToNotification().then(() => console.log("Hola")).catch((error => {console.error("Error al suscribirse a las notificaciones", error)}));
-        }
-
-          const connectWebSocket = async () => {
-            try {
-                await WebSocketService.waitForConnection();
-
-                // Configurar el callback para recibir mensajes
-                WebSocketService.setnotificationCallback((messageData) => {
-                        try {
-                            // Intentar parsear el mensaje si es un string
-                            const parsedData = typeof messageData === 'string'
-                                ? JSON.parse(messageData)
-                                : messageData;
-
-                            console.log('Mensaje recibido:', parsedData);
-                        } catch (error) {
-                            console.error('Error al parsear el mensaje:', error);
-                        }
-                    }
-                );
-            } catch (error) {
-                console.error('Error al conectar al WebSocket:', error);
+    WebSocketService.connect()
+        .then((conectado) => {
+            if (conectado) {
+                console.log('Conexión exitosa al WebSocket');
+                return WebSocketService.subscribeToNotification();
             }
-        }
-        connectWebSocket()
-    }).catch((error) => {
-        console.error('Error al conectar al WebSocket:', error);
-    });
+        })
+        .catch((error) => {
+            console.error('Error al conectar al WebSocket:', error);
+        });
+
 
     useEffect(() => {
         const mediaQuery = window.matchMedia('(min-width: 768px)');
@@ -122,6 +102,8 @@ const App: React.FC = () => {
             window.removeEventListener('popstate', checkIfChatView);
         };
     }, []);
+
+
 
     return (
         <IonApp>
@@ -165,6 +147,9 @@ const App: React.FC = () => {
                     </Route>
                     <Route exact path="/settings">
                         <SettingsPage />
+                    </Route>
+                    <Route exact path="/notification">
+                        <Notification/>
                     </Route>
                 </IonRouterOutlet>
             </IonReactRouter>
