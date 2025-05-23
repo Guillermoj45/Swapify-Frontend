@@ -1,7 +1,4 @@
-"use client";
-
 import type React from "react";
-
 import {
     IonContent,
     IonHeader,
@@ -9,17 +6,17 @@ import {
     IonTitle,
     IonToolbar,
     IonList,
+    IonItem,
+    IonLabel,
     useIonViewDidEnter,
 } from "@ionic/react";
 import "./Notification.css";
 import { useEffect, useState } from "react";
-import { WebSocketService } from "../../Services/websocket";
 import { useNotifications } from "../../Services/DatosParaExoportar";
 
 const Notifications: React.FC = () => {
     const [notifications] = useNotifications();
     const [darkMode, setDarkMode] = useState(false);
-    const [message, setMessage] = useState<string>("");
 
     useEffect(() => {
         const applyTheme = (isDarkMode: boolean) => {
@@ -39,44 +36,43 @@ const Notifications: React.FC = () => {
         loadThemePreference();
     }, []);
 
-    useEffect(() => {
-        console.log("Notificaciones actualizadas:", notifications); // Para depuración
-        setMessage(`Notificaciones actualizadas: ${notifications.length}`);
-    }, [notifications]);
-
     const applyTheme = (isDark: boolean) => {
-        console.log("Aplicando tema:", isDark ? "oscuro" : "claro"); // Para depuración
         document.body.classList.remove("dark-theme", "light-theme");
         document.body.classList.add(isDark ? "dark-theme" : "light-theme");
     };
 
     useIonViewDidEnter(() => {
-        console.log("Vista activada, aplicando tema"); // Para depuración
         applyTheme(darkMode);
     });
-
-    useEffect(() => {
-        WebSocketService.waitForConnection()
-            .then(() => {
-                WebSocketService.setNotificationCallback((newNotification) => {
-                    console.log("Nueva notificación:", newNotification); // Para depuración
-                });
-            })
-            .catch((error) => {
-                console.error("Error al conectar con WebSocket:", error);
-            });
-    }, []);
 
     return (
         <IonPage>
             <IonHeader>
                 <IonToolbar className="header-toolbar">
-                    <IonTitle className="notifications-title">Notificaciones</IonTitle>
+                    <IonTitle className="notifications-title">
+                        Notificaciones ({notifications.length})
+                    </IonTitle>
                 </IonToolbar>
             </IonHeader>
             <IonContent className="notifications-content">
                 <IonList className="notification-list">
-                    <p>{message}</p> {/* Renderizar el mensaje */}
+                    {notifications.length === 0 ? (
+                        <IonItem>
+                            <IonLabel>No hay notificaciones</IonLabel>
+                        </IonItem>
+                    ) : (
+                        notifications.map((notification, index) => (
+                            <IonItem key={`${notification.timestamp}-${index}`}>
+                                <IonLabel>
+                                    <h2>{notification.senderName}</h2>
+                                    <p>{notification.content}</p>
+                                    <p className="notification-time">
+                                        {new Date(notification.timestamp).toLocaleString()}
+                                    </p>
+                                </IonLabel>
+                            </IonItem>
+                        ))
+                    )}
                 </IonList>
             </IonContent>
         </IonPage>

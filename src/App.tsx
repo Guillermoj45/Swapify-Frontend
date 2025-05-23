@@ -1,5 +1,6 @@
+
 import { Redirect, Route } from 'react-router-dom';
-import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
+import {IonApp, IonRouterOutlet, IonToast, setupIonicReact} from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { useState, useEffect } from 'react';
 import Navegacion from './components/Navegation';
@@ -20,15 +21,6 @@ import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
- */
-
-/* import '@ionic/react/css/palettes/dark.always.css'; */
-/* import '@ionic/react/css/palettes/dark.class.css'; */
 import '@ionic/react/css/palettes/dark.system.css';
 
 /* Theme variables */
@@ -46,50 +38,55 @@ import ProductDetailPage from "./pages/ProductDetail/ProductDetailPage";
 import SettingsPage from "./pages/Settings/SettingsPage";
 import {WebSocketService} from "./Services/websocket";
 import Notification from "./pages/Notification/Notification";
-import {useNotifications} from "./Services/DatosParaExoportar";
 import { MensajeRecibeDTO } from './Services/websocket';
+import { addNotification } from './Services/DatosParaExoportar';
 
 setupIonicReact();
-
 
 const App: React.FC = () => {
     // Detectar si es vista de escritorio
     const [isDesktop, setIsDesktop] = useState(false);
-    const [notifications, setNotifications] = useNotifications();
-
 
     // Detectar si es vista de chat
     const [isChatView, setIsChatView] = useState(false);
 
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
 
-    WebSocketService.connect()
-.then((conectado) => {
-    if (conectado) {
-        console.log('Conexión exitosa al WebSocket');
-        return WebSocketService.subscribeToNotification().then(() => {
-            WebSocketService.setNotificationCallback((newNotification) => {
-                console.log("Nueva notificación (App8):", newNotification); // Para depuración
 
-                // Transformar `newNotification` al tipo `MensajeRecibeDTO` si es necesario
-                const transformedNotification: MensajeRecibeDTO = {
-                    timestamp: "", token: "", type: "", userName: "",
-                    senderName: newNotification.content || '',
-                    content: newNotification.content || ''
-                };
+    // NUEVO useEffect para manejar la conexión WebSocket
+    useEffect(() => {
+        WebSocketService.connect()
+            .then((conectado) => {
+                if (conectado) {
+                    console.log('Conexión exitosa al WebSocket');
+                    return WebSocketService.subscribeToNotification().then(() => {
+                        WebSocketService.setNotificationCallback((newNotification) => {
+                            console.log("Nueva notificación (App):", newNotification);
 
-                setNotifications((prevNotifications) => {
-                    const updatedNotifications = [...prevNotifications, transformedNotification];
-                    console.log("Notificaciones actualizadas:", updatedNotifications); // Para depuración
-                    return updatedNotifications;
-                });
+                            const transformedNotification: MensajeRecibeDTO = {
+                                timestamp: newNotification.timestamp || new Date().toISOString(),
+                                token: sessionStorage.getItem('token') || '',
+                                type: newNotification.type || 'notification',
+                                userName: newNotification.userName || 'Sistema',
+                                senderName: newNotification.senderName || 'Sistema',
+                                content: newNotification.content || 'Nueva notificación'
+                            };
+
+                            console.log("Agregando notificación:", transformedNotification);
+                            // Usar la función global para agregar la notificación
+                            addNotification(transformedNotification);
+
+                            setToastMessage(`${transformedNotification.senderName}: ${transformedNotification.content}`);
+                            setShowToast(true);
+                        });
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error('Error al conectar al WebSocket:', error);
             });
-        });
-    }
-})
-        .catch((error) => {
-            console.error('Error al conectar al WebSocket:', error);
-        });
-
+    }, []); // Se ejecuta una sola vez al montar el componente
 
     useEffect(() => {
         const mediaQuery = window.matchMedia('(min-width: 768px)');
@@ -125,8 +122,6 @@ const App: React.FC = () => {
             window.removeEventListener('popstate', checkIfChatView);
         };
     }, []);
-
-
 
     return (
         <IonApp>
@@ -176,6 +171,22 @@ const App: React.FC = () => {
                     </Route>
                 </IonRouterOutlet>
             </IonReactRouter>
+
+            <IonToast
+                isOpen={showToast}
+                onDidDismiss={() => setShowToast(false)}
+                message={toastMessage}
+                duration={3000}
+                position="bottom"
+                buttons={[
+                    {
+                        text: 'Ver',
+                        handler: () => {
+                            window.location.href = '/notification';
+                        }
+                    }
+                ]}
+            />
         </IonApp>
     );
 };

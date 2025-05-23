@@ -1,7 +1,5 @@
 import { Client, Message, StompSubscription } from '@stomp/stompjs';
 import ProfileService from "./ProfileService";
-import { notificationsOutline } from "ionicons/icons";
-import {useState} from "react";
 
 type MessageCallback = (message: { content: string, roomId: string }) => void;
 
@@ -78,13 +76,15 @@ export const WebSocketService = new class {
         (message: Message) => {
           if (this.notificationCallback) {
             const data = JSON.parse(message.body);
+            console.log("Datos recibidos del WebSocket:", data);
+
+            // Pasar los datos tal como vienen del servidor
             this.notificationCallback({
-              id: Date.now(),
-              title: data.title || 'Nueva notificación',
-              description: data.content || 'Sin descripción',
-              time: 'Ahora',
-              icon: notificationsOutline,
-              unread: true,
+              content: data.content || data.message || 'Nueva notificación',
+              roomId: data.roomId || '',
+              senderName: data.senderName || data.from || 'Sistema',
+              // Agregar cualquier otro campo que necesites
+              ...data
             });
           }
         },

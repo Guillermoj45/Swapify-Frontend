@@ -1,5 +1,5 @@
-/* Theme Variables */
-body.light-theme {
+/* Variables globales por defecto */
+:root {
     --background: #ffffff;
     --text-color: #333333;
     --item-background: #f8f8f8;
@@ -13,28 +13,56 @@ body.light-theme {
     --toolbar-border: #e0e0e0;
 }
 
-body.dark-theme {
-    --background: #0d1b2a;
-    --text-color: #dbe9f4;
-    --item-background: #1b263b;
-    --item-hover: #253b56;
-    --border-color: #2c3e50;
-    --accent-color: #4d9fff;
-    --secondary-text: #a0b4c7;
-    --unread-indicator: #4d9fff;
-    --icon-background: rgba(77, 159, 255, 0.15);
-    --header-background: #0d1b2a;
-    --toolbar-border: #1b263b;
+/* Tema claro */
+body.light-theme {
+    --background: #ffffff !important;
+    --text-color: #333333 !important;
+    --item-background: #f8f8f8 !important;
+    --item-hover: #f0f0f0 !important;
+    --border-color: #e0e0e0 !important;
+    --accent-color: #3880ff !important;
+    --secondary-text: #666666 !important;
+    --unread-indicator: #3880ff !important;
+    --icon-background: rgba(56, 128, 255, 0.1) !important;
+    --header-background: #ffffff !important;
+    --toolbar-border: #e0e0e0 !important;
+
+    /* Variables específicas de Ionic */
+    --ion-background-color: var(--background) !important;
+    --ion-text-color: var(--text-color) !important;
+    --ion-toolbar-background: var(--header-background) !important;
+    --ion-item-background: var(--item-background) !important;
 }
 
-/* General Styles */
+/* Tema oscuro */
+body.dark-theme {
+    --background: #0d1b2a !important;
+    --text-color: #dbe9f4 !important;
+    --item-background: #1b263b !important;
+    --item-hover: #253b56 !important;
+    --border-color: #2c3e50 !important;
+    --accent-color: #4d9fff !important;
+    --secondary-text: #a0b4c7 !important;
+    --unread-indicator: #4d9fff !important;
+    --icon-background: rgba(77, 159, 255, 0.15) !important;
+    --header-background: #0d1b2a !important;
+    --toolbar-border: #1b263b !important;
+
+    /* Variables específicas de Ionic */
+    --ion-background-color: var(--background) !important;
+    --ion-text-color: var(--text-color) !important;
+    --ion-toolbar-background: var(--header-background) !important;
+    --ion-item-background: var(--item-background) !important;
+}
+
+/* Estilos generales */
 .notifications-content {
     background-color: var(--background);
     color: var(--text-color);
     --background: var(--background);
 }
 
-/* Header Styles */
+/* Estilos del encabezado */
 .header-toolbar {
     --background: var(--header-background);
     --color: var(--text-color);
@@ -43,301 +71,99 @@ body.dark-theme {
 
 .notifications-title {
     font-weight: 600;
-}
-
-.theme-toggle {
-    display: flex;
-    align-items: center;
-    margin-right: 10px;
-}
-
-.theme-icon {
-    margin-right: 8px;
-    font-size: 20px;
-    color: var(--accent-color);
-}
-
-/* Notification Header */
-.notification-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.notification-header h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
     color: var(--text-color);
 }
 
-/* Notification List */
+/* Lista de notificaciones */
 .notification-list {
     padding: 8px;
+    background-color: var(--background);
+}
+
+ion-list {
+    background-color: var(--background);
 }
 
 ion-item {
     --background: var(--item-background);
     --color: var(--text-color);
-    border-radius: 12px;
-    margin: 8px 0;
-    --padding-start: 0;
-    --inner-padding-end: 0;
     --border-color: transparent;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
+    margin: 8px 0;
+    border-radius: 12px;
+    --padding-start: 16px;
+    --padding-end: 16px;
 }
 
 ion-item::part(native) {
-    padding: 0;
+    background: var(--item-background);
 }
 
-.notification-icon-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background-color: var(--icon-background);
-    margin: 12px;
-    flex-shrink: 0;
-}
-
-.notification-icon {
-    font-size: 24px;
-    color: var(--accent-color);
-}
-
-.notification-content {
-    padding: 12px 12px 12px 0;
-    flex: 1;
-    min-width: 0; /* Prevents flex items from overflowing */
-}
-
-.notification-title {
-    font-weight: 600;
+/* Estilos del contenido de la notificación */
+ion-label h2 {
+    color: var(--text-color);
     font-size: 16px;
+    font-weight: 600;
     margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-    white-space: normal; /* Allow text to wrap */
-    word-break: break-word;
 }
 
-.notification-description {
+ion-label p {
     color: var(--secondary-text);
     font-size: 14px;
-    margin-bottom: 8px;
-    white-space: normal; /* Allow text to wrap */
-    word-break: break-word;
 }
 
 .notification-time {
-    display: flex;
-    align-items: center;
-    color: var(--secondary-text);
     font-size: 12px;
+    margin-top: 4px;
 }
 
-.time-icon {
-    font-size: 14px;
-    margin-right: 4px;
-    flex-shrink: 0;
+/* Sobreescribir estilos de Ionic */
+ion-content::part(background),
+ion-content::part(scroll) {
+    background: var(--background);
 }
 
-/* Unread Notification Styles */
-.unread-notification {
-    --background: var(--item-background);
-    border-left: 3px solid var(--unread-indicator);
+ion-toolbar {
+    --background: var(--header-background);
+    --color: var(--text-color);
 }
 
-.unread-dot {
-    width: 8px;
-    height: 8px;
-    background-color: var(--unread-indicator);
-    border-radius: 50%;
-    display: inline-block;
-    margin-left: 8px;
-    flex-shrink: 0;
+/* Media queries */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --ion-color-step-50: #0d1b2a;
+        --ion-color-step-100: #1b263b;
+        --ion-color-step-150: #253b56;
+        --ion-color-step-200: #2c3e50;
+    }
 }
 
-/* Delete Button */
-.delete-button {
-    background: transparent;
-    border: none;
-    padding: 12px;
-    margin-right: 8px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    flex-shrink: 0;
-    touch-action: manipulation; /* Improves touch behavior */
-}
-
-.delete-button:hover {
-    background-color: var(--item-hover);
-}
-
-.delete-icon {
-    color: var(--secondary-text);
-    font-size: 20px;
-}
-
-body.light-theme .delete-button:hover .delete-icon,
-body.light-theme .delete-button:active .delete-icon {
-    color: #ff3b30;
-}
-
-body.dark-theme .delete-button:hover .delete-icon,
-body.dark-theme .delete-button:active .delete-icon {
-    color: #ff453a;
-}
-
-/* Empty state */
-.empty-notifications {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 200px;
-    color: var(--secondary-text);
-    text-align: center;
-    padding: 20px;
-}
-
-/* Responsive adjustments */
-/* Large phones and small tablets */
+/* Ajustes responsive */
 @media (max-width: 768px) {
-    .notification-header h2 {
-        font-size: 16px;
+    ion-item {
+        --padding-start: 12px;
+        --padding-end: 12px;
     }
 
-    .notification-icon-container {
-        width: 44px;
-        height: 44px;
-    }
-
-    .notification-icon {
-        font-size: 22px;
-    }
-}
-
-/* Medium phones */
-@media (max-width: 576px) {
-    .notification-icon-container {
-        width: 40px;
-        height: 40px;
-        margin: 10px;
-    }
-
-    .notification-icon {
-        font-size: 20px;
-    }
-
-    .notification-title {
+    ion-label h2 {
         font-size: 15px;
     }
 
-    .notification-description {
+    ion-label p {
         font-size: 13px;
-    }
-
-    .delete-button {
-        padding: 10px;
-    }
-
-    .delete-icon {
-        font-size: 18px;
-    }
-
-    .notification-content {
-        padding: 10px 8px 10px 0;
     }
 }
 
-/* Small phones */
-@media (max-width: 375px) {
-    .notification-header {
-        flex-direction: column;
-        align-items: flex-start;
+@media (max-width: 480px) {
+    ion-item {
+        --padding-start: 8px;
+        --padding-end: 8px;
     }
 
-    .notification-header h2 {
-        margin-bottom: 8px;
-    }
-
-    .notification-icon-container {
-        width: 36px;
-        height: 36px;
-        margin: 8px;
-    }
-
-    .notification-icon {
-        font-size: 18px;
-    }
-
-    .notification-title {
+    ion-label h2 {
         font-size: 14px;
     }
 
-    .notification-description {
-        font-size: 12px;
-        margin-bottom: 6px;
-    }
-
-    .delete-button {
-        padding: 8px;
-    }
-
-    .delete-icon {
-        font-size: 16px;
-    }
-
-    .theme-toggle {
-        margin-right: 5px;
-    }
-
-    .theme-icon {
-        margin-right: 4px;
-        font-size: 18px;
-    }
-}
-
-/* Very small phones */
-@media (max-width: 320px) {
-    .notification-content {
-        padding: 8px 6px 8px 0;
-    }
-
-    .notification-icon-container {
-        width: 32px;
-        height: 32px;
-        margin: 6px;
-    }
-
-    .notification-icon {
-        font-size: 16px;
-    }
-
-    .notification-title {
-        font-size: 13px;
-    }
-
-    .notification-description {
-        font-size: 11px;
-        margin-bottom: 4px;
-    }
-
-    .notification-time {
-        font-size: 10px;
-    }
-
-    .time-icon {
+    ion-label p {
         font-size: 12px;
     }
 }
