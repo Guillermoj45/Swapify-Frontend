@@ -431,43 +431,74 @@ const AIChatPage: React.FC = () => {
     };
 
     const handleSend = async (): Promise<void> => {
-        if (inputText.trim() === '' && selectedImages.length === 0) return;
+        console.log('handleSend called - inputText:', `"${inputText}"`, 'selectedImages:', selectedImages.length); // Debug
+
+        // Obtener valores actuales al momento de la llamada
+        const currentText = inputText.trim();
+        const currentImages = [...selectedImages];
+        const currentPreviews = [...previewImages];
+
+        console.log('Current values - text:', `"${currentText}"`, 'images:', currentImages.length); // Debug
+
+        if (currentText === '' && currentImages.length === 0) {
+            console.log('No text and no images, aborting send'); // Debug
+            return;
+        }
 
         try {
-            const messageText = inputText.trim();
+            // IMPORTANTE: Determinar qué texto mostrar en la UI
+            let displayText: string;
+            if (currentText !== '') {
+                displayText = currentText;
+            } else if (currentImages.length > 0) {
+                displayText = ""; // Mostrar solo las imágenes si no hay texto
+            } else {
+                displayText = '';
+            }
+
             const userMessage: Message = {
                 id: Date.now(),
-                text: messageText !== '' ? messageText : (selectedImages.length > 0 ? 'Análisis de imagen' : ''),
+                text: displayText,
                 sender: "user",
                 timestamp: new Date(),
-                images: previewImages.length > 0 ? previewImages : undefined
+                images: currentPreviews.length > 0 ? currentPreviews : undefined
             };
 
             const updatedMessages = [...messages, userMessage];
             setMessages(updatedMessages);
-            updateChatSession(activeChatId, updatedMessages, messageText !== '' ? messageText : 'Análisis de imagen');
+            updateChatSession(activeChatId, updatedMessages, displayText || "Imagen enviada");
 
             setIsTyping(true);
 
-            const files = selectedImages;
-            const message = messageText !== '' ? messageText : "Analiza esta imagen";
+            // CRÍTICO: Determinar qué mensaje enviar a la API
+            let messageToAPI: string;
+            if (currentText !== '') {
+                messageToAPI = currentText;
+            } else {
+                messageToAPI = "Analiza esta imagen";
+            }
 
+            console.log('Message to API:', messageToAPI); // Debug
+
+            // Limpiar inputs INMEDIATAMENTE después de preparar todo
             setInputText('');
             setSelectedImages([]);
             setPreviewImages([]);
 
+            console.log('Inputs cleared, calling IAChat'); // Debug
+
             const response = await IAChat(
-                files,
-                message,
+                currentImages,
+                messageToAPI,
                 currentChatId || undefined,
                 productId || undefined
             );
 
             if (response) {
-                // Actualizar el chatId actual con la respuesta del backend
-                setCurrentChatId(response.id);
+                console.log('Response received:', response); // Debug
 
-                // Actualizar el chat session para marcarlo como cargado del backend
+                // Resto del código de manejo de respuesta...
+                setCurrentChatId(response.id);
                 updateChatSessionAsBackendLoaded(activeChatId, response.id);
 
                 if (response.product) {
@@ -518,7 +549,8 @@ const AIChatPage: React.FC = () => {
                 // Actualizar título si es una conversación nueva
                 const currentChat = chatSessions.find(chat => chat.id === activeChatId);
                 if (currentChat && (currentChat.title === 'Nueva conversación' || !currentChat.loadedFromBackend)) {
-                    const suggestedTitle = generateChatTitle(messageText);
+                    const titleText = currentText !== '' ? currentText : displayText;
+                    const suggestedTitle = generateChatTitle(titleText);
                     updateChatTitle(activeChatId, suggestedTitle);
                 }
             }
@@ -597,11 +629,75 @@ const AIChatPage: React.FC = () => {
     };
 
     const handleKeyPress = (e: React.KeyboardEvent): void => {
+        // Solo como backup, el handler principal está en el useEffect
+        console.log('React KeyPress - Key:', e.key, 'Shift:', e.shiftKey); // Debug
+
         if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
+            const currentText = inputText.trim();
+            const hasImages = selectedImages.length > 0;
+
+            if (currentText === '' && !hasImages) {
+                console.log('React KeyPress - Empty message, preventing default'); // Debug
+                e.preventDefault();
+                return;
+            }
+
+            console.log('React KeyPress - Valid message, will send'); // Debug
         }
     };
+
+    useEffect(() => {
+        let cleanup: (() => void) | undefined;
+
+        const setupKeyboardHandlers = async () => {
+            try {
+                if (textareaRef.current) {
+                    const textareaElement = await textareaRef.current.getInputElement();
+
+                    if (textareaElement) {
+                        const handleKeyDown = (e: KeyboardEvent) => {
+                            console.log('Key pressed:', e.key, 'Shift:', e.shiftKey, 'Input text:', inputText.trim()); // Debug
+
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                // Verificar que no hay modales abiertos
+                                if (!showNewChatAlert && !showProductSidebar) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+
+                                    // Verificar contenido antes de enviar
+                                    const currentText = inputText.trim();
+                                    const hasImages = selectedImages.length > 0;
+
+                                    console.log('About to send - Text:', currentText, 'Images:', hasImages); // Debug
+
+                                    if (currentText !== '' || hasImages) {
+                                        console.log('Calling handleSend from keyboard'); // Debug
+                                        handleSend();
+                                    } else {
+                                        console.log('Empty message, not sending'); // Debug
+                                    }
+                                }
+                            }
+                        };
+
+                        textareaElement.addEventListener('keydown', handleKeyDown);
+
+                        cleanup = () => {
+                            textareaElement.removeEventListener('keydown', handleKeyDown);
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error('Error setting up keyboard handlers:', error);
+            }
+        };
+
+        setupKeyboardHandlers();
+
+        return () => {
+            if (cleanup) cleanup();
+        };
+    }, [inputText, selectedImages, showNewChatAlert, showProductSidebar]);
 
     const handleImageSelect = (): void => {
         if (fileInputRef.current) {
@@ -854,108 +950,110 @@ const AIChatPage: React.FC = () => {
     };
 
     const ChatListWithLoadingImproved = () => (
-        <div className="chat-list">
+        <IonContent className="chat-list-content">
             <IonRefresher slot="fixed" onIonRefresh={handleRefreshConversations}>
                 <IonRefresherContent></IonRefresherContent>
             </IonRefresher>
 
-            {loadingError && (
-                <div className="error-message">
-                    <IonText color="danger">{loadingError}</IonText>
-                    <IonButton
-                        size="small"
-                        fill="clear"
-                        onClick={() => loadConversationsFromBackend(0, false)}
-                    >
-                        Reintentar
-                    </IonButton>
-                </div>
-            )}
-
-            {isLoadingConversations && chatSessions.length === 0 ? (
-                <div className="loading-conversations">
-                    <IonSpinner name="crescent" />
-                    <p>Cargando conversaciones...</p>
-                </div>
-            ) : chatSessions.length > 0 ? (
-                <>
-                    {chatSessions.map(chat => (
-                        <div
-                            key={chat.id}
-                            className={`chat-item ${activeChatId === chat.id ? 'active' : ''}`}
-                            onClick={() => handleSwitchChat(chat.id)}
-                        >
-                            <div className="chat-item-avatar">
-                                <div className="ai-avatar">AI</div>
-                                {!chat.loadedFromBackend && (
-                                    <div className="local-chat-indicator" title="Conversación local"></div>
-                                )}
-                            </div>
-                            <div className="chat-item-content">
-                                <div className="chat-item-header">
-                                    <div className="chat-item-title">{chat.title}</div>
-                                    <div className="chat-item-time">{formatDate(chat.timestamp)}</div>
-                                </div>
-                                <div className="chat-item-message">{chat.lastMessage}</div>
-                            </div>
-                            <div className="chat-item-actions">
-                                <IonButton fill="clear" size="large" onClick={(e) => {
-                                    e.stopPropagation();
-                                    const newTitle = prompt('Editar título de la conversación:', chat.title);
-                                    if (newTitle) handleEditChatTitle(chat.id, newTitle);
-                                }}>
-                                    <IonIcon icon={createOutline} size="medium"/>
-                                </IonButton>
-                                <IonButton fill="clear" size="large" onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirm('¿Estás seguro de eliminar esta conversación?')) {
-                                        handleDeleteChat(chat.id);
-                                    }
-                                }}>
-                                    <IonIcon icon={trash} size="medium"/>
-                                </IonButton>
-                            </div>
-                            {chat.unread && chat.unread > 0 && (
-                                <IonBadge color="primary" className="unread-badge">
-                                    {chat.unread}
-                                </IonBadge>
-                            )}
-                        </div>
-                    ))}
-
-                    {hasMoreConversations && (
+            <div className="chat-list">
+                {loadingError && (
+                    <div className="error-message">
+                        <IonText color="danger">{loadingError}</IonText>
                         <IonButton
-                            expand="block"
-                            className="load-more-button"
-                            onClick={loadMoreConversations}
-                            disabled={isLoadingConversations}
+                            size="small"
+                            fill="clear"
+                            onClick={() => loadConversationsFromBackend(0, false)}
                         >
-                            {isLoadingConversations ? (
-                                <>
-                                    <IonSpinner name="crescent" />
-                                    <span style={{ marginLeft: '8px' }}>Cargando...</span>
-                                </>
-                            ) : (
-                                'Cargar más conversaciones'
-                            )}
-                        </IonButton>
-                    )}
-                </>
-            ) : (
-                !loadingError && (
-                    <div className="no-chats-message">
-                        <p>No hay conversaciones disponibles</p>
-                        <IonButton
-                            expand="block"
-                            onClick={() => setShowNewChatAlert(true)}
-                            className="create-first-chat-btn"
-                        >
-                            Crear primera conversación
+                            Reintentar
                         </IonButton>
                     </div>
-                )
-            )}
-        </div>
+                )}
+
+                {isLoadingConversations && chatSessions.length === 0 ? (
+                    <div className="loading-conversations">
+                        <IonSpinner name="crescent" />
+                        <p>Cargando conversaciones...</p>
+                    </div>
+                ) : chatSessions.length > 0 ? (
+                    <>
+                        {chatSessions.map(chat => (
+                            <div
+                                key={chat.id}
+                                className={`chat-item ${activeChatId === chat.id ? 'active' : ''}`}
+                                onClick={() => handleSwitchChat(chat.id)}
+                            >
+                                <div className="chat-item-avatar">
+                                    <div className="ai-avatar">AI</div>
+                                    {!chat.loadedFromBackend && (
+                                        <div className="local-chat-indicator" title="Conversación local"></div>
+                                    )}
+                                </div>
+                                <div className="chat-item-content">
+                                    <div className="chat-item-header">
+                                        <div className="chat-item-title">{chat.title}</div>
+                                        <div className="chat-item-time">{formatDate(chat.timestamp)}</div>
+                                    </div>
+                                    <div className="chat-item-message">{chat.lastMessage}</div>
+                                </div>
+                                <div className="chat-item-actions">
+                                    <IonButton fill="clear" size="large" onClick={(e) => {
+                                        e.stopPropagation();
+                                        const newTitle = prompt('Editar título de la conversación:', chat.title);
+                                        if (newTitle) handleEditChatTitle(chat.id, newTitle);
+                                    }}>
+                                        <IonIcon icon={createOutline} size="medium"/>
+                                    </IonButton>
+                                    <IonButton fill="clear" size="large" onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (confirm('¿Estás seguro de eliminar esta conversación?')) {
+                                            handleDeleteChat(chat.id);
+                                        }
+                                    }}>
+                                        <IonIcon icon={trash} size="medium"/>
+                                    </IonButton>
+                                </div>
+                                {chat.unread && chat.unread > 0 && (
+                                    <IonBadge color="primary" className="unread-badge">
+                                        {chat.unread}
+                                    </IonBadge>
+                                )}
+                            </div>
+                        ))}
+
+                        {hasMoreConversations && (
+                            <IonButton
+                                expand="block"
+                                className="load-more-button"
+                                onClick={loadMoreConversations}
+                                disabled={isLoadingConversations}
+                            >
+                                {isLoadingConversations ? (
+                                    <>
+                                        <IonSpinner name="crescent" />
+                                        <span style={{ marginLeft: '8px' }}>Cargando...</span>
+                                    </>
+                                ) : (
+                                    'Cargar más conversaciones'
+                                )}
+                            </IonButton>
+                        )}
+                    </>
+                ) : (
+                    !loadingError && (
+                        <div className="no-chats-message">
+                            <p>No hay conversaciones disponibles</p>
+                            <IonButton
+                                expand="block"
+                                onClick={() => setShowNewChatAlert(true)}
+                                className="create-first-chat-btn"
+                            >
+                                Crear primera conversación
+                            </IonButton>
+                        </div>
+                    )
+                )}
+            </div>
+        </IonContent>
     );
 
     const NewChatAlert = () => (
@@ -1221,7 +1319,16 @@ const AIChatPage: React.FC = () => {
                             maxlength={1000}
                             className="chat-input"
                             onKeyDown={handleKeyPress}
+                            onKeyPress={(e: React.KeyboardEvent) => {
+                                // Backup handler
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    console.log('onKeyPress backup triggered'); // Debug
+                                    e.preventDefault();
+                                    handleSend();
+                                }
+                            }}
                         />
+
 
                         <div className="input-buttons">
                             <input
