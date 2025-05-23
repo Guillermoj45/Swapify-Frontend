@@ -908,7 +908,7 @@ const ProductsPage = () => {
                 key={product.id}
                 className={`product-card ${isHorizontalScroll ? 'horizontal-card' : ''}`}
                 onClick={(e) => {
-                    // Only navigate to product detail if not clicking on navigation arrows or favorite button
+                    // Solo navegar a detalle si no está clickeando en botones de navegación o favorito
                     if (!(e.target as Element).closest('.image-nav-button') &&
                         !(e.target as Element).closest('.favorite-button')) {
                         console.log('Product selected:', product);
@@ -917,7 +917,16 @@ const ProductsPage = () => {
                 }}
             >
                 <div className="product-image-container"
-                     onClick={(e: React.MouseEvent) => handleProductImageClick(product.id, product.imagenes?.length || 0, e)}>
+                     onClick={(e: React.MouseEvent) => {
+                         // Prevenir que el click en la imagen ejecute la navegación de imagen
+                         // Solo permitir que pase al contenedor padre para ir al detalle del producto
+                         if (!(e.target as Element).closest('.image-nav-button') &&
+                             !(e.target as Element).closest('.favorite-button')) {
+                             // No hacer nada aquí, dejar que el evento burbujee al contenedor padre
+                             return;
+                         }
+                         handleProductImageClick(product.id, product.imagenes?.length || 0, e);
+                     }}>
                     <div className="product-image">
                         {product.imagenes && product.imagenes.length > 0 ? (
                             <img
@@ -952,14 +961,20 @@ const ProductsPage = () => {
                             <>
                                 <button
                                     className="image-nav-button image-nav-prev"
-                                    onClick={(e) => navigateProductImage(product.id, 'prev', product.imagenes?.length || 0, e)}
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Prevenir que el click vaya al contenedor padre
+                                        navigateProductImage(product.id, 'prev', product.imagenes?.length || 0, e);
+                                    }}
                                     aria-label="Previous image"
                                 >
                                     <IonIcon icon={arrowBack}/>
                                 </button>
                                 <button
                                     className="image-nav-button image-nav-next"
-                                    onClick={(e) => navigateProductImage(product.id, 'next', product.imagenes?.length || 0, e)}
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Prevenir que el click vaya al contenedor padre
+                                        navigateProductImage(product.id, 'next', product.imagenes?.length || 0, e);
+                                    }}
                                     aria-label="Next image"
                                 >
                                     <IonIcon icon={arrowForward}/>
@@ -977,7 +992,10 @@ const ProductsPage = () => {
 
                         <div
                             className={`favorite-button ${isFavorite ? 'favorited' : ''}`}
-                            onClick={(e) => handleToggleFavorite(product.id, product.profile.id, e)}
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevenir que el click vaya al contenedor padre
+                                handleToggleFavorite(product.id, product.profile.id, e);
+                            }}
                         >
                             <IonIcon icon={isFavorite ? heart : heartOutline} />
                         </div>
