@@ -20,7 +20,11 @@ import {
     IonMenuButton,
     TextareaCustomEvent,
     IonBadge,
-    useIonToast, IonInput,
+    useIonToast,
+    IonInput,
+    IonRefresher,
+    IonRefresherContent,
+    RefresherEventDetail,
 } from '@ionic/react';
 import { TextareaChangeEventDetail } from '@ionic/core';
 import {
@@ -39,6 +43,7 @@ import {
 import './IA.css';
 import Navegacion from '../../components/Navegation';
 import { IAChat } from '../../Services/IAService';
+import { ConversationService, ConversationDTO } from '../../Services/IAService';
 import useAuthRedirect from "../../Services/useAuthRedirect";
 import { Settings as SettingsService } from '../../Services/SettingsService';
 import {ProductService} from "../../Services/ProductService";
@@ -46,7 +51,7 @@ import {ProductService} from "../../Services/ProductService";
 interface Message {
     id: number | string;
     text: string;
-    sender: 'user' | 'ai';  // Explicitly limited to these two values
+    sender: 'user' | 'ai';
     timestamp: Date;
     image?: string;
     images?: string[];
@@ -60,6 +65,7 @@ interface ChatSession {
     timestamp: Date;
     messages: Message[];
     unread?: number;
+    loadedFromBackend?: boolean; // Flag para saber si se cargó del backend
 }
 
 interface SideContentProps {
@@ -82,11 +88,6 @@ interface ProductSidePanelProps {
     handleProductAction: (action: 'upload' | 'cancel') => void;
 }
 
-interface PreferenceUpdate {
-    key: 'modo_oscuro' | 'notificaciones';
-    value: boolean;
-}
-
 // Create a custom component to replace IonSideContent
 const SideContent: React.FC<SideContentProps> = ({ children, className, collapsed }) => {
     return (
@@ -97,7 +98,6 @@ const SideContent: React.FC<SideContentProps> = ({ children, className, collapse
 };
 
 const AIChatPage: React.FC = () => {
-
     useAuthRedirect()
 
     const initialAIMessage: Message = {
@@ -120,91 +120,177 @@ const AIChatPage: React.FC = () => {
         "¿Cómo puedo mejorar mi proyecto?"
     ]);
     const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768);
-    const [darkMode, setDarkMode] = useState<boolean>(true); // Por defecto en modo oscuro
+    const [darkMode, setDarkMode] = useState<boolean>(true);
     const [currentChatId, setCurrentChatId] = useState<string | null>(null);
     const [productId, setProductId] = useState<string | null>(null);
     const [presentToast] = useIonToast();
 
     // Estado para el panel lateral de chats
     const [showChatSidebar, setShowChatSidebar] = useState<boolean>(true);
-    const [chatSessions, setChatSessions] = useState<ChatSession[]>([
-        {
-            id: 'default',
-            title: 'Nueva conversación',
-            lastMessage: 'Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?',
-            timestamp: new Date(),
-            messages: [initialAIMessage],
-        }
-    ]);
-    const [activeChatId, setActiveChatId] = useState<string>();
+    const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+    const [activeChatId, setActiveChatId] = useState<string>('default');
     const [showNewChatAlert, setShowNewChatAlert] = useState<boolean>(false);
     const [newChatTitle, setNewChatTitle] = useState<string>('');
+    const [isLoadingConversations, setIsLoadingConversations] = useState<boolean>(false);
+    const [conversationsPage, setConversationsPage] = useState<number>(0);
+    const [hasMoreConversations, setHasMoreConversations] = useState<boolean>(true);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const contentRef = useRef<HTMLIonContentElement>(null);
     const textareaRef = useRef<HTMLIonTextareaElement>(null);
     const sidebarRef = useRef<HTMLDivElement>(null);
 
+    const [loadingError, setLoadingError] = useState<string | null>(null);
+
     const [showProductSidebar, setShowProductSidebar] = useState<boolean>(false);
     const [productInfo, setProductInfo] = useState({
         name: "Auriculares Premium XM4",
-        image: 0,
+        image: "",
         price: 0,
         description: "Auriculares inalámbricos con cancelación de ruido activa, hasta 30 horas de batería y sonido de alta resolución. Perfectos para trabajo y ocio.",
     });
 
     const [productSummaryMode, setProductSummaryMode] = useState<boolean>(false);
 
-    // Configuración inicial del tema basado en sessionStorage, preferencia del sistema o backend
+    // Cargar conversaciones del backend al iniciar
+    useEffect(() => {
+        loadConversationsFromBackend();
+    }, []);
+
+    const loadConversationMessages = async (conversationId: string) => {
+        try {
+            const conversationDetail = await ConversationService.getConversationDetail(conversationId);
+            const formattedMessages = ConversationService.convertMessagesToFrontendFormat(conversationDetail.messages);
+
+            // Si no hay mensajes, agregar el mensaje inicial de la IA
+            const messagesWithInitial = formattedMessages.length > 0
+                ? formattedMessages
+                : [initialAIMessage];
+
+            setMessages(messagesWithInitial);
+            setCurrentChatId(conversationId);
+
+            // Actualizar la sesión de chat con los mensajes cargados
+            setChatSessions(prev => prev.map(session =>
+                session.id === conversationId
+                    ? { ...session, messages: messagesWithInitial, loadedFromBackend: true }
+                    : session
+            ));
+        } catch (error) {
+            console.error('Error al cargar mensajes de la conversación:', error);
+            // Si hay error, usar el mensaje inicial
+            setMessages([initialAIMessage]);
+            setCurrentChatId(null);
+        }
+    };
+
+    // Función para cargar conversaciones del backend
+    const loadConversationsFromBackend = async (page: number = 0, append: boolean = false) => {
+        try {
+            setIsLoadingConversations(true);
+            setLoadingError(null);
+
+            const conversations = await ConversationService.getConversations(page);
+
+            if (conversations.length === 0) {
+                setHasMoreConversations(false);
+                if (!append) {
+                    createDefaultConversation();
+                }
+                return;
+            }
+
+            const formattedConversations = ConversationService.convertToFrontendFormat(conversations);
+
+            if (append) {
+                setChatSessions(prev => [...prev, ...formattedConversations]);
+            } else {
+                setChatSessions(formattedConversations);
+                if (formattedConversations.length > 0 && (!activeChatId || activeChatId === 'default')) {
+                    const firstChat = formattedConversations[0];
+                    setActiveChatId(firstChat.id);
+                    await loadConversationMessages(firstChat.id);
+                }
+            }
+
+            setConversationsPage(page);
+            setHasMoreConversations(conversations.length >= 10);
+        } catch (error) {
+            console.error('Error al cargar conversaciones:', error);
+            setLoadingError('Error al cargar conversaciones. Intenta de nuevo.');
+
+            if (!append) {
+                createDefaultConversation();
+            }
+        } finally {
+            setIsLoadingConversations(false);
+        }
+    };
+
+    // Crear conversación por defecto cuando no hay conversaciones
+    const createDefaultConversation = () => {
+        const defaultChat: ChatSession = {
+            id: 'default',
+            title: 'Nueva conversación',
+            lastMessage: 'Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?',
+            timestamp: new Date(),
+            messages: [initialAIMessage],
+            loadedFromBackend: false
+        };
+        setChatSessions([defaultChat]);
+        setActiveChatId('default');
+    };
+
+    // Función para cargar más conversaciones (paginación)
+    const loadMoreConversations = async () => {
+        if (hasMoreConversations && !isLoadingConversations) {
+            await loadConversationsFromBackend(conversationsPage + 1, true);
+        }
+    };
+
+    // Función para refrescar conversaciones
+    const handleRefreshConversations = async (event: CustomEvent<RefresherEventDetail>) => {
+        try {
+            await loadConversationsFromBackend(0, false);
+            event.detail.complete();
+        } catch (error) {
+            console.error('Error al refrescar conversaciones:', error);
+            event.detail.complete();
+        }
+    };
+
+    // Configuración inicial del tema
     useEffect(() => {
         const loadThemeSettings = async () => {
-            // Primero, obtener el valor del sessionStorage
             const modoOscuroStorage = sessionStorage.getItem('modoOscuroClaro');
 
             if (modoOscuroStorage !== null) {
-                // Si existe un valor en sessionStorage, usarlo
                 const isDarkMode = modoOscuroStorage === 'true';
                 setDarkMode(isDarkMode);
-
-                // Aplicar la clase al body inmediatamente
                 document.body.classList.remove('light-theme', 'dark-theme');
                 document.body.classList.add(isDarkMode ? 'dark-theme' : 'light-theme');
             } else {
-                // Si no hay valor en sessionStorage, intentar obtener del backend si hay token
                 if (sessionStorage.getItem("token")) {
                     try {
                         const modoOscuroBackend = await SettingsService.getModoOcuro();
                         const isDarkMode = modoOscuroBackend === true;
-
-                        // Guardar en sessionStorage
                         sessionStorage.setItem('modoOscuroClaro', isDarkMode.toString());
                         setDarkMode(isDarkMode);
-
-                        // Aplicar la clase al body
                         document.body.classList.remove('light-theme', 'dark-theme');
                         document.body.classList.add(isDarkMode ? 'dark-theme' : 'light-theme');
                     } catch (error) {
                         console.error('Error al obtener modo oscuro del backend:', error);
-
-                        // Usar preferencia del sistema como fallback
                         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                         setDarkMode(prefersDark);
-
                         document.body.classList.remove('light-theme', 'dark-theme');
                         document.body.classList.add(prefersDark ? 'dark-theme' : 'light-theme');
-
-                        // Guardar la preferencia en sessionStorage
                         sessionStorage.setItem('modoOscuroClaro', prefersDark.toString());
                     }
                 } else {
-                    // Si no hay token, usar preferencia del sistema
                     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                     setDarkMode(prefersDark);
-
                     document.body.classList.remove('light-theme', 'dark-theme');
                     document.body.classList.add(prefersDark ? 'dark-theme' : 'light-theme');
-
-                    // Guardar la preferencia en sessionStorage
                     sessionStorage.setItem('modoOscuroClaro', prefersDark.toString());
                 }
             }
@@ -213,24 +299,19 @@ const AIChatPage: React.FC = () => {
         loadThemeSettings();
     }, []);
 
-    // Escuchar cambios en el sessionStorage desde otras pestañas/componentes
+    // Escuchar cambios en el sessionStorage
     useEffect(() => {
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key === 'modoOscuroClaro' && e.newValue !== null) {
                 const isDarkMode = e.newValue === 'true';
                 setDarkMode(isDarkMode);
-
-                // Aplicar las clases de tema al body
                 document.body.classList.remove('light-theme', 'dark-theme');
                 document.body.classList.add(isDarkMode ? 'dark-theme' : 'light-theme');
             }
         };
 
         window.addEventListener('storage', handleStorageChange);
-
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-        };
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
     // Detectar cambios en el tamaño de la pantalla
@@ -243,17 +324,15 @@ const AIChatPage: React.FC = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Aplicar clase de tema al elemento raíz y configurar colores de fondo
+    // Aplicar clase de tema
     useEffect(() => {
         document.body.classList.toggle('light-mode', !darkMode);
         document.body.classList.toggle('dark-mode', darkMode);
 
-        // Configurar colores de fondo según el modo
         const backgroundColor = darkMode ? "#111827" : "#f5f7fa";
         document.body.style.backgroundColor = backgroundColor;
         document.documentElement.style.backgroundColor = backgroundColor;
 
-        // Encontrar y estilizar contenedores padres
         const parentElements = document.querySelectorAll('ion-router-outlet, ion-content');
         parentElements.forEach(el => {
             if (el instanceof HTMLElement) {
@@ -265,13 +344,15 @@ const AIChatPage: React.FC = () => {
     // Actualizar mensajes cuando cambia la conversación activa
     useEffect(() => {
         const activeChat = chatSessions.find(chat => chat.id === activeChatId);
-        if (activeChat) {
+        if (activeChat && !activeChat.loadedFromBackend) {
+            // Solo actualizar mensajes para conversaciones locales (no cargadas del backend)
             setMessages([...activeChat.messages]);
-            setCurrentChatId(activeChat.id);
+            setCurrentChatId(null); // Resetear para conversaciones nuevas
         }
+        // Para conversaciones del backend, los mensajes se cargan en handleSwitchChat
     }, [activeChatId, chatSessions]);
 
-    // Scroll to bottom when messages change and ensure proper layout
+    // Scroll to bottom when messages change
     useEffect(() => {
         if (contentRef.current) {
             contentRef.current.scrollToBottom(500);
@@ -289,8 +370,6 @@ const AIChatPage: React.FC = () => {
 
     const toggleProductSummaryMode = () => {
         setProductSummaryMode(prev => !prev);
-
-        // Opcional: Mostrar un toast para indicar el cambio de modo
         presentToast({
             message: productSummaryMode ?
                 'Modo resumen de producto desactivado' :
@@ -312,14 +391,12 @@ const AIChatPage: React.FC = () => {
             }
 
             try {
-                // Mostrar indicador de carga
                 presentToast({
                     message: 'Subiendo producto...',
                     duration: 1000,
                     color: 'primary'
                 });
 
-                // Llamar al método activeProduct del ProductService
                 const success = await ProductService.activeProduct(productId);
 
                 if (success) {
@@ -350,48 +427,35 @@ const AIChatPage: React.FC = () => {
                 color: 'medium'
             });
         }
-        // Cierra el panel lateral después de la acción
         setShowProductSidebar(false);
     };
 
     const handleSend = async (): Promise<void> => {
-        // Si no hay texto ni imágenes, no enviar nada
         if (inputText.trim() === '' && selectedImages.length === 0) return;
 
         try {
-            // Guardar el texto del input antes de limpiarlo
             const messageText = inputText.trim();
-
-            // Crear mensaje de usuario para la UI
             const userMessage: Message = {
                 id: Date.now(),
-                // Si hay texto, usar ese texto. Si no hay texto pero hay imagen, usar "Análisis de imagen"
                 text: messageText !== '' ? messageText : (selectedImages.length > 0 ? 'Análisis de imagen' : ''),
                 sender: "user",
                 timestamp: new Date(),
                 images: previewImages.length > 0 ? previewImages : undefined
             };
 
-            // Actualizar mensajes de la sesión actual
             const updatedMessages = [...messages, userMessage];
             setMessages(updatedMessages);
-
-            // Actualizar la conversación en las sesiones de chat
             updateChatSession(activeChatId, updatedMessages, messageText !== '' ? messageText : 'Análisis de imagen');
 
             setIsTyping(true);
 
-            // Preparar para la llamada a la API
             const files = selectedImages;
-            // Asegurarnos de usar el texto escrito por el usuario, no el predeterminado
-            const message = messageText !== '' ? messageText : "Analiza esta imagen";  // Usar el texto guardado
+            const message = messageText !== '' ? messageText : "Analiza esta imagen";
 
-            // Reiniciar estado de UI
             setInputText('');
             setSelectedImages([]);
             setPreviewImages([]);
 
-            // Llamar a la API con la función de servicio
             const response = await IAChat(
                 files,
                 message,
@@ -399,27 +463,23 @@ const AIChatPage: React.FC = () => {
                 productId || undefined
             );
 
-            // Procesar respuesta de la API
             if (response) {
-                // Guardar ID de chat para continuar la conversación
+                // Actualizar el chatId actual con la respuesta del backend
                 setCurrentChatId(response.id);
 
-                // Si hay un producto en la respuesta, guardar su ID
+                // Actualizar el chat session para marcarlo como cargado del backend
+                updateChatSessionAsBackendLoaded(activeChatId, response.id);
+
                 if (response.product) {
                     setProductId(response.product.id);
                 }
 
-                // Obtener el último mensaje de la IA
                 const lastAIMessage = response.lastMessage;
-                console.log('Respuesta de IA:', lastAIMessage);
                 if (!lastAIMessage) {
                     throw new Error('No se encontró respuesta de la IA en los mensajes');
                 }
 
-                // Obtener imágenes del último mensaje si están disponibles
                 const messageImages = lastAIMessage?.images || [];
-
-                // Mostrar respuesta de la IA
                 const aiResponse: Message = {
                     id: lastAIMessage.id || response.id,
                     text: lastAIMessage.message || 'No se recibió respuesta de texto',
@@ -429,33 +489,26 @@ const AIChatPage: React.FC = () => {
                 };
 
                 if (response && response.product) {
-                    // Extraer info del producto si existe
                     setProductInfo({
                         name: response.product.name || 'Producto detectado',
-                        image: response.product.points || 0,
+                        image: response.product.points?.toString() || "0",
                         price: response.product.points || productInfo.price,
                         description: response.product.description || 'IA ha detectado un posible producto basado en tu imagen.'
                     });
-                    // Mostrar el panel lateral SOLO SI el modo productSummaryMode está activo
+
                     if (productSummaryMode) {
                         setShowProductSidebar(true);
-                        // Resetear el modo después de usarlo una vez
                         setProductSummaryMode(false);
                     }
                 }
 
                 if (productSummaryMode && response) {
-                    // Activar el panel lateral del producto automáticamente
                     setShowProductSidebar(true);
-
-                    // Resetear el modo después de usarlo una vez
                     setProductSummaryMode(false);
                 }
 
                 const finalMessages = [...updatedMessages, aiResponse];
                 setMessages(finalMessages);
-
-                // Actualizar la conversación en las sesiones de chat
                 updateChatSession(
                     activeChatId,
                     finalMessages,
@@ -463,15 +516,15 @@ const AIChatPage: React.FC = () => {
                 );
 
                 // Actualizar título si es una conversación nueva
-                if (chatSessions.find(chat => chat.id === activeChatId)?.title === 'Nueva conversación') {
-                    const suggestedTitle = generateChatTitle(inputText);
+                const currentChat = chatSessions.find(chat => chat.id === activeChatId);
+                if (currentChat && (currentChat.title === 'Nueva conversación' || !currentChat.loadedFromBackend)) {
+                    const suggestedTitle = generateChatTitle(messageText);
                     updateChatTitle(activeChatId, suggestedTitle);
                 }
             }
         } catch (error) {
             console.error("Error sending message:", error);
 
-            // Añadir mensaje de error a la conversación
             const errorMessage: Message = {
                 id: Date.now(),
                 text: "Lo siento, ocurrió un error al procesar tu mensaje. Por favor, intenta nuevamente.",
@@ -481,8 +534,6 @@ const AIChatPage: React.FC = () => {
 
             const finalMessages = [...messages, errorMessage];
             setMessages(finalMessages);
-
-            // Actualizar la conversación en las sesiones de chat
             updateChatSession(activeChatId, finalMessages, "Error al procesar el mensaje");
 
             presentToast({
@@ -492,6 +543,24 @@ const AIChatPage: React.FC = () => {
             });
         } finally {
             setIsTyping(false);
+        }
+    };
+
+    // Función para marcar una sesión de chat como cargada del backend
+    const updateChatSessionAsBackendLoaded = (tempChatId: string, backendChatId: string) => {
+        setChatSessions(prevSessions => prevSessions.map(session =>
+            session.id === tempChatId
+                ? {
+                    ...session,
+                    id: backendChatId,
+                    loadedFromBackend: true
+                }
+                : session
+        ));
+
+        // Actualizar también el activeChatId si es necesario
+        if (activeChatId === tempChatId) {
+            setActiveChatId(backendChatId);
         }
     };
 
@@ -518,14 +587,10 @@ const AIChatPage: React.FC = () => {
         ));
     };
 
-    // Genera un título sugerido para la conversación basado en el primer mensaje
     const generateChatTitle = (message: string): string => {
         if (!message || message.trim() === '') return 'Nueva conversación';
-
-        // Limitar a 30 caracteres y añadir puntos suspensivos si es necesario
         const maxLength = 30;
-        const title = message.trim().split('\n')[0]; // Tomar solo la primera línea
-
+        const title = message.trim().split('\n')[0];
         return title.length > maxLength
             ? title.substring(0, maxLength) + '...'
             : title;
@@ -534,7 +599,6 @@ const AIChatPage: React.FC = () => {
     const handleKeyPress = (e: React.KeyboardEvent): void => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            // Asegurarse de que se envía el mensaje con el texto actual
             handleSend();
         }
     };
@@ -548,16 +612,13 @@ const AIChatPage: React.FC = () => {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const files = e.target.files;
         if (files && files.length > 0) {
-            // Verificar el tamaño de los archivos (máximo 5MB por archivo)
             const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
             const fileArray: File[] = [];
             let hasOverSizedFiles = false;
 
-            // Convertir FileList a array para un manejo más fácil
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
 
-                // Verificar tamaño
                 if (file.size > MAX_FILE_SIZE) {
                     hasOverSizedFiles = true;
                     presentToast({
@@ -568,7 +629,6 @@ const AIChatPage: React.FC = () => {
                     continue;
                 }
 
-                // Verificar tipo de archivo
                 if (!file.type.startsWith('image/')) {
                     presentToast({
                         message: `El archivo ${file.name} no es una imagen válida`,
@@ -584,7 +644,6 @@ const AIChatPage: React.FC = () => {
             if (fileArray.length > 0) {
                 setSelectedImages(prev => [...prev, ...fileArray]);
 
-                // Crear vistas previas para todas las imágenes seleccionadas
                 fileArray.forEach(file => {
                     const reader = new FileReader();
                     reader.onloadend = () => {
@@ -597,7 +656,6 @@ const AIChatPage: React.FC = () => {
                 });
             }
 
-            // Limpiar el input para permitir seleccionar el mismo archivo nuevamente
             if (e.target) {
                 e.target.value = '';
             }
@@ -645,14 +703,10 @@ const AIChatPage: React.FC = () => {
             timestamp: new Date()
         };
 
-        // Limpieza del chat activo
         setMessages([newMessage]);
-
-        // Actualizar la sesión de chat
         updateChatSession(activeChatId, [newMessage], "Chat reiniciado. ¿En qué puedo ayudarte?");
-
-        // Reset conversation state
         setProductId(null);
+        setCurrentChatId(null); // Resetear el chat ID para empezar una nueva conversación
     };
 
     const handleToggleSidebar = () => {
@@ -660,10 +714,7 @@ const AIChatPage: React.FC = () => {
     };
 
     const handleCreateNewChat = () => {
-        // Crear un nuevo ID único para la conversación
-        const newChatId = `chat-${Date.now()}`;
-
-        // Mensaje inicial
+        const newChatId = `temp-${Date.now()}`;
         const initialMessage: Message = {
             id: Date.now(),
             text: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
@@ -671,65 +722,241 @@ const AIChatPage: React.FC = () => {
             timestamp: new Date()
         };
 
-        // Añadir nueva conversación a la lista
         const newChat: ChatSession = {
             id: newChatId,
             title: newChatTitle || 'Nueva conversación',
             lastMessage: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
             timestamp: new Date(),
             messages: [initialMessage],
+            loadedFromBackend: false
         };
 
         setChatSessions(prev => [newChat, ...prev]);
-
-        // Cambiar a la nueva conversación
         setActiveChatId(newChatId);
         setMessages([initialMessage]);
-        setCurrentChatId(null); // Resetear ID de chat actual con la API
-        setProductId(null); // Resetear ID de producto si existe
+        setCurrentChatId(null);
+        setProductId(null);
 
-        // Cerrar alerta y limpiar input
         setShowNewChatAlert(false);
         setNewChatTitle('');
 
-        // En dispositivos móviles, cerrar el sidebar después de seleccionar
         if (!isDesktop) {
             setShowChatSidebar(false);
         }
     };
 
-    const handleSwitchChat = (chatId: string) => {
+    const handleSwitchChat = async (chatId: string) => {
         setActiveChatId(chatId);
 
+        const selectedChat = chatSessions.find(chat => chat.id === chatId);
+        if (selectedChat) {
+            if (selectedChat.loadedFromBackend && selectedChat.messages.length > 1) {
+                // Si ya está cargada del backend y tiene mensajes, usar los mensajes existentes
+                setMessages(selectedChat.messages);
+                setCurrentChatId(selectedChat.id);
+            } else if (selectedChat.loadedFromBackend) {
+                // Si está cargada del backend pero no tiene mensajes completos, cargarlos
+                await loadConversationMessages(chatId);
+            } else {
+                // Si es una conversación local (nueva), usar sus mensajes
+                setMessages(selectedChat.messages);
+                setCurrentChatId(null); // Resetear para crear nueva conversación en el backend
+            }
+        }
+
         // En dispositivos móviles, cerrar el sidebar después de seleccionar
         if (!isDesktop) {
             setShowChatSidebar(false);
         }
     };
 
-    const handleEditChatTitle = (chatId: string, newTitle: string) => {
-        if (newTitle.trim() !== '') {
-            updateChatTitle(chatId, newTitle);
-        }
-    };
+    const handleEditChatTitle = async (chatId: string, newTitle: string) => {
+        if (newTitle.trim() === '') return;
 
-    const handleDeleteChat = (chatId: string) => {
-        // Filtrar las sesiones para eliminar la seleccionada
-        setChatSessions(prev => prev.filter(chat => chat.id !== chatId));
+        try {
+            const chatToUpdate = chatSessions.find(chat => chat.id === chatId);
 
-        // Si se elimina la sesión activa, cambiar a la primera disponible
-        if (chatId === activeChatId && chatSessions.length > 1) {
-            const remainingSessions = chatSessions.filter(chat => chat.id !== chatId);
-            if (remainingSessions.length > 0) {
-                setActiveChatId(remainingSessions[0].id);
-                setMessages(remainingSessions[0].messages);
-                setCurrentChatId(remainingSessions[0].id);
-            } else {
-                // Si no quedan sesiones, crear una nueva
-                handleCreateNewChat();
+            // Si es una conversación del backend, actualizar en el servidor
+            if (chatToUpdate?.loadedFromBackend) {
+                const success = await ConversationService.updateConversationName(chatId, newTitle);
+                if (!success) {
+                    presentToast({
+                        message: 'Error al actualizar el título en el servidor',
+                        duration: 3000,
+                        color: 'danger'
+                    });
+                    return;
+                }
             }
+
+            // Actualizar localmente
+            updateChatTitle(chatId, newTitle);
+
+            presentToast({
+                message: 'Título actualizado correctamente',
+                duration: 2000,
+                color: 'success'
+            });
+        } catch (error) {
+            console.error('Error al actualizar título:', error);
+            presentToast({
+                message: 'Error al actualizar el título',
+                duration: 3000,
+                color: 'danger'
+            });
         }
     };
+
+    const handleDeleteChat = async (chatId: string) => {
+        try {
+            const chatToDelete = chatSessions.find(chat => chat.id === chatId);
+
+            // Si es una conversación del backend, eliminarla del servidor
+            if (chatToDelete?.loadedFromBackend) {
+                const success = await ConversationService.deleteConversation(chatId);
+                if (!success) {
+                    presentToast({
+                        message: 'Error al eliminar la conversación del servidor',
+                        duration: 3000,
+                        color: 'danger'
+                    });
+                    return;
+                }
+            }
+
+            // Eliminar de la lista local
+            setChatSessions(prev => prev.filter(chat => chat.id !== chatId));
+
+            // Si se elimina la sesión activa, cambiar a otra
+            if (chatId === activeChatId) {
+                const remainingSessions = chatSessions.filter(chat => chat.id !== chatId);
+                if (remainingSessions.length > 0) {
+                    await handleSwitchChat(remainingSessions[0].id);
+                } else {
+                    // Si no quedan sesiones, crear una nueva
+                    handleCreateNewChat();
+                }
+            }
+
+            presentToast({
+                message: 'Conversación eliminada correctamente',
+                duration: 2000,
+                color: 'success'
+            });
+        } catch (error) {
+            console.error('Error al eliminar conversación:', error);
+            presentToast({
+                message: 'Error al eliminar la conversación',
+                duration: 3000,
+                color: 'danger'
+            });
+        }
+    };
+
+    const ChatListWithLoadingImproved = () => (
+        <div className="chat-list">
+            <IonRefresher slot="fixed" onIonRefresh={handleRefreshConversations}>
+                <IonRefresherContent></IonRefresherContent>
+            </IonRefresher>
+
+            {loadingError && (
+                <div className="error-message">
+                    <IonText color="danger">{loadingError}</IonText>
+                    <IonButton
+                        size="small"
+                        fill="clear"
+                        onClick={() => loadConversationsFromBackend(0, false)}
+                    >
+                        Reintentar
+                    </IonButton>
+                </div>
+            )}
+
+            {isLoadingConversations && chatSessions.length === 0 ? (
+                <div className="loading-conversations">
+                    <IonSpinner name="crescent" />
+                    <p>Cargando conversaciones...</p>
+                </div>
+            ) : chatSessions.length > 0 ? (
+                <>
+                    {chatSessions.map(chat => (
+                        <div
+                            key={chat.id}
+                            className={`chat-item ${activeChatId === chat.id ? 'active' : ''}`}
+                            onClick={() => handleSwitchChat(chat.id)}
+                        >
+                            <div className="chat-item-avatar">
+                                <div className="ai-avatar">AI</div>
+                                {!chat.loadedFromBackend && (
+                                    <div className="local-chat-indicator" title="Conversación local"></div>
+                                )}
+                            </div>
+                            <div className="chat-item-content">
+                                <div className="chat-item-header">
+                                    <div className="chat-item-title">{chat.title}</div>
+                                    <div className="chat-item-time">{formatDate(chat.timestamp)}</div>
+                                </div>
+                                <div className="chat-item-message">{chat.lastMessage}</div>
+                            </div>
+                            <div className="chat-item-actions">
+                                <IonButton fill="clear" size="large" onClick={(e) => {
+                                    e.stopPropagation();
+                                    const newTitle = prompt('Editar título de la conversación:', chat.title);
+                                    if (newTitle) handleEditChatTitle(chat.id, newTitle);
+                                }}>
+                                    <IonIcon icon={createOutline} size="medium"/>
+                                </IonButton>
+                                <IonButton fill="clear" size="large" onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm('¿Estás seguro de eliminar esta conversación?')) {
+                                        handleDeleteChat(chat.id);
+                                    }
+                                }}>
+                                    <IonIcon icon={trash} size="medium"/>
+                                </IonButton>
+                            </div>
+                            {chat.unread && chat.unread > 0 && (
+                                <IonBadge color="primary" className="unread-badge">
+                                    {chat.unread}
+                                </IonBadge>
+                            )}
+                        </div>
+                    ))}
+
+                    {hasMoreConversations && (
+                        <IonButton
+                            expand="block"
+                            className="load-more-button"
+                            onClick={loadMoreConversations}
+                            disabled={isLoadingConversations}
+                        >
+                            {isLoadingConversations ? (
+                                <>
+                                    <IonSpinner name="crescent" />
+                                    <span style={{ marginLeft: '8px' }}>Cargando...</span>
+                                </>
+                            ) : (
+                                'Cargar más conversaciones'
+                            )}
+                        </IonButton>
+                    )}
+                </>
+            ) : (
+                !loadingError && (
+                    <div className="no-chats-message">
+                        <p>No hay conversaciones disponibles</p>
+                        <IonButton
+                            expand="block"
+                            onClick={() => setShowNewChatAlert(true)}
+                            className="create-first-chat-btn"
+                        >
+                            Crear primera conversación
+                        </IonButton>
+                    </div>
+                )
+            )}
+        </div>
+    );
 
     const NewChatAlert = () => (
         <IonPopover
@@ -849,58 +1076,7 @@ const AIChatPage: React.FC = () => {
                         </IonButton>
                     </div>
 
-                    <div className="chat-list">
-                        {chatSessions.length > 0 ? (
-                            chatSessions.map(chat => (
-                                <div
-                                    key={chat.id}
-                                    className={`chat-item ${activeChatId === chat.id ? 'active' : ''}`}
-                                    onClick={() => handleSwitchChat(chat.id)}
-                                >
-                                    <div className="chat-item-avatar">
-                                        <div className="ai-avatar">AI</div>
-                                    </div>
-                                    <div className="chat-item-content">
-                                        <div className="chat-item-header">
-                                            <div className="chat-item-title">{chat.title}</div>
-                                            <div className="chat-item-time">{formatDate(chat.timestamp)}</div>
-                                        </div>
-                                        <div className="chat-item-message">{chat.lastMessage}</div>
-                                    </div>
-
-                                    {/* Botones de acción del chat */}
-                                    <div className="chat-item-actions">
-                                        <IonButton fill="clear" size="large" onClick={(e) => {
-                                            e.stopPropagation();
-                                            const newTitle = prompt('Editar título de la conversación:', chat.title);
-                                            if (newTitle) handleEditChatTitle(chat.id, newTitle);
-                                        }}>
-                                            <IonIcon icon={createOutline} size="medium"/>
-                                        </IonButton>
-                                        <IonButton fill="clear" size="large" onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (confirm('¿Estás seguro de eliminar esta conversación?')) {
-                                                handleDeleteChat(chat.id);
-                                            }
-                                        }}>
-                                            <IonIcon icon={trash} size="medium"/>
-                                        </IonButton>
-                                    </div>
-
-                                    {/* Badge para mensajes no leídos */}
-                                    {chat.unread && chat.unread > 0 && (
-                                        <IonBadge color="primary" className="unread-badge">
-                                            {chat.unread}
-                                        </IonBadge>
-                                    )}
-                                </div>
-                            ))
-                        ) : (
-                            <div className="no-chats-message">
-                                No hay conversaciones disponibles
-                            </div>
-                        )}
-                    </div>
+                    <ChatListWithLoadingImproved />
                 </SideContent>
 
                 <ProductSidePanel
@@ -969,7 +1145,7 @@ const AIChatPage: React.FC = () => {
                                         {message.isCopied && <span className="copied-indicator"><IonIcon icon={checkmark} /> Copiado</span>}
                                     </div>
                                 </div>
-                                
+
                             </div>
                         ))}
 
