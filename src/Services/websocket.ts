@@ -1,10 +1,11 @@
 import { Client, Message, StompSubscription } from '@stomp/stompjs';
 import ProfileService from "./ProfileService";
 import { notificationsOutline } from "ionicons/icons";
+import {useState} from "react";
 
 type MessageCallback = (message: { content: string, roomId: string }) => void;
 
-interface MensajeRecibeDTO {
+export interface MensajeRecibeDTO {
   content: string;
   senderName: string;
   token?: string;
@@ -16,14 +17,14 @@ interface MensajeRecibeDTO {
 export const WebSocketService = new class {
   private client: Client | null = null;
   private messageCallback: MessageCallback | null = null;
-  private notificationCallback: ((newNotification: any) => void) | null = null;
+  private notificationCallback:MessageCallback | null = null;
   private headers = {
     'Authorization': `Bearer ${sessionStorage.getItem('token')}`
   };
   private subscribeChatMessages?: StompSubscription;
   private isConnected = false;
 
-  connect(): Promise<boolean> {
+  async connect(): Promise<boolean> {
     if (this.client) {
       console.log('Ya está conectado al WebSocket');
       return Promise.resolve(false);
@@ -126,7 +127,8 @@ export const WebSocketService = new class {
     this.messageCallback = callback;
   }
 
-  setNotificationCallback(callback: (newNotification: any) => void) {
+  setNotificationCallback(callback: MessageCallback)   {
+    console.log("Configurando callback de notificación");
     this.notificationCallback = callback;
   }
 

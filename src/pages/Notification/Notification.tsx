@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
 import {
     IonContent,
@@ -9,34 +9,28 @@ import {
     IonTitle,
     IonToolbar,
     IonList,
-    IonItem,
-    IonLabel,
-    IonIcon,
-    IonNote,
     useIonViewDidEnter,
-} from "@ionic/react"
-import {
-    timeOutline,
-} from "ionicons/icons"
-import "./Notification.css"
-import { useEffect, useState } from "react"
-import {WebSocketService} from "../../Services/websocket";
+} from "@ionic/react";
+import "./Notification.css";
+import { useEffect, useState } from "react";
+import { WebSocketService } from "../../Services/websocket";
+import { useNotifications } from "../../Services/DatosParaExoportar";
 
 const Notifications: React.FC = () => {
-    const [darkMode, setDarkMode] = useState(false)
-    const [notifications, setNotifications] = useState<any[]>([]);
+    const [notifications] = useNotifications();
+    const [darkMode, setDarkMode] = useState(false);
+    const [message, setMessage] = useState<string>("");
 
     useEffect(() => {
         const applyTheme = (isDarkMode: boolean) => {
-            document.body.classList.remove('light-theme', 'dark-theme');
-            document.body.classList.add(isDarkMode ? 'dark-theme' : 'light-theme');
+            document.body.classList.remove("light-theme", "dark-theme");
+            document.body.classList.add(isDarkMode ? "dark-theme" : "light-theme");
         };
 
         const loadThemePreference = async () => {
-            const storedTheme = sessionStorage.getItem('modoOscuroClaro');
+            const storedTheme = sessionStorage.getItem("modoOscuroClaro");
             if (storedTheme !== null) {
-                // Si hay un valor en sessionStorage, úsalo
-                const isDarkMode = storedTheme === 'true';
+                const isDarkMode = storedTheme === "true";
                 setDarkMode(isDarkMode);
                 applyTheme(isDarkMode);
             }
@@ -46,32 +40,32 @@ const Notifications: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        WebSocketService.setNotificationCallback((newNotification) => {
-            setNotifications((prev) => [newNotification, ...prev]);
-        });
-    }, []);
-
-
+        console.log("Notificaciones actualizadas:", notifications); // Para depuración
+        setMessage(`Notificaciones actualizadas: ${notifications.length}`);
+    }, [notifications]);
 
     const applyTheme = (isDark: boolean) => {
-        console.log("Aplicando tema:", isDark ? "oscuro" : "claro") // Para depuración
+        console.log("Aplicando tema:", isDark ? "oscuro" : "claro"); // Para depuración
+        document.body.classList.remove("dark-theme", "light-theme");
+        document.body.classList.add(isDark ? "dark-theme" : "light-theme");
+    };
 
-        // Primero eliminar ambas clases para evitar conflictos
-        document.body.classList.remove("dark-theme", "light-theme")
-
-        // Luego aplicar la clase correcta
-        if (isDark) {
-            document.body.classList.add("dark-theme")
-        } else {
-            document.body.classList.add("light-theme")
-        }
-    }
-
-    // Asegurar que el tema se aplique cuando la vista se active
     useIonViewDidEnter(() => {
-        console.log("Vista activada, aplicando tema") // Para depuración
-        applyTheme(darkMode)
-    })
+        console.log("Vista activada, aplicando tema"); // Para depuración
+        applyTheme(darkMode);
+    });
+
+    useEffect(() => {
+        WebSocketService.waitForConnection()
+            .then(() => {
+                WebSocketService.setNotificationCallback((newNotification) => {
+                    console.log("Nueva notificación:", newNotification); // Para depuración
+                });
+            })
+            .catch((error) => {
+                console.error("Error al conectar con WebSocket:", error);
+            });
+    }, []);
 
     return (
         <IonPage>
@@ -82,34 +76,11 @@ const Notifications: React.FC = () => {
             </IonHeader>
             <IonContent className="notifications-content">
                 <IonList className="notification-list">
-                    {notifications.length > 0 ? (
-                        notifications.map((notification) => (
-                            <IonItem key={notification.id} className={notification.unread ? "unread-notification" : ""}>
-                                <div className="notification-icon-container">
-                                    <IonIcon icon={notification.icon} className="notification-icon" />
-                                </div>
-                                <div className="notification-content">
-                                    <IonLabel className="notification-title">
-                                        {notification.title}
-                                        {notification.unread && <span className="unread-dot"></span>}
-                                    </IonLabel>
-                                    <IonNote className="notification-description">{notification.description}</IonNote>
-                                    <div className="notification-time">
-                                        <IonIcon icon={timeOutline} className="time-icon" />
-                                        <span>{notification.time}</span>
-                                    </div>
-                                </div>
-                            </IonItem>
-                        ))
-                    ) : (
-                        <div className="empty-notifications">
-                            <p>No tienes notificaciones</p>
-                        </div>
-                    )}
+                    <p>{message}</p> {/* Renderizar el mensaje */}
                 </IonList>
             </IonContent>
         </IonPage>
     );
-}
+};
 
-export default Notifications
+export default Notifications;

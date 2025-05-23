@@ -46,23 +46,46 @@ import ProductDetailPage from "./pages/ProductDetail/ProductDetailPage";
 import SettingsPage from "./pages/Settings/SettingsPage";
 import {WebSocketService} from "./Services/websocket";
 import Notification from "./pages/Notification/Notification";
+import {useNotifications} from "./Services/DatosParaExoportar";
+import { MensajeRecibeDTO } from './Services/websocket';
 
 setupIonicReact();
+
 
 const App: React.FC = () => {
     // Detectar si es vista de escritorio
     const [isDesktop, setIsDesktop] = useState(false);
+    const [notifications, setNotifications] = useNotifications();
+
 
     // Detectar si es vista de chat
     const [isChatView, setIsChatView] = useState(false);
 
+
     WebSocketService.connect()
-        .then((conectado) => {
-            if (conectado) {
-                console.log('Conexión exitosa al WebSocket');
-                return WebSocketService.subscribeToNotification();
-            }
-        })
+.then((conectado) => {
+    if (conectado) {
+        console.log('Conexión exitosa al WebSocket');
+        return WebSocketService.subscribeToNotification().then(() => {
+            WebSocketService.setNotificationCallback((newNotification) => {
+                console.log("Nueva notificación (App8):", newNotification); // Para depuración
+
+                // Transformar `newNotification` al tipo `MensajeRecibeDTO` si es necesario
+                const transformedNotification: MensajeRecibeDTO = {
+                    timestamp: "", token: "", type: "", userName: "",
+                    senderName: newNotification.content || '',
+                    content: newNotification.content || ''
+                };
+
+                setNotifications((prevNotifications) => {
+                    const updatedNotifications = [...prevNotifications, transformedNotification];
+                    console.log("Notificaciones actualizadas:", updatedNotifications); // Para depuración
+                    return updatedNotifications;
+                });
+            });
+        });
+    }
+})
         .catch((error) => {
             console.error('Error al conectar al WebSocket:', error);
         });
