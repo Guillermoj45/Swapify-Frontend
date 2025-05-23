@@ -348,32 +348,35 @@ const ProductsPage = () => {
 
             if (favorites[productId]) {
                 // If already favorited, remove from favorites
-                const response = await ProfileService.deleteProductFromProfile(saveProductDTO);
+                ProfileService.deleteProductFromProfile(saveProductDTO)
+                    .then((response)=>{
+                        if (response.success) {
+                            setFavorites(prev => ({
+                                ...prev,
+                                [productId]: false
+                            }));
 
-                if (response.success) {
-                    setFavorites(prev => ({
-                        ...prev,
-                        [productId]: false
-                    }));
-
-                    showToastMessage('Producto eliminado de favoritos', 'success');
-                } else {
-                    showToastMessage(response.message || 'Error al eliminar de favoritos', 'danger');
-                }
+                                showToastMessage('Producto eliminado de favoritos', 'success');
+                        } else {
+                            showToastMessage(response.message || 'Error al eliminar de favoritos', 'danger');
+                        }
+                });
             } else {
-                // If not favorited, add to favorites
-                const response = await ProfileService.saveProductToProfile(saveProductDTO);
+                // If not favorite, add to favorites
+                ProfileService.saveProductToProfile(saveProductDTO)
+                    .then((response)=>{
+                        if (response.success) {
+                           setFavorites(prev => ({
+                            ...prev,
+                            [productId]: true
+                        }));
+                            showToastMessage('Producto guardado en favoritos', 'success');
+                        } else {
+                            showToastMessage(response.message || 'Error al guardar en favoritos', 'danger');
+                        }
+                });
 
-                if (response.success) {
-                    setFavorites(prev => ({
-                        ...prev,
-                        [productId]: true
-                    }));
 
-                    showToastMessage('Producto guardado en favoritos', 'success');
-                } else {
-                    showToastMessage(response.message || 'Error al guardar en favoritos', 'danger');
-                }
             }
         } catch (error) {
             console.error('Error managing favorite:', error);
