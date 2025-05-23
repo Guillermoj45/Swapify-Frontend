@@ -474,6 +474,10 @@ const ProductsPage = () => {
                     setCurrentImages(initialImageIndexes);
                 }
 
+                if (data && data.titles) {
+                    setAvailableCategories(data.titles);
+                }
+
                 if (sessionStorage.getItem("token")) {
                     const [profileData, tutorialHecho] = await Promise.all([
                         ProfileService.getProfileInfo(),
