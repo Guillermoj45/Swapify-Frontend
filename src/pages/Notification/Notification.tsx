@@ -8,11 +8,13 @@ import {
     IonList,
     IonItem,
     IonLabel,
-    useIonViewDidEnter,
+    useIonViewDidEnter, IonIcon,
 } from "@ionic/react";
 import "./Notification.css";
 import { useNotifications } from "../../Services/DatosParaExoportar";
 import { NotificationService } from "../../Services/NotificationService";
+import {trashOutline} from "ionicons/icons";
+import {MensajeRecibeDTO} from "../../Services/websocket";
 
 const Notifications: React.FC = () => {
     const [notifications, setGlobalNotifications] = useNotifications();
@@ -40,24 +42,39 @@ const Notifications: React.FC = () => {
 
     // Efecto para cargar notificaciones
     useEffect(() => {
-        const fetchNotifications = async () => {
-            try {
-                const backendNotifications = await NotificationService.getNotifications();
-                if (backendNotifications) {
-                    setGlobalNotifications(backendNotifications);
-                }
-            } catch (error) {
-                console.error('Error al obtener las notificaciones:', error);
-            }
-        };
-
-        fetchNotifications();
-    }, [setGlobalNotifications]);
+        NotificationService.getNotifications()
+            .then(notifications => {
+                // Ordenar las notificaciones de más antigua a más nueva
+                const sortedNotifications = notifications.sort((a, b) => {
+                    return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+                });
+                setGlobalNotifications(sortedNotifications);
+            })
+            .catch(error => {
+                console.error("Error al cargar las notificaciones:", error);
+            });
+    }, []);
 
     // Hook para aplicar tema cuando la vista se activa
     useIonViewDidEnter(() => {
         applyTheme(darkMode);
     });
+
+    const deleteNotification = async (notification: MensajeRecibeDTO) => {
+        try {
+            await NotificationService.deleteNotification(notification);
+
+            // Actualizar el estado global después de eliminar
+            const updatedNotifications = await NotificationService.getNotifications();
+            const sortedNotifications = updatedNotifications.sort((a, b) => {
+                return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+            });
+            setGlobalNotifications(sortedNotifications);
+
+        } catch (error) {
+            console.error('Error al eliminar la notificación:', error);
+        }
+    };
 
     return (
         <IonPage>
@@ -84,6 +101,12 @@ const Notifications: React.FC = () => {
                                         {new Date(notification.timestamp).toLocaleString()}
                                     </p>
                                 </IonLabel>
+                                <IonIcon
+                                    icon={trashOutline}
+                                    slot="end"
+                                    className="delete-icon-circle"
+                                    onClick={() => deleteNotification(notification)}
+                                />
                             </IonItem>
                         ))
                     )}

@@ -167,3 +167,19 @@ ion-toolbar {
         font-size: 12px;
     }
 }
+.delete-icon-circle {
+    background: var(--accent-color);
+    padding: 8px;
+    border-radius: 50%;
+    color: white;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-icon-circle:hover {
+    opacity: 0.8;
+    cursor: pointer;
+}

@@ -18,5 +18,14 @@ export const NotificationService = {
             console.error('Error al obtener notificaciones:', error);
             throw error;
         }
+    },
+
+    deleteNotification: async (notificacion: MensajeRecibeDTO): Promise<void> => {
+        try {
+            await API.post('/notification/deleteNotification', notificacion);
+        } catch (error) {
+            console.error('Error al eliminar la notificación:', error);
+            throw error;
+        }
     }
 };
