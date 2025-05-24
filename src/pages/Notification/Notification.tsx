@@ -1,4 +1,4 @@
-import type React from "react";
+import React, { useEffect, useState } from "react";
 import {
     IonContent,
     IonHeader,
@@ -11,19 +11,21 @@ import {
     useIonViewDidEnter,
 } from "@ionic/react";
 import "./Notification.css";
-import { useEffect, useState } from "react";
 import { useNotifications } from "../../Services/DatosParaExoportar";
+import { NotificationService } from "../../Services/NotificationService";
 
 const Notifications: React.FC = () => {
-    const [notifications] = useNotifications();
+    const [notifications, setGlobalNotifications] = useNotifications();
     const [darkMode, setDarkMode] = useState(false);
 
-    useEffect(() => {
-        const applyTheme = (isDarkMode: boolean) => {
-            document.body.classList.remove("light-theme", "dark-theme");
-            document.body.classList.add(isDarkMode ? "dark-theme" : "light-theme");
-        };
+    // Función para aplicar el tema
+    const applyTheme = (isDark: boolean) => {
+        document.body.classList.remove("dark-theme", "light-theme");
+        document.body.classList.add(isDark ? "dark-theme" : "light-theme");
+    };
 
+    // Efecto para cargar la preferencia del tema
+    useEffect(() => {
         const loadThemePreference = async () => {
             const storedTheme = sessionStorage.getItem("modoOscuroClaro");
             if (storedTheme !== null) {
@@ -36,11 +38,23 @@ const Notifications: React.FC = () => {
         loadThemePreference();
     }, []);
 
-    const applyTheme = (isDark: boolean) => {
-        document.body.classList.remove("dark-theme", "light-theme");
-        document.body.classList.add(isDark ? "dark-theme" : "light-theme");
-    };
+    // Efecto para cargar notificaciones
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const backendNotifications = await NotificationService.getNotifications();
+                if (backendNotifications) {
+                    setGlobalNotifications(backendNotifications);
+                }
+            } catch (error) {
+                console.error('Error al obtener las notificaciones:', error);
+            }
+        };
 
+        fetchNotifications();
+    }, [setGlobalNotifications]);
+
+    // Hook para aplicar tema cuando la vista se activa
     useIonViewDidEnter(() => {
         applyTheme(darkMode);
     });
