@@ -70,6 +70,72 @@ export default function ProfilePage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Effects
+
+    useEffect(() => {
+        // Listen for favorites updates from other pages
+        const handleFavoritesUpdate = (event: CustomEvent) => {
+            const { action, productId } = event.detail;
+
+            if (activeTab === "deseados") {
+                // Refresh saved products immediately when favorites are updated
+                const refreshSavedProducts = async () => {
+                    try {
+                        setLoadingSaved(true);
+                        const saved = await ProfileService.getSavedProducts(true);
+                        setSavedProducts(saved);
+                    } catch (error) {
+                        console.error("Error refreshing saved products:", error);
+                    } finally {
+                        setLoadingSaved(false);
+                    }
+                };
+
+                refreshSavedProducts();
+            }
+        };
+
+        // Add event listener for favorites updates
+        window.addEventListener('favoritesUpdated', handleFavoritesUpdate as EventListener);
+
+        return () => {
+            window.removeEventListener('favoritesUpdated', handleFavoritesUpdate as EventListener);
+        };
+    }, [activeTab]);
+
+// Enhanced useEffect for deseados tab with better performance
+    useEffect(() => {
+        if (activeTab === "deseados") {
+            const loadSaved = async () => {
+                // Only show loading if we don't have data yet
+                if (savedProducts.length === 0) {
+                    setLoadingSaved(true);
+                }
+
+                try {
+                    // Always force refresh when switching to this tab for fresh data
+                    const saved = await ProfileService.getSavedProducts(true);
+                    setSavedProducts(saved);
+                    setShowAllSavedProducts(false);
+                } catch (error) {
+                    console.error("Error loading saved products:", error);
+                } finally {
+                    setLoadingSaved(false);
+                }
+            };
+
+            loadSaved();
+
+            // Subscribe to cache changes for real-time updates
+            const unsubscribe = ProfileService.subscribeSavedProducts((newData: ProductDTO[]) => {
+                if (newData && Array.isArray(newData)) {
+                    setSavedProducts(newData);
+                }
+            });
+
+            return unsubscribe;
+        }
+    }, [activeTab]);
+
     useEffect(() => {
         const checkAuth = async () => {
             if (!sessionStorage.getItem("token")) {
@@ -120,9 +186,16 @@ export default function ProfilePage() {
     useEffect(() => {
         if (activeTab === "deseados") {
             const loadSaved = async () => {
-                setLoadingSaved(true);
+                // Only show loading if we don't have data yet
+                if (savedProducts.length === 0) {
+                    setLoadingSaved(true);
+                }
+
                 try {
-                    const saved = await ProfileService.getSavedProducts();
+                    // Use forceRefresh only if we suspect data might be stale
+                    const shouldForceRefresh = savedProducts.length === 0;
+                    const saved = await ProfileService.getSavedProducts(shouldForceRefresh);
+
                     setSavedProducts(saved);
                     setShowAllSavedProducts(false);
                 } catch (error) {
@@ -134,6 +207,39 @@ export default function ProfilePage() {
 
             loadSaved();
         }
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (activeTab === "deseados") {
+            // Set up a more intelligent refresh interval
+            const refreshInterval = setInterval(async () => {
+                try {
+                    // Only refresh if the page is visible to avoid unnecessary API calls
+                    if (!document.hidden) {
+                        const saved = await ProfileService.getSavedProducts(true);
+                        setSavedProducts(saved);
+                    }
+                } catch (error) {
+                    console.error("Error refreshing saved products:", error);
+                }
+            }, 60000); // Increased to 60 seconds for better performance
+
+            return () => clearInterval(refreshInterval);
+        }
+    }, [activeTab]);
+
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (!document.hidden && activeTab === "deseados") {
+                // Page became visible, refresh saved products
+                ProfileService.getSavedProducts(true).then(saved => {
+                    setSavedProducts(saved);
+                }).catch(console.error);
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [activeTab]);
 
     useEffect(() => {

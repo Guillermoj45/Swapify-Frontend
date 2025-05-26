@@ -18,20 +18,79 @@ export interface IAChatResponse {
         description: string;
         points: number;
         createdAt: string;
-        // Otros campos del producto
     };
 }
 
 export interface ConversationDTO {
     id: string;
     nombre: string;
+    titulo: string;
     createdAt: string;
-    lastMessage?: {
+    product: {
         id: string;
-        message: string;
+        name: string;
+        description: string;
+        points: number;
         createdAt: string;
-        images: string[];
-        user: boolean;
+        updatedAt: string;
+        imagenes: string[];
+        profile: {
+            id: string;
+            nickname: string;
+            avatar: string;
+            banAt: boolean;
+            premium: string;
+            ubicacion: string;
+            banner: string;
+            newUser: boolean;
+        };
+        categories: {
+            name: string;
+            description: string;
+        }[];
+    };
+    // ✅ CORREGIDO: Campos que realmente devuelve ConversIADTO del backend
+    lastMessages?: string; // ✅ En lugar de lastMessage (objeto)
+    lastMesageDate?: string; // ✅ En lugar de lastMessageDate
+}
+
+export interface MessageIADTO {
+    id: string;
+    message: string; // ✅ El backend usa 'message', no 'text'
+    createdAt: string;
+    images: string[];
+    user: boolean; // ✅ El backend usa 'user' boolean, no 'sender' string
+}
+
+// ✅ INTERFACE PARA ConversIADetailDTO que devuelve el endpoint de detalle
+export interface ConversationDetailDTO {
+    id: string;
+    nombre: string;
+    titulo: string;
+    createdAt: string;
+    messages: MessageIADTO[]; // ✅ Usa MessageIADTO
+    product?: {
+        id: string;
+        name: string;
+        description: string;
+        points: number;
+        createdAt: string;
+        updatedAt: string;
+        imagenes: string[];
+        profile: {
+            id: string;
+            nickname: string;
+            avatar: string;
+            banAt: boolean;
+            premium: string;
+            ubicacion: string;
+            banner: string;
+            newUser: boolean;
+        };
+        categories: {
+            name: string;
+            description: string;
+        }[];
     };
 }
 
@@ -46,6 +105,7 @@ export interface ConversationMessage {
 export interface ConversationDetail {
     id: string;
     nombre: string;
+    titulo: string;
     createdAt: string;
     messages: ConversationMessage[];
 }
@@ -138,7 +198,8 @@ export const IAChat = async (
     files: File[],
     message: string,
     chatID?: string,
-    productId?: string
+    productId?: string,
+    titulo?: string
 ): Promise<IAChatResponse> => {
     const formData = new FormData();
 
@@ -147,10 +208,8 @@ export const IAChat = async (
 
     // Luego agregamos los archivos, si hay alguno
     if (files && files.length > 0) {
-
         // IMPORTANTE: El backend espera una lista con el nombre "file", no "files" o "images"
         for (const file of files) {
-
             // Si el tipo MIME no está definido explícitamente, intentamos asignarlo
             let fileToUpload = file;
 
@@ -159,12 +218,10 @@ export const IAChat = async (
             const fileExtension = file.name.split('.').pop()?.toLowerCase();
             if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
                 console.log('Tipo jpg no reconocido, intentando convertir a PNG');
-
                 // Crear un nuevo File con el tipo MIME correcto
                 fileToUpload = new File([file], file.name, { type: 'image/jpeg' });
             } else if (fileExtension === 'png') {
                 console.log('Tipo png no reconocido, intentando convertir a PNG');
-
                 fileToUpload = new File([file], file.name, { type: 'image/png' });
             } else {
                 console.log('Tipo MIME no reconocido, intentando convertir a PNG');
@@ -184,7 +241,7 @@ export const IAChat = async (
     // Agregamos los demás parámetros
     if (chatID) formData.append('chatID', chatID);
     if (productId) formData.append('productId', productId);
-
+    if (titulo) formData.append('titulo', titulo);
 
     try {
         // Importante: Para FormData, debemos dejar que Axios establezca el Content-Type automáticamente
@@ -193,7 +250,6 @@ export const IAChat = async (
                 'Content-Type': 'multipart/form-data'
             }
         });
-
 
         return response.data;
     } catch (error: any) {
@@ -229,12 +285,9 @@ export class ConversationService {
 
     /**
      * Obtiene los detalles completos de una conversación específica
-     * Esta función asume que existe un endpoint para obtener mensajes de una conversación
-     * Si no existe, tendrás que crearlo en el backend
      */
-    static async getConversationDetail(conversationId: string): Promise<ConversationDetail> {
+    static async getConversationDetail(conversationId: string): Promise<ConversationDetailDTO> {
         try {
-            // Este endpoint tendría que ser implementado en el backend
             const response = await API.get(`/ia/conversations/${conversationId}`);
             return response.data;
         } catch (error) {
@@ -245,7 +298,6 @@ export class ConversationService {
 
     /**
      * Elimina una conversación
-     * Esta función asume que existe un endpoint para eliminar conversaciones
      */
     static async deleteConversation(conversationId: string): Promise<boolean> {
         try {
@@ -258,13 +310,12 @@ export class ConversationService {
     }
 
     /**
-     * Actualiza el nombre de una conversación
-     * Esta función asume que existe un endpoint para actualizar el nombre
+     * Actualiza el titulo de una conversación
      */
-    static async updateConversationName(conversationId: string, newName: string): Promise<boolean> {
+    static async updateConversationTitle(conversationId: string, newName: string): Promise<boolean> {
         try {
             await API.put(`/ia/conversations/${conversationId}`, {
-                nombre: newName
+                titulo: newName
             });
             return true;
         } catch (error) {
@@ -274,35 +325,65 @@ export class ConversationService {
     }
 
     /**
-     * Convierte las conversaciones del backend al formato que usa el frontend
+     * Obtiene los mensajes de una conversación con paginación
      */
-    static convertToFrontendFormat(conversations: ConversationDTO[]): any[] {
+    static async getConversationMessages(conversationId: string, page: number = 0, size: number = 20): Promise<ConversationMessage[]> {
+        try {
+            const response = await API.get(`/ia/conversations/${conversationId}/messages`, {
+                params: { page, size }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error al obtener mensajes de conversación:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Versión síncrona más simple para casos donde no necesitas todos los mensajes
+     */
+    static convertToFrontendFormatSimple(conversations: ConversationDTO[]): any[] {
         return conversations.map(conv => ({
             id: conv.id,
-            title: conv.nombre,
-            lastMessage: conv.lastMessage?.message || 'Nueva conversación',
-            timestamp: new Date(conv.createdAt),
-            messages: conv.lastMessage ? [{
-                id: conv.lastMessage.id,
-                text: conv.lastMessage.message,
-                sender: conv.lastMessage.user ? 'user' : 'ai',
-                timestamp: new Date(conv.lastMessage.createdAt),
-                images: conv.lastMessage.images?.length > 0 ? conv.lastMessage.images : undefined
-            }] : [],
-            unread: 0 // Puedes implementar lógica de no leídos si es necesario
+            title: conv.titulo || conv.nombre || 'Nueva conversación', // ✅ CORREGIDO: usar titulo primero
+            lastMessage: conv.lastMessages || 'Nueva conversación', // ✅ CORREGIDO: usar lastMessages
+            timestamp: conv.lastMesageDate ? new Date(conv.lastMesageDate) : new Date(conv.createdAt), // ✅ CORREGIDO: usar lastMesageDate
+            messages: [], // Se cargarán cuando se seleccione la conversación
+            unread: 0
         }));
     }
 
     /**
      * Convierte los mensajes del formato backend al formato frontend
      */
-    static convertMessagesToFrontendFormat(messages: ConversationMessage[]): any[] {
+    static convertMessagesToFrontendFormat(messages: MessageIADTO[]): any[] {
         return messages.map(msg => ({
             id: msg.id,
-            text: msg.message,
-            sender: msg.user ? 'user' : 'ai',
+            text: msg.message, // ✅ CORREGIDO: el backend usa 'message'
+            sender: msg.user ? 'user' : 'ai', // ✅ CORREGIDO: el backend usa 'user' boolean
             timestamp: new Date(msg.createdAt),
             images: msg.images?.length > 0 ? msg.images : undefined
         }));
+    }
+
+    /**
+     * Carga una conversación completa con todos sus mensajes
+     * Útil para cuando seleccionas una conversación específica
+     */
+    static async loadFullConversation(conversationId: string): Promise<any> {
+        try {
+            const conversationDetail: ConversationDetailDTO = await this.getConversationDetail(conversationId);
+
+            return {
+                id: conversationDetail.id,
+                title: conversationDetail.titulo || conversationDetail.nombre || 'Conversación', // ✅ CORREGIDO: usar titulo primero
+                timestamp: new Date(conversationDetail.createdAt),
+                messages: this.convertMessagesToFrontendFormat(conversationDetail.messages),
+                unread: 0
+            };
+        } catch (error) {
+            console.error('Error al cargar conversación completa:', error);
+            throw error;
+        }
     }
 }

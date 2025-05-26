@@ -216,35 +216,99 @@ const AIChatPage: React.FC = () => {
 
     // Cargar conversaciones del backend al iniciar
     useEffect(() => {
+        console.log('🚀 Componente montado, iniciando carga de conversaciones...');
         loadConversationsFromBackend();
     }, []);
 
+    useEffect(() => {
+        console.log('📊 Estado actual:', {
+            chatSessions: chatSessions.length,
+            activeChatId,
+            messages: messages.length,
+            isLoadingConversations,
+            loadingError
+        });
+    }, [chatSessions, activeChatId, messages, isLoadingConversations, loadingError]);
+
     const loadConversationMessages = async (conversationId: string) => {
         try {
-            const conversationDetail = await ConversationService.getConversationDetail(conversationId);
-            const formattedMessages = ConversationService.convertMessagesToFrontendFormat(conversationDetail.messages);
+            console.log('🔍 Cargando mensajes completos para conversación:', conversationId);
 
-            // Si no hay mensajes, agregar el mensaje inicial de la IA
-            const messagesWithInitial = formattedMessages.length > 0
-                ? formattedMessages
-                : [initialAIMessage];
+            if (!conversationId || conversationId === 'default') {
+                console.warn('⚠️ ID de conversación inválido:', conversationId);
+                setMessages([initialAIMessage]);
+                return;
+            }
 
-            setMessages(messagesWithInitial);
+            // Verificar si ya tenemos los mensajes cargados
+            const existingChat = chatSessions.find(chat => chat.id === conversationId);
+            if (existingChat && existingChat.messages.length > 1) {
+                console.log('📋 Usando mensajes ya cargados');
+                setMessages(existingChat.messages);
+                setCurrentChatId(conversationId);
+                return;
+            }
+
+            // Cargar conversación completa del backend
+            const fullConversation = await ConversationService.loadFullConversation(conversationId);
+            console.log('📨 Conversación completa cargada:', fullConversation);
+
+            if (!fullConversation) {
+                console.warn('⚠️ No se pudo cargar la conversación completa');
+                setMessages([initialAIMessage]);
+                return;
+            }
+
+            let messagesToSet = [initialAIMessage];
+
+            // Procesar mensajes si existen
+            if (fullConversation.messages && Array.isArray(fullConversation.messages) && fullConversation.messages.length > 0) {
+                try {
+                    messagesToSet = fullConversation.messages.map((msg: any) => ({
+                        id: msg.id || Date.now() + Math.random(),
+                        text: msg.message || msg.text || '',
+                        sender: msg.sender || (msg.isUser ? 'user' : 'ai'),
+                        timestamp: msg.createdAt ? new Date(msg.createdAt) : new Date(),
+                        images: msg.images || undefined
+                    }));
+
+                    console.log('💬 Mensajes procesados:', messagesToSet.length);
+                } catch (msgError) {
+                    console.error('❌ Error al procesar mensajes individuales:', msgError);
+                    messagesToSet = [initialAIMessage];
+                }
+            }
+
+            setMessages(messagesToSet);
             setCurrentChatId(conversationId);
 
             // Actualizar la sesión de chat con los mensajes cargados
             setChatSessions(prev => prev.map(session =>
                 session.id === conversationId
-                    ? { ...session, messages: messagesWithInitial, loadedFromBackend: true }
+                    ? {
+                        ...session,
+                        messages: messagesToSet,
+                        loadedFromBackend: true,
+                        title: fullConversation.nombre || fullConversation.title || session.title,
+                        lastMessage: messagesToSet[messagesToSet.length - 1]?.text?.substring(0, 50) + '...' || 'Sin mensajes'
+                    }
                     : session
             ));
+
         } catch (error) {
-            console.error('Error al cargar mensajes de la conversación:', error);
-            // Si hay error, usar el mensaje inicial
+            console.error('❌ Error al cargar mensajes de la conversación:', error);
             setMessages([initialAIMessage]);
             setCurrentChatId(null);
+
+            // Mostrar error al usuario
+            presentToast({
+                message: 'Error al cargar los mensajes de la conversación',
+                duration: 3000,
+                color: 'danger'
+            });
         }
     };
+
 
     // Función para cargar conversaciones del backend
     const loadConversationsFromBackend = async (page: number = 0, append: boolean = false) => {
@@ -252,9 +316,13 @@ const AIChatPage: React.FC = () => {
             setIsLoadingConversations(true);
             setLoadingError(null);
 
+            console.log('🔍 Cargando conversaciones, página:', page);
             const conversations = await ConversationService.getConversations(page);
+            console.log('📦 Conversaciones recibidas del backend:', conversations);
 
-            if (conversations.length === 0) {
+            // ✅ VERIFICAR QUE HAY DATOS VÁLIDOS
+            if (!conversations || conversations.length === 0) {
+                console.log('📭 No hay conversaciones en el backend');
                 setHasMoreConversations(false);
                 if (!append) {
                     createDefaultConversation();
@@ -262,25 +330,98 @@ const AIChatPage: React.FC = () => {
                 return;
             }
 
-            const formattedConversations = ConversationService.convertToFrontendFormat(conversations);
+            // ✅ PROCESAR CADA CONVERSACIÓN INDIVIDUALMENTE
+            const frontendConversations: ChatSession[] = [];
+
+            for (const conversation: ConversationDTO of conversations) {
+                console.log('🔄 Procesando conversación:', conversation);
+
+                try {
+                    // Verificar que la conversación tiene los campos necesarios
+                    if (!conversation.id) {
+                        console.warn('⚠️ Conversación sin ID:', conversation);
+                        continue;
+                    }
+
+                    // Crear la conversación con datos seguros - CORREGIDO para usar los campos correctos del backend
+                    const chatSession: ChatSession = {
+                        id: conversation.id,
+                        title: conversation.titulo || conversation.nombre || 'Conversación sin título', // ✅ CORREGIDO: usar titulo primero, luego nombre
+                        lastMessage: conversation.lastMessages || 'Sin mensajes', // ✅ CORREGIDO: usar lastMessages del backend
+                        timestamp: conversation.lastMesageDate ? new Date(conversation.lastMesageDate) : new Date(conversation.createdAt), // ✅ CORREGIDO: usar lastMesageDate
+                        messages: [initialAIMessage], // Inicializar con mensaje por defecto
+                        loadedFromBackend: true,
+                        unread: 0
+                    };
+
+                    // ✅ CARGAR LOS MENSAJES COMPLETOS DE LA CONVERSACIÓN
+                    // En lugar de usar conversation.messages (que no existe en ConversIADTO),
+                    // cargamos los mensajes usando el endpoint de detalle
+                    try {
+                        console.log('💬 Cargando mensajes completos para conversación:', conversation.id);
+                        const conversationDetail = await ConversationService.getConversationDetail(conversation.id);
+
+                        if (conversationDetail.messages && Array.isArray(conversationDetail.messages) && conversationDetail.messages.length > 0) {
+                            const processedMessages = conversationDetail.messages.map((msg: any) => ({
+                                id: msg.id || Date.now(),
+                                text: msg.message || msg.text || '',
+                                sender: msg.user ? 'user' : 'ai', // ✅ CORREGIDO: usar msg.user del backend MessageIADTO
+                                timestamp: msg.createdAt ? new Date(msg.createdAt) : new Date(),
+                                images: msg.images || undefined
+                            }));
+
+                            chatSession.messages = processedMessages;
+
+                            // Actualizar el último mensaje con el texto real del último mensaje
+                            const lastMsg = processedMessages[processedMessages.length - 1];
+                            if (lastMsg) {
+                                chatSession.lastMessage = lastMsg.text.length > 50
+                                    ? lastMsg.text.substring(0, 50) + '...'
+                                    : lastMsg.text;
+                            }
+                        }
+                    } catch (msgError) {
+                        console.error('❌ Error cargando mensajes completos:', msgError);
+                        // Si no se pueden cargar los mensajes completos, usar solo el lastMessage del resumen
+                        if (conversation.lastMessages) {
+                            chatSession.lastMessage = conversation.lastMessages.length > 50
+                                ? conversation.lastMessages.substring(0, 50) + '...'
+                                : conversation.lastMessages;
+                        }
+                    }
+
+                    frontendConversations.push(chatSession);
+                    console.log('✅ Conversación procesada:', chatSession);
+
+                } catch (convError) {
+                    console.error('❌ Error procesando conversación individual:', convError);
+                    continue;
+                }
+            }
+
+            console.log('📋 Total conversaciones procesadas:', frontendConversations.length);
 
             if (append) {
-                setChatSessions(prev => [...prev, ...formattedConversations]);
+                setChatSessions(prev => [...prev, ...frontendConversations]);
             } else {
-                setChatSessions(formattedConversations);
-                if (formattedConversations.length > 0 && (!activeChatId || activeChatId === 'default')) {
-                    const firstChat = formattedConversations[0];
+                setChatSessions(frontendConversations);
+
+                // Solo establecer chat activo si no hay uno seleccionado
+                if (frontendConversations.length > 0 && (!activeChatId || activeChatId === 'default')) {
+                    const firstChat = frontendConversations[0];
+                    console.log('📝 Seleccionando primer chat:', firstChat);
                     setActiveChatId(firstChat.id);
-                    await loadConversationMessages(firstChat.id);
+                    setMessages(firstChat.messages);
+                    setCurrentChatId(firstChat.id);
                 }
             }
 
             setConversationsPage(page);
             setHasMoreConversations(conversations.length >= 10);
-        } catch (error) {
-            console.error('Error al cargar conversaciones:', error);
-            setLoadingError('Error al cargar conversaciones. Intenta de nuevo.');
 
+        } catch (error) {
+            console.error('❌ Error al cargar conversaciones:', error);
+            setLoadingError('Error al cargar conversaciones. Intenta de nuevo.');
             if (!append) {
                 createDefaultConversation();
             }
@@ -493,27 +634,25 @@ const AIChatPage: React.FC = () => {
     };
 
     const handleSend = async (): Promise<void> => {
-        console.log('handleSend called - inputText:', `"${inputText}"`, 'selectedImages:', selectedImages.length); // Debug
+        console.log('handleSend called - inputText:', `"${inputText}"`, 'selectedImages:', selectedImages.length);
 
-        // Obtener valores actuales al momento de la llamada
         const currentText = inputText.trim();
         const currentImages = [...selectedImages];
         const currentPreviews = [...previewImages];
 
-        console.log('Current values - text:', `"${currentText}"`, 'images:', currentImages.length); // Debug
+        console.log('Current values - text:', `"${currentText}"`, 'images:', currentImages.length);
 
         if (currentText === '' && currentImages.length === 0) {
-            console.log('No text and no images, aborting send'); // Debug
+            console.log('No text and no images, aborting send');
             return;
         }
 
         try {
-            // IMPORTANTE: Determinar qué texto mostrar en la UI
             let displayText: string;
             if (currentText !== '') {
                 displayText = currentText;
             } else if (currentImages.length > 0) {
-                displayText = ""; // Mostrar solo las imágenes si no hay texto
+                displayText = "";
             } else {
                 displayText = '';
             }
@@ -532,7 +671,6 @@ const AIChatPage: React.FC = () => {
 
             setIsTyping(true);
 
-            // CRÍTICO: Determinar qué mensaje enviar a la API
             let messageToAPI: string;
             if (currentText !== '') {
                 messageToAPI = currentText;
@@ -540,26 +678,48 @@ const AIChatPage: React.FC = () => {
                 messageToAPI = "Analiza esta imagen";
             }
 
-            console.log('Message to API:', messageToAPI); // Debug
+            // ✅ AQUÍ ESTÁ LA MODIFICACIÓN PRINCIPAL - Determinar el título a enviar
+            let tituloToSend: string | undefined = undefined;
+
+            // Solo enviar título si es una conversación nueva (sin currentChatId)
+            if (!currentChatId) {
+                const currentChat = chatSessions.find(chat => chat.id === activeChatId);
+
+                if (currentChat) {
+                    // Si el chat tiene un título personalizado (no es el título por defecto)
+                    if (currentChat.title !== 'Nueva conversación') {
+                        tituloToSend = currentChat.title;
+                    } else {
+                        // Si es el título por defecto, generar uno basado en el mensaje
+                        const titleText = currentText !== '' ? currentText : displayText;
+                        tituloToSend = generateChatTitle(titleText);
+                    }
+                }
+            }
+
+            console.log('Message to API:', messageToAPI);
+            console.log('Title to send:', tituloToSend); // Debug
 
             // Limpiar inputs INMEDIATAMENTE después de preparar todo
             setInputText('');
             setSelectedImages([]);
             setPreviewImages([]);
 
-            console.log('Inputs cleared, calling IAChat'); // Debug
+            console.log('Inputs cleared, calling IAChat');
 
+            // ✅ LLAMADA MODIFICADA - Incluir el título
             const response = await IAChat(
                 currentImages,
                 messageToAPI,
                 currentChatId || undefined,
-                productId || undefined
+                productId || undefined,
+                tituloToSend // ✅ Pasar el título aquí
             );
 
             if (response) {
-                console.log('Response received:', response); // Debug
+                console.log('Response received:', response);
 
-                // Resto del código de manejo de respuesta...
+                // Resto del código permanece igual...
                 setCurrentChatId(response.id);
                 updateChatSessionAsBackendLoaded(activeChatId, response.id);
 
@@ -608,12 +768,12 @@ const AIChatPage: React.FC = () => {
                     aiResponse.text.substring(0, 50) + (aiResponse.text.length > 50 ? '...' : '')
                 );
 
-                // Actualizar título si es una conversación nueva
+                // ✅ ACTUALIZAR TÍTULO LOCALMENTE con el título enviado o el nombre de la conversación del backend
                 const currentChat = chatSessions.find(chat => chat.id === activeChatId);
-                if (currentChat && (currentChat.title === 'Nueva conversación' || !currentChat.loadedFromBackend)) {
-                    const titleText = currentText !== '' ? currentText : displayText;
-                    const suggestedTitle = generateChatTitle(titleText);
-                    updateChatTitle(activeChatId, suggestedTitle);
+                if (currentChat && !currentChat.loadedFromBackend) {
+                    // Usar el título que se envió al backend o el nombre que viene en la respuesta
+                    const finalTitle = tituloToSend || response.nombre || generateChatTitle(currentText !== '' ? currentText : displayText);
+                    updateChatTitle(activeChatId, finalTitle);
                 }
             }
         } catch (error) {
@@ -640,6 +800,7 @@ const AIChatPage: React.FC = () => {
         }
     };
 
+
     // Función para marcar una sesión de chat como cargada del backend
     const updateChatSessionAsBackendLoaded = (tempChatId: string, backendChatId: string) => {
         setChatSessions(prevSessions => prevSessions.map(session =>
@@ -648,6 +809,7 @@ const AIChatPage: React.FC = () => {
                     ...session,
                     id: backendChatId,
                     loadedFromBackend: true
+                    // ✅ NO modificar el título aquí, ya se maneja en handleSend
                 }
                 : session
         ));
@@ -683,11 +845,36 @@ const AIChatPage: React.FC = () => {
 
     const generateChatTitle = (message: string): string => {
         if (!message || message.trim() === '') return 'Nueva conversación';
+
         const maxLength = 30;
-        const title = message.trim().split('\n')[0];
-        return title.length > maxLength
-            ? title.substring(0, maxLength) + '...'
-            : title;
+        let title = message.trim();
+
+        // Remover saltos de línea y espacios extra
+        title = title.replace(/\n+/g, ' ').replace(/\s+/g, ' ');
+
+        // Tomar solo la primera oración si es muy larga
+        const firstSentence = title.split(/[.!?]/)[0];
+        if (firstSentence.length > 0 && firstSentence.length <= maxLength) {
+            return firstSentence;
+        }
+
+        // Cortar por palabras para evitar cortes en medio de palabras
+        if (title.length > maxLength) {
+            const words = title.split(' ');
+            let result = '';
+
+            for (const word of words) {
+                if ((result + ' ' + word).length <= maxLength - 3) {
+                    result += (result ? ' ' : '') + word;
+                } else {
+                    break;
+                }
+            }
+
+            return result + (title.length > maxLength ? '...' : '');
+        }
+
+        return title;
     };
 
     const handleKeyPress = (e: React.KeyboardEvent): void => {
@@ -880,9 +1067,12 @@ const AIChatPage: React.FC = () => {
             timestamp: new Date()
         };
 
+        // ✅ USAR EL TÍTULO PERSONALIZADO SI SE PROPORCIONÓ
+        const chatTitle = newChatTitle.trim() || 'Nueva conversación';
+
         const newChat: ChatSession = {
             id: newChatId,
-            title: newChatTitle || 'Nueva conversación',
+            title: chatTitle, // ✅ Usar el título personalizado
             lastMessage: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
             timestamp: new Date(),
             messages: [initialMessage],
@@ -896,7 +1086,7 @@ const AIChatPage: React.FC = () => {
         setProductId(null);
 
         setShowNewChatAlert(false);
-        setNewChatTitle('');
+        setNewChatTitle(''); // Limpiar el título después de usar
 
         if (!isDesktop) {
             setShowChatSidebar(false);
@@ -904,25 +1094,31 @@ const AIChatPage: React.FC = () => {
     };
 
     const handleSwitchChat = async (chatId: string) => {
+        console.log('🔄 Cambiando a chat:', chatId);
+
         setActiveChatId(chatId);
 
         const selectedChat = chatSessions.find(chat => chat.id === chatId);
-        if (selectedChat) {
-            if (selectedChat.loadedFromBackend && selectedChat.messages.length > 1) {
-                // Si ya está cargada del backend y tiene mensajes, usar los mensajes existentes
-                setMessages(selectedChat.messages);
-                setCurrentChatId(selectedChat.id);
-            } else if (selectedChat.loadedFromBackend) {
-                // Si está cargada del backend pero no tiene mensajes completos, cargarlos
-                await loadConversationMessages(chatId);
-            } else {
-                // Si es una conversación local (nueva), usar sus mensajes
-                setMessages(selectedChat.messages);
-                setCurrentChatId(null); // Resetear para crear nueva conversación en el backend
-            }
+        if (!selectedChat) {
+            console.error('❌ Chat no encontrado:', chatId);
+            return;
         }
 
-        // En dispositivos móviles, cerrar el sidebar después de seleccionar
+        try {
+            if (selectedChat.loadedFromBackend) {
+                // Para conversaciones del backend, siempre cargar mensajes completos
+                await loadConversationMessages(chatId);
+            } else {
+                // Para conversaciones locales, usar mensajes existentes
+                setMessages(selectedChat.messages);
+                setCurrentChatId(null);
+            }
+        } catch (error) {
+            console.error('❌ Error al cambiar de chat:', error);
+            setMessages([initialAIMessage]);
+        }
+
+        // En dispositivos móviles, cerrar el sidebar
         if (!isDesktop) {
             setShowChatSidebar(false);
         }
@@ -936,7 +1132,7 @@ const AIChatPage: React.FC = () => {
 
             // Si es una conversación del backend, actualizar en el servidor
             if (chatToUpdate?.loadedFromBackend) {
-                const success = await ConversationService.updateConversationName(chatId, newTitle);
+                const success = await ConversationService.updateConversationTitle(chatId, newTitle);
                 if (!success) {
                     presentToast({
                         message: 'Error al actualizar el título en el servidor',
@@ -1052,16 +1248,24 @@ const AIChatPage: React.FC = () => {
                                 </div>
                                 <div className="chat-item-content">
                                     <div className="chat-item-header">
-                                        <div className="chat-item-title">{chat.title}</div>
-                                        <div className="chat-item-time">{formatDate(chat.timestamp)}</div>
+                                        <div className="chat-item-title">
+                                            {chat.title || 'Conversación sin título'}
+                                        </div>
+                                        <div className="chat-item-time">
+                                            {formatDate(chat.timestamp)}
+                                        </div>
                                     </div>
-                                    <div className="chat-item-message">{chat.lastMessage}</div>
+                                    <div className="chat-item-message">
+                                        {chat.lastMessage || 'Sin mensajes disponibles'}
+                                    </div>
                                 </div>
                                 <div className="chat-item-actions">
                                     <IonButton fill="clear" size="large" onClick={(e) => {
                                         e.stopPropagation();
                                         const newTitle = prompt('Editar título de la conversación:', chat.title);
-                                        if (newTitle) handleEditChatTitle(chat.id, newTitle);
+                                        if (newTitle && newTitle.trim()) {
+                                            handleEditChatTitle(chat.id, newTitle.trim());
+                                        }
                                     }}>
                                         <IonIcon icon={createOutline} size="medium"/>
                                     </IonButton>
@@ -1127,7 +1331,7 @@ const AIChatPage: React.FC = () => {
             <div className="alert-content">
                 <h3>Nueva conversación</h3>
                 <IonItem>
-                    <IonLabel position="floating">Título (opcional)</IonLabel>
+                    <IonLabel position="floating">Título</IonLabel>
                     <IonInput
                         value={newChatTitle}
                         onIonChange={e => setNewChatTitle(e.detail.value || '')}
