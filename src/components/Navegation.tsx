@@ -13,6 +13,7 @@ import {
     IonFooter,
     IonTabBar,
     IonTabButton,
+    IonButton,
 } from '@ionic/react';
 import {
     homeOutline,
@@ -21,13 +22,19 @@ import {
     personCircle,
     logOut,
     settings,
-    shieldCheckmark, notificationsCircleOutline,
+    shieldCheckmark,
+    moon,
+    sunny,
 } from 'ionicons/icons';
 import './Navegation.css';
 
 const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDesktop, isChatView = false }) => {
-    // Estado para el modo oscuro/claro
-    const [darkMode] = useState(true);
+    // Estado para el modo oscuro/claro - ahora con funcionalidad de toggle
+    const [darkMode, setDarkMode] = useState(() => {
+        const saved = localStorage.getItem('darkMode');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
+
     const history = useHistory();
     const location = useLocation();
 
@@ -39,10 +46,17 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
     // Efecto para aplicar la clase al body para tema claro/oscuro global
     useEffect(() => {
         document.body.classList.toggle('light-mode', !darkMode);
+        document.body.classList.toggle('dark-mode', darkMode);
+        localStorage.setItem('darkMode', JSON.stringify(darkMode));
         return () => {
-            document.body.classList.remove('light-mode');
+            document.body.classList.remove('light-mode', 'dark-mode');
         };
     }, [darkMode]);
+
+    // Función para alternar entre modo oscuro y claro
+    const toggleTheme = () => {
+        setDarkMode(!darkMode);
+    };
 
     // Función para manejar la navegación con un enfoque más directo
     const navigateTo = (path: string) => {
@@ -62,12 +76,12 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
     };
 
     return (
-        <>
+        <div className={`navegacion-container ${darkMode ? 'dark-mode' : 'light-mode'}`}>
             {/* Menú hamburguesa (siempre en vistas de chat, o cuando es escritorio en otras vistas) */}
             {showHamburgerMenu && (
                 <IonMenu contentId="main-content" side="start">
                     <IonHeader>
-                        <IonToolbar color="primary">
+                        <IonToolbar>
                             <div className="menu-header">
                                 <div className="menu-title">
                                     <span className="menu-logo">Swapify</span>
@@ -79,54 +93,83 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                     <IonContent>
                         <IonList className="menu-list">
                             <IonMenuToggle autoHide={false}>
-                                <IonItem className="inicio" button onClick={() => (window.location.href = '/products')} detail={false}>
+                                <IonItem
+                                    className={`menu-item inicio ${isActive('/products') ? 'active' : ''}`}
+                                    button
+                                    onClick={() => (window.location.href = '/products')}
+                                    detail={false}
+                                >
                                     <IonIcon slot="start" icon={homeOutline} />
                                     <IonLabel>Inicio</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem className="perfil" button onClick={() => (window.location.href = '/profile')} detail={false}>
+                                <IonItem
+                                    className={`menu-item perfil ${isActive('/profile') ? 'active' : ''}`}
+                                    button
+                                    onClick={() => (window.location.href = '/profile')}
+                                    detail={false}
+                                >
                                     <IonIcon slot="start" icon={personCircle} />
                                     <IonLabel>Perfil</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem className="ia" button onClick={() => (window.location.href = '/IA')} detail={false}>
+                                <IonItem
+                                    className={`menu-item ia ${isActive('/IA') ? 'active' : ''}`}
+                                    button
+                                    onClick={() => (window.location.href = '/IA')}
+                                    detail={false}
+                                >
                                     <IonIcon slot="start" icon={addOutline} />
                                     <IonLabel>IA</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem className="chat" button onClick={() => (window.location.href = '/chat')} detail={false}>
+                                <IonItem
+                                    className={`menu-item chat ${isActive('/chat') ? 'active' : ''}`}
+                                    button
+                                    onClick={() => (window.location.href = '/chat')}
+                                    detail={false}
+                                >
                                     <IonIcon slot="start" icon={mailOutline} />
                                     <IonLabel>Chats</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem className="notificacion" button onClick={() => navigateTo('/notification')} detail={false}>
-                                    <IonIcon slot="start" icon={notificationsCircleOutline} />
-                                    <IonLabel>Notificaciones</IonLabel>
-                                </IonItem>
-                            </IonMenuToggle>
-                            <IonMenuToggle autoHide={false}>
-                                <IonItem className="premium" button onClick={() => (window.location.href = '/premiumSuscribe')} detail={false}>
-                                    <IonIcon slot="start" icon={personCircle} />
+                                <IonItem
+                                    className={`menu-item premium ${isActive('/premiumSuscribe') ? 'active' : ''}`}
+                                    button
+                                    onClick={() => (window.location.href = '/premiumSuscribe')}
+                                    detail={false}
+                                >
+                                    <IonIcon slot="start" icon={shieldCheckmark} />
                                     <IonLabel>Premium</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem className="ajustes" button onClick={() => ( window.location.href ='/settings')} detail={false}>
+                                <IonItem
+                                    className={`menu-item ajustes ${isActive('/settings') ? 'active' : ''}`}
+                                    button
+                                    onClick={() => ( window.location.href ='/settings')}
+                                    detail={false}
+                                >
                                     <IonIcon slot="start" icon={settings} />
                                     <IonLabel>Ajustes</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
+                            <div className="menu-divider"></div>
                             <IonMenuToggle autoHide={false}>
-                                <IonItem className="cerrar_sesion" button onClick={() => navigateTo('/login')} detail={false}>
+                                <IonItem
+                                    className="menu-item cerrar_sesion logout"
+                                    button
+                                    onClick={() => navigateTo('/login')}
+                                    detail={false}
+                                >
                                     <IonIcon slot="start" icon={logOut} />
                                     <IonLabel>Cerrar sesión</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
-
                         </IonList>
                     </IonContent>
                 </IonMenu>
@@ -135,31 +178,51 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
             {/* TabBar for mobile devices */}
             {showTabBar && (
                 <IonFooter className="ion-no-border navigation-footer">
-                    <IonTabBar slot="bottom">
-                        <IonTabButton tab="products" onClick={() => navigateTo('/products')} selected={isActive('/products')}>
+                    <IonTabBar slot="bottom" className="custom-tab-bar">
+                        <IonTabButton
+                            tab="products"
+                            onClick={() => navigateTo('/products')}
+                            className={`custom-tab-button ${isActive('/products') ? 'selected' : ''}`}
+                        >
                             <IonIcon icon={homeOutline} />
                             <IonLabel>Inicio</IonLabel>
                         </IonTabButton>
-                        <IonTabButton tab="profile" onClick={() => navigateTo('/profile')} selected={isActive('/profile')}>
+                        <IonTabButton
+                            tab="profile"
+                            onClick={() => navigateTo('/profile')}
+                            className={`custom-tab-button ${isActive('/profile') ? 'selected' : ''}`}
+                        >
                             <IonIcon icon={personCircle} />
                             <IonLabel>Perfil</IonLabel>
                         </IonTabButton>
-                        <IonTabButton tab="ia" onClick={() => navigateTo('/IA')} selected={isActive('/IA')}>
+                        <IonTabButton
+                            tab="ia"
+                            onClick={() => navigateTo('/IA')}
+                            className={`custom-tab-button ${isActive('/IA') ? 'selected' : ''}`}
+                        >
                             <IonIcon icon={addOutline} />
                             <IonLabel>IA</IonLabel>
                         </IonTabButton>
-                        <IonTabButton tab="chat" onClick={() => navigateTo('/chat')} selected={isActive('/chat')}>
+                        <IonTabButton
+                            tab="chat"
+                            onClick={() => navigateTo('/chat')}
+                            className={`custom-tab-button ${isActive('/chat') ? 'selected' : ''}`}
+                        >
                             <IonIcon icon={mailOutline} />
                             <IonLabel>Chats</IonLabel>
                         </IonTabButton>
-                        <IonTabButton tab="premium" onClick={() => navigateTo('/premiumSuscribe')} selected={isActive('/premiumSuscribe')}>
+                        <IonTabButton
+                            tab="premium"
+                            onClick={() => navigateTo('/premiumSuscribe')}
+                            className={`custom-tab-button ${isActive('/premiumSuscribe') ? 'selected' : ''}`}
+                        >
                             <IonIcon icon={shieldCheckmark} />
-                            <IonLabel>Suscripción</IonLabel>
+                            <IonLabel>Premium</IonLabel>
                         </IonTabButton>
                     </IonTabBar>
                 </IonFooter>
             )}
-        </>
+        </div>
     );
 };
 

@@ -22,6 +22,34 @@ export interface IAChatResponse {
     };
 }
 
+export interface ConversationDTO {
+    id: string;
+    nombre: string;
+    createdAt: string;
+    lastMessage?: {
+        id: string;
+        message: string;
+        createdAt: string;
+        images: string[];
+        user: boolean;
+    };
+}
+
+export interface ConversationMessage {
+    id: string;
+    message: string;
+    createdAt: string;
+    images: string[];
+    user: boolean;
+}
+
+export interface ConversationDetail {
+    id: string;
+    nombre: string;
+    createdAt: string;
+    messages: ConversationMessage[];
+}
+
 const MAX_FILE_SIZE = 1024 * 1024; // 1MB en bytes
 
 const compressImage = async (file: File, maxSizeInBytes: number): Promise<File> => {
@@ -182,3 +210,99 @@ export const IAChat = async (
         throw error;
     }
 };
+
+export class ConversationService {
+    /**
+     * Obtiene la lista de conversaciones del usuario con paginación
+     */
+    static async getConversations(page: number = 0): Promise<ConversationDTO[]> {
+        try {
+            const response = await API.get('/ia/conversations', {
+                params: { page }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error al obtener conversaciones:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtiene los detalles completos de una conversación específica
+     * Esta función asume que existe un endpoint para obtener mensajes de una conversación
+     * Si no existe, tendrás que crearlo en el backend
+     */
+    static async getConversationDetail(conversationId: string): Promise<ConversationDetail> {
+        try {
+            // Este endpoint tendría que ser implementado en el backend
+            const response = await API.get(`/ia/conversations/${conversationId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error al obtener detalles de conversación:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Elimina una conversación
+     * Esta función asume que existe un endpoint para eliminar conversaciones
+     */
+    static async deleteConversation(conversationId: string): Promise<boolean> {
+        try {
+            await API.delete(`/ia/conversations/${conversationId}`);
+            return true;
+        } catch (error) {
+            console.error('Error al eliminar conversación:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Actualiza el nombre de una conversación
+     * Esta función asume que existe un endpoint para actualizar el nombre
+     */
+    static async updateConversationName(conversationId: string, newName: string): Promise<boolean> {
+        try {
+            await API.put(`/ia/conversations/${conversationId}`, {
+                nombre: newName
+            });
+            return true;
+        } catch (error) {
+            console.error('Error al actualizar nombre de conversación:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Convierte las conversaciones del backend al formato que usa el frontend
+     */
+    static convertToFrontendFormat(conversations: ConversationDTO[]): any[] {
+        return conversations.map(conv => ({
+            id: conv.id,
+            title: conv.nombre,
+            lastMessage: conv.lastMessage?.message || 'Nueva conversación',
+            timestamp: new Date(conv.createdAt),
+            messages: conv.lastMessage ? [{
+                id: conv.lastMessage.id,
+                text: conv.lastMessage.message,
+                sender: conv.lastMessage.user ? 'user' : 'ai',
+                timestamp: new Date(conv.lastMessage.createdAt),
+                images: conv.lastMessage.images?.length > 0 ? conv.lastMessage.images : undefined
+            }] : [],
+            unread: 0 // Puedes implementar lógica de no leídos si es necesario
+        }));
+    }
+
+    /**
+     * Convierte los mensajes del formato backend al formato frontend
+     */
+    static convertMessagesToFrontendFormat(messages: ConversationMessage[]): any[] {
+        return messages.map(msg => ({
+            id: msg.id,
+            text: msg.message,
+            sender: msg.user ? 'user' : 'ai',
+            timestamp: new Date(msg.createdAt),
+            images: msg.images?.length > 0 ? msg.images : undefined
+        }));
+    }
+}
