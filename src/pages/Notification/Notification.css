@@ -183,3 +183,13 @@ ion-toolbar {
     opacity: 0.8;
     cursor: pointer;
 }
+
+/* Agrega estos estilos en tu archivo Notification.css */
+.delete-all-fab {
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.delete-all-fab:hover {
+    opacity: 0.9;
+}

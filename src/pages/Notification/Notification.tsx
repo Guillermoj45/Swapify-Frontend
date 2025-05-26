@@ -8,12 +8,12 @@ import {
     IonList,
     IonItem,
     IonLabel,
-    useIonViewDidEnter, IonIcon,
+    useIonViewDidEnter, IonIcon, IonMenuButton, IonButtons, IonButton,
 } from "@ionic/react";
 import "./Notification.css";
 import { useNotifications } from "../../Services/DatosParaExoportar";
 import { NotificationService } from "../../Services/NotificationService";
-import {trashOutline} from "ionicons/icons";
+import {menuOutline, trashOutline} from "ionicons/icons";
 import {MensajeRecibeDTO} from "../../Services/websocket";
 
 const Notifications: React.FC = () => {
@@ -76,10 +76,29 @@ const Notifications: React.FC = () => {
         }
     };
 
+    const deleteAllNotifications = async () => {
+        try {
+            // Eliminar cada notificación una por una
+            await Promise.all(notifications.map(notification =>
+                NotificationService.deleteNotification(notification)
+            ));
+
+            // Actualizar el estado para mostrar lista vacía
+            setGlobalNotifications([]);
+        } catch (error) {
+            console.error('Error al eliminar todas las notificaciones:', error);
+        }
+    };
+
     return (
         <IonPage>
             <IonHeader>
                 <IonToolbar className="header-toolbar">
+                    <IonButtons slot="start">
+                        <IonMenuButton>
+                            <IonIcon icon={menuOutline} style={{ color: 'white', fontSize: '24px' }} />
+                        </IonMenuButton>
+                    </IonButtons>
                     <IonTitle className="notifications-title">
                         Notificaciones ({notifications.length})
                     </IonTitle>
@@ -111,6 +130,25 @@ const Notifications: React.FC = () => {
                         ))
                     )}
                 </IonList>
+
+                {notifications.length > 0 && (
+                    <IonButton
+                        className="delete-all-fab"
+                        color="danger"
+                        onClick={deleteAllNotifications}
+                        style={{
+                            position: 'fixed',
+                            bottom: '20px',
+                            right: '20px',
+                            '--border-radius': '50px',
+                            '--padding-start': '20px',
+                            '--padding-end': '20px',
+                        }}
+                    >
+                        <IonIcon icon={trashOutline} slot="start" />
+                        Eliminar Todo
+                    </IonButton>
+                )}
             </IonContent>
         </IonPage>
     );

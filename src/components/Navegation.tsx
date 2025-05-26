@@ -21,7 +21,7 @@ import {
     personCircle,
     logOut,
     settings,
-    shieldCheckmark,
+    shieldCheckmark, notificationsCircleOutline,
 } from 'ionicons/icons';
 import './Navegation.css';
 
@@ -103,6 +103,12 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
+                                <IonItem className="notificacion" button onClick={() => navigateTo('/notification')} detail={false}>
+                                    <IonIcon slot="start" icon={notificationsCircleOutline} />
+                                    <IonLabel>Notificaciones</IonLabel>
+                                </IonItem>
+                            </IonMenuToggle>
+                            <IonMenuToggle autoHide={false}>
                                 <IonItem className="premium" button onClick={() => (window.location.href = '/premiumSuscribe')} detail={false}>
                                     <IonIcon slot="start" icon={personCircle} />
                                     <IonLabel>Premium</IonLabel>
@@ -120,6 +126,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                     <IonLabel>Cerrar sesión</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
+
                         </IonList>
                     </IonContent>
                 </IonMenu>

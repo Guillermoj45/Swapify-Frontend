@@ -21,11 +21,19 @@ export const NotificationService = {
     },
 
     deleteNotification: async (notificacion: MensajeRecibeDTO): Promise<void> => {
+        console.log(notificacion);
         try {
-            await API.post('/notification/deleteNotification', notificacion);
+            await API.post('/notification/deleteNotification', notificacion, {
+                headers: {
+                    "Authorization": `Bearer ${sessionStorage.getItem('token')}`
+                }
+            });
         } catch (error) {
             console.error('Error al eliminar la notificación:', error);
             throw error;
         }
     }
+
+    // Primero, agrega esta función en el componente antes del return
+
 };
