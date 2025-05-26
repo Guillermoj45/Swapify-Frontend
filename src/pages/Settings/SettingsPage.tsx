@@ -732,9 +732,9 @@ const Settings: React.FC = () => {
                     <IonAlert
                         isOpen={showAboutAlert}
                         onDidDismiss={() => setShowAboutAlert(false)}
-                        header="Acerca de"
-                        subHeader="MiApp v1.0.0"
-                        message="Desarrollado con React e Ionic.<br>© 2025 MiEmpresa. Todos los derechos reservados."
+                        header="Swapify App"
+                        subHeader="Hecho con React e Ionic"
+                        message="Desarrollado por Guille, Rafa y Javi 2025©."
                         buttons={['OK']}
                     />
 

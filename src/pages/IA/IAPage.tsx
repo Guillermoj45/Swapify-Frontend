@@ -27,6 +27,8 @@ import {
     RefresherEventDetail,
 } from '@ionic/react';
 import { TextareaChangeEventDetail } from '@ionic/core';
+import {driver} from "driver.js";
+import 'driver.js/dist/driver.css';
 import {
     camera,
     refresh,
@@ -38,7 +40,7 @@ import {
     chatboxEllipses,
     add,
     chevronBack,
-    createOutline, readerOutline,
+    createOutline, readerOutline,informationCircleOutline
 } from 'ionicons/icons';
 import './IA.css';
 import Navegacion from '../../components/Navegation';
@@ -105,6 +107,66 @@ const AIChatPage: React.FC = () => {
         text: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
         sender: "ai",
         timestamp: new Date()
+    };
+
+    // Añade esta función dentro del componente AIChatPage antes del return
+    const startIATutorial = () => {
+        const driverObj = driver({
+            showProgress: true,
+            steps: [
+                {
+                    element: '.chat-sidebar-toggle',
+                    popover: {
+                        title: 'Panel de Chats',
+                        description: 'Accede a todas tus conversaciones guardadas y crea nuevas.',
+                        side: "right"
+                    }
+                },
+                {
+                    element: '.custom-side-content',
+                    popover: {
+                        title: 'Lista de Conversaciones',
+                        description: 'Aquí encontrarás todas tus conversaciones con la IA.',
+                        side: "right"
+                    }
+                },
+                {
+                    element: '.action-button',
+                    popover: {
+                        title: 'Adjuntar Imágenes',
+                        description: 'Aquí puedes subir imágenes para que la IA las analice.',
+                        side: "top"
+                    }
+                },
+                {
+                    element: '.chat-input',
+                    popover: {
+                        title: 'Escribe tu Mensaje',
+                        description: 'Escribe aquí tus preguntas o mensajes para la IA.',
+                        side: "top"
+                    }
+                },
+                {
+                    element: '.send-button',
+                    popover: {
+                        title: 'Enviar Mensaje',
+                        description: 'Presiona este botón para enviar tu mensaje a la IA.',
+                        side: "left"
+                    }
+                },
+                {
+                    element: '.refresh-icon',
+                    popover: {
+                        title: 'Limpiar Conversación',
+                        description: 'Reinicia la conversación actual para comenzar una nueva.',
+                        side: "left"
+                    }
+                }
+            ],
+            allowClose: true,
+            animate: true
+        });
+        driverObj.drive();
     };
 
     const [messages, setMessages] = useState<Message[]>([initialAIMessage]);
@@ -1201,7 +1263,12 @@ const AIChatPage: React.FC = () => {
                             {chatSessions.find(chat => chat.id === activeChatId)?.title || 'Asistente IA'}
                         </IonTitle>
                         <IonButtons slot="end">
-                            <IonButton onClick={handleClearChat}>
+                            {/* Botón del tutorial */}
+                            <IonButton
+                                onClick={startIATutorial}>
+                                <IonIcon icon={informationCircleOutline} />
+                            </IonButton>
+                            <IonButton className="refresh-icon" onClick={handleClearChat}>
                                 <IonIcon icon={refresh} />
                             </IonButton>
                         </IonButtons>
@@ -1350,11 +1417,13 @@ const AIChatPage: React.FC = () => {
                                 className="action-button"
                                 color={productSummaryMode ? "primary" : "medium"}
                             >
-                                <IonIcon icon={readerOutline}/>
+                                <IonIcon className="reader-icon" icon={readerOutline}/>
                                 {productSummaryMode && (
                                     <div className="mode-indicator"></div>
                                 )}
                             </IonButton>
+
+
 
                             <IonButton
                                 className="send-button"

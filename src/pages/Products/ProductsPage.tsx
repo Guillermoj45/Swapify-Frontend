@@ -27,7 +27,7 @@ import {
     arrowForward,
     arrowBack,
     star,
-    informationCircleOutline
+    informationCircleOutline, menuOutline
 } from 'ionicons/icons';
 import './ProductsPage.css';
 import { useHistory, useLocation } from "react-router-dom";
@@ -1051,7 +1051,15 @@ const ProductsPage = () => {
                     <IonToolbar className={`shopify-toolbar ${darkMode ? 'dark-toolbar' : ''}`}>
                         {isDesktop && (
                             <IonButtons slot="start">
-                                <IonMenuButton/>
+                                <IonMenuButton>
+                                    <IonIcon
+                                        icon={menuOutline}
+                                        style={{
+                                            color: darkMode ? 'white' : 'black',
+                                            fontSize: '24px'
+                                        }}
+                                    />
+                                </IonMenuButton>
                             </IonButtons>
                         )}
                         <div className="search-container" ref={searchContainerRef}>
