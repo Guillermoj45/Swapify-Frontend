@@ -38,7 +38,7 @@ import {
     chatboxEllipses,
     add,
     chevronBack,
-    createOutline,
+    createOutline, readerOutline,
 } from 'ionicons/icons';
 import './IA.css';
 import Navegacion from '../../components/Navegation';
@@ -1350,7 +1350,7 @@ const AIChatPage: React.FC = () => {
                                 className="action-button"
                                 color={productSummaryMode ? "primary" : "medium"}
                             >
-                                <IonIcon icon={chatboxEllipses} />
+                                <IonIcon icon={readerOutline}/>
                                 {productSummaryMode && (
                                     <div className="mode-indicator"></div>
                                 )}
