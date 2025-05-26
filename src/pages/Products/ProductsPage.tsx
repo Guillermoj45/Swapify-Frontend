@@ -334,7 +334,6 @@ const ProductsPage = () => {
     const handleToggleFavorite = async (productId: string, productProfileId: string, e: React.MouseEvent) => {
         // Stop event from bubbling to parent elements
         e.stopPropagation();
-
         if (savingFavorite) return; // Prevent multiple clicks while processing
 
         try {
@@ -346,40 +345,76 @@ const ProductsPage = () => {
                 profileId: productProfileId
             };
 
-            if (favorites[productId]) {
-                // If already favorited, remove from favorites
-                ProfileService.deleteProductFromProfile(saveProductDTO)
-                    .then((response)=>{
-                        if (response.success) {
-                            setFavorites(prev => ({
-                                ...prev,
-                                [productId]: false
-                            }));
+            // Update UI immediately for better UX (optimistic update)
+            const isCurrentlyFavorite = favorites[productId];
+            setFavorites(prev => ({
+                ...prev,
+                [productId]: !isCurrentlyFavorite
+            }));
 
-                                showToastMessage('Producto eliminado de favoritos', 'success');
-                        } else {
-                            showToastMessage(response.message || 'Error al eliminar de favoritos', 'danger');
-                        }
-                });
+            let response;
+
+            if (isCurrentlyFavorite) {
+                // If already favorited, remove from favorites
+                response = await ProfileService.deleteProductFromProfile(saveProductDTO);
+
+                if (response.success) {
+                    // Show success message immediately
+                    showToastMessage('Producto eliminado de favoritos', 'success');
+
+                    // Force refresh of saved products cache to ensure consistency
+                    ProfileService.refreshSavedProductsCache();
+
+                    // If we're on profile page, trigger a refresh of saved products
+                    if (window.location.pathname.includes('/profile')) {
+                        window.dispatchEvent(new CustomEvent('favoritesUpdated', {
+                            detail: { action: 'removed', productId }
+                        }));
+                    }
+                } else {
+                    // Revert optimistic update on failure
+                    setFavorites(prev => ({
+                        ...prev,
+                        [productId]: true
+                    }));
+                    showToastMessage(response.message || 'Error al eliminar de favoritos', 'danger');
+                }
             } else {
                 // If not favorite, add to favorites
-                ProfileService.saveProductToProfile(saveProductDTO)
-                    .then((response)=>{
-                        if (response.success) {
-                           setFavorites(prev => ({
-                            ...prev,
-                            [productId]: true
+                response = await ProfileService.saveProductToProfile(saveProductDTO);
+
+                if (response.success) {
+                    // Show success message immediately
+                    showToastMessage('Producto guardado en favoritos', 'success');
+
+                    // Force refresh of saved products cache to ensure consistency
+                    ProfileService.refreshSavedProductsCache();
+
+                    // If we're on profile page, trigger a refresh of saved products
+                    if (window.location.pathname.includes('/profile')) {
+                        window.dispatchEvent(new CustomEvent('favoritesUpdated', {
+                            detail: { action: 'added', productId }
                         }));
-                            showToastMessage('Producto guardado en favoritos', 'success');
-                        } else {
-                            showToastMessage(response.message || 'Error al guardar en favoritos', 'danger');
-                        }
-                });
-
-
+                    }
+                } else {
+                    // Revert optimistic update on failure
+                    setFavorites(prev => ({
+                        ...prev,
+                        [productId]: false
+                    }));
+                    showToastMessage(response.message || 'Error al guardar en favoritos', 'danger');
+                }
             }
+
         } catch (error) {
             console.error('Error managing favorite:', error);
+
+            // Revert optimistic update on error
+            setFavorites(prev => ({
+                ...prev,
+                [productId]: !prev[productId] // Revert to previous state
+            }));
+
             showToastMessage('Error al procesar la solicitud', 'danger');
         } finally {
             setSavingFavorite(false);

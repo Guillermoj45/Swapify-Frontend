@@ -14,7 +14,7 @@ export interface ProfileDTO {
     premium: string;
     newUser: boolean;
     banner: string;
-    ubicacion: string; // Nueva propiedad agregada
+    ubicacion: string;
 }
 
 export interface ProductDTO {
@@ -34,8 +34,93 @@ export interface SaveProductDTO {
     profileId: string;
 }
 
+// Enhanced Cache management with better performance
+class CacheManager {
+    private static cache = new Map<string, { data: any, timestamp: number }>();
+    private static CACHE_DURATION = 3 * 60 * 1000; // Reduced to 3 minutes for fresher data
+
+    // Event emitter for cache updates
+    private static listeners = new Map<string, Set<Function>>();
+
+    static set(key: string, data: any) {
+        this.cache.set(key, { data, timestamp: Date.now() });
+        this.notifyListeners(key, data);
+    }
+
+    static get(key: string) {
+        const cached = this.cache.get(key);
+        if (!cached) return null;
+
+        const isExpired = Date.now() - cached.timestamp > this.CACHE_DURATION;
+        if (isExpired) {
+            this.cache.delete(key);
+            return null;
+        }
+
+        return cached.data;
+    }
+
+    static invalidate(key: string) {
+        this.cache.delete(key);
+        this.notifyListeners(key, null);
+    }
+
+    static invalidatePattern(pattern: string) {
+        for (const key of this.cache.keys()) {
+            if (key.includes(pattern)) {
+                this.cache.delete(key);
+                this.notifyListeners(key, null);
+            }
+        }
+    }
+
+    // Subscribe to cache changes
+    static subscribe(key: string, callback: Function) {
+        if (!this.listeners.has(key)) {
+            this.listeners.set(key, new Set());
+        }
+        this.listeners.get(key)!.add(callback);
+
+        // Return unsubscribe function
+        return () => {
+            const keyListeners = this.listeners.get(key);
+            if (keyListeners) {
+                keyListeners.delete(callback);
+                if (keyListeners.size === 0) {
+                    this.listeners.delete(key);
+                }
+            }
+        };
+    }
+
+    private static notifyListeners(key: string, data: any) {
+        const keyListeners = this.listeners.get(key);
+        if (keyListeners) {
+            keyListeners.forEach(callback => callback(data));
+        }
+    }
+
+    // Force refresh a specific key
+    static forceRefresh(key: string) {
+        this.invalidate(key);
+    }
+
+    // Get cache stats for debugging
+    static getStats() {
+        return {
+            size: this.cache.size,
+            keys: Array.from(this.cache.keys()),
+            listeners: Array.from(this.listeners.keys())
+        };
+    }
+}
+
 export const ProfileService = {
     getProfileInfo: async (): Promise<ProfileDTO> => {
+        const cacheKey = 'profile-info';
+        const cached = CacheManager.get(cacheKey);
+        if (cached) return cached;
+
         try {
             const response = await API.get('/profile/getProfileDto');
             if (response.data && response.data.avatar) {
@@ -44,6 +129,8 @@ export const ProfileService = {
             if (response.data && response.data.banner) {
                 response.data.banner = cloudinaryImage(response.data.banner);
             }
+
+            CacheManager.set(cacheKey, response.data);
             return response.data;
         } catch (error) {
             console.error('Error al obtener información del perfil:', error);
@@ -52,6 +139,10 @@ export const ProfileService = {
     },
 
     getProfileById: async (profileId: string): Promise<ProfileDTO> => {
+        const cacheKey = `profile-${profileId}`;
+        const cached = CacheManager.get(cacheKey);
+        if (cached) return cached;
+
         try {
             const response = await API.get(`/profile/${profileId}`);
             if (response.data && response.data.avatar) {
@@ -60,6 +151,8 @@ export const ProfileService = {
             if (response.data && response.data.banner) {
                 response.data.banner = cloudinaryImage(response.data.banner);
             }
+
+            CacheManager.set(cacheKey, response.data);
             return response.data;
         } catch (error) {
             console.error('Error al obtener información del perfil por ID:', error);
@@ -68,6 +161,10 @@ export const ProfileService = {
     },
 
     getUserProducts: async (): Promise<ProductDTO[]> => {
+        const cacheKey = 'user-products';
+        const cached = CacheManager.get(cacheKey);
+        if (cached) return cached;
+
         try {
             const response = await API.get('/profile/myProducts');
             if (response.data && Array.isArray(response.data)) {
@@ -77,6 +174,8 @@ export const ProfileService = {
                     }
                 });
             }
+
+            CacheManager.set(cacheKey, response.data);
             return response.data;
         } catch (error) {
             console.error('Error al obtener los productos del usuario:', error);
@@ -87,6 +186,17 @@ export const ProfileService = {
     saveProductToProfile: async (saveProductDTO: SaveProductDTO): Promise<{ success: boolean, message: string }> => {
         try {
             const response = await API.post('/profile/saveProduct', saveProductDTO);
+
+            // Immediately invalidate and refresh saved products cache
+            if (response.data.success) {
+                CacheManager.forceRefresh('saved-products');
+
+                // Trigger a background refresh to get updated data
+                setTimeout(() => {
+                    ProfileService.getSavedProducts(true);
+                }, 100);
+            }
+
             return {
                 success: response.data.success,
                 message: response.data.message
@@ -102,6 +212,17 @@ export const ProfileService = {
             const response = await API.delete('/profile/deleteProduct', {
                 data: saveProductDTO
             });
+
+            // Immediately invalidate and refresh saved products cache
+            if (response.data.success) {
+                CacheManager.forceRefresh('saved-products');
+
+                // Trigger a background refresh to get updated data
+                setTimeout(() => {
+                    ProfileService.getSavedProducts(true);
+                }, 100);
+            }
+
             return {
                 success: response.data.success,
                 message: response.data.message
@@ -112,7 +233,14 @@ export const ProfileService = {
         }
     },
 
-    getSavedProducts: async (): Promise<ProductDTO[]> => {
+    getSavedProducts: async (forceRefresh: boolean = false): Promise<ProductDTO[]> => {
+        const cacheKey = 'saved-products';
+
+        if (!forceRefresh) {
+            const cached = CacheManager.get(cacheKey);
+            if (cached) return cached;
+        }
+
         try {
             const response = await API.get('/profile/savedProducts');
             if (response.data && Array.isArray(response.data)) {
@@ -122,6 +250,8 @@ export const ProfileService = {
                     }
                 });
             }
+
+            CacheManager.set(cacheKey, response.data);
             return response.data;
         } catch (error) {
             console.error('Error al obtener los productos guardados:', error);
@@ -141,6 +271,11 @@ export const ProfileService = {
                 }
             });
 
+            // Invalidate profile cache when banner is updated
+            if (response.data.success) {
+                CacheManager.invalidatePattern('profile');
+            }
+
             return {
                 success: response.data.success,
                 imageUrl: imageFile ? URL.createObjectURL(imageFile) : ''
@@ -152,8 +287,13 @@ export const ProfileService = {
     },
 
     isPremium: async (): Promise<boolean> => {
+        const cacheKey = 'is-premium';
+        const cached = CacheManager.get(cacheKey);
+        if (cached !== null) return cached;
+
         try {
             const response = await API.get('/profile/isPremium');
+            CacheManager.set(cacheKey, response.data);
             return response.data;
         } catch (error) {
             console.error('Error al verificar el estado premium:', error);
@@ -162,6 +302,10 @@ export const ProfileService = {
     },
 
     getProfileByIdAlternative: async (profileId: string): Promise<ProfileDTO> => {
+        const cacheKey = `profile-alt-${profileId}`;
+        const cached = CacheManager.get(cacheKey);
+        if (cached) return cached;
+
         try {
             const params = new URLSearchParams({ profileId });
             const response = await API.get(`/profile?${profileId}`, { params });
@@ -171,6 +315,8 @@ export const ProfileService = {
             if (response.data && response.data.banner) {
                 response.data.banner = cloudinaryImage(response.data.banner);
             }
+
+            CacheManager.set(cacheKey, response.data);
             return response.data;
         } catch (error) {
             console.error('Error al obtener información del perfil por ID:', error);
@@ -179,12 +325,18 @@ export const ProfileService = {
     },
 
     getTutorialHecho: async (): Promise<boolean> => {
+        const cacheKey = 'tutorial-done';
+        const cached = CacheManager.get(cacheKey);
+        if (cached !== null) return cached;
+
         try {
             const response = await API.get('/profile/tutorial', {
                 headers: {
                     'Authorization': `${sessionStorage.getItem('token')}`
                 }
             });
+
+            CacheManager.set(cacheKey, response.data);
             return response.data;
         } catch (error) {
             console.error('Error al verificar si el tutorial fue hecho:', error);
@@ -199,12 +351,50 @@ export const ProfileService = {
                     'Authorization': `${sessionStorage.getItem('token')}`
                 }
             });
+
+            // Update cache
+            CacheManager.set('tutorial-done', true);
             return true;
         } catch (error) {
             console.error('Error al establecer que el tutorial fue hecho:', error);
             return false;
         }
     },
+
+    // Enhanced cache management methods
+    refreshCache: () => {
+        CacheManager.invalidatePattern('');
+    },
+
+    refreshSavedProductsCache: () => {
+        CacheManager.forceRefresh('saved-products');
+    },
+
+    // Subscribe to saved products changes
+    subscribeSavedProducts: (callback: Function) => {
+        return CacheManager.subscribe('saved-products', callback);
+    },
+
+    // Get fresh saved products count
+    getSavedProductsCount: async (): Promise<number> => {
+        try {
+            const products = await ProfileService.getSavedProducts(true);
+            return products.length;
+        } catch (error) {
+            console.error('Error getting saved products count:', error);
+            return 0;
+        }
+    },
+
+    // Preload saved products in background
+    preloadSavedProducts: () => {
+        ProfileService.getSavedProducts(true).catch(console.error);
+    },
+
+    // Debug methods
+    getCacheStats: () => {
+        return CacheManager.getStats();
+    }
 };
 
 export default ProfileService;
