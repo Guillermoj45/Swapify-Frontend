@@ -21,7 +21,7 @@ import {
     personCircle,
     logOut,
     settings,
-    shieldCheckmark,
+    shieldCheckmark, notificationsCircleOutline,
 
 } from 'ionicons/icons';
 import './Navegation.css';
@@ -50,6 +50,8 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
             document.body.classList.remove('light-mode', 'dark-mode');
         };
     }, [darkMode]);
+
+
 
     // Función para manejar la navegación con un enfoque más directo
     const navigateTo = (path: string) => {
@@ -127,6 +129,17 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 >
                                     <IonIcon slot="start" icon={mailOutline} />
                                     <IonLabel>Chats</IonLabel>
+                                </IonItem>
+                            </IonMenuToggle>
+                            <IonMenuToggle autoHide={false}>
+                                <IonItem
+                                    className={`menu-item chat ${isActive('/notification') ? 'active' : ''}`}
+                                    button
+                                    onClick={() => (window.location.href = '/notification')}
+                                    detail={false}
+                                >
+                                    <IonIcon slot="start" icon={notificationsCircleOutline} />
+                                    <IonLabel>Notificaciones</IonLabel>
                                 </IonItem>
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>

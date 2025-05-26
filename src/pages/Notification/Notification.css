@@ -1,195 +1,384 @@
-/* Variables globales por defecto */
-:root {
-    --background: #ffffff;
-    --text-color: #333333;
-    --item-background: #f8f8f8;
-    --item-hover: #f0f0f0;
-    --border-color: #e0e0e0;
-    --accent-color: #3880ff;
-    --secondary-text: #666666;
-    --unread-indicator: #3880ff;
-    --icon-background: rgba(56, 128, 255, 0.1);
-    --header-background: #ffffff;
-    --toolbar-border: #e0e0e0;
+/* Notification.css - Estilos para notificaciones con soporte de tema */
+
+/* Variables base para transiciones */
+.notifications-page {
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Tema claro */
-body.light-theme {
-    --background: #ffffff !important;
-    --text-color: #333333 !important;
-    --item-background: #f8f8f8 !important;
-    --item-hover: #f0f0f0 !important;
-    --border-color: #e0e0e0 !important;
-    --accent-color: #3880ff !important;
-    --secondary-text: #666666 !important;
-    --unread-indicator: #3880ff !important;
-    --icon-background: rgba(56, 128, 255, 0.1) !important;
-    --header-background: #ffffff !important;
-    --toolbar-border: #e0e0e0 !important;
-
-    /* Variables específicas de Ionic */
-    --ion-background-color: var(--background) !important;
-    --ion-text-color: var(--text-color) !important;
-    --ion-toolbar-background: var(--header-background) !important;
-    --ion-item-background: var(--item-background) !important;
+/* ========================================
+   MODO OSCURO - NOTIFICACIONES
+   ======================================== */
+.notifications-page.dark-mode {
+    /* Variables del modo oscuro */
+    --background-primary: #000000;
+    --background-secondary: #0a0a0a;
+    --background-tertiary: #141414;
+    --surface-elevated: #1a1a1a;
+    --text-primary: #ffffff;
+    --text-secondary: #b3b3b3;
+    --text-tertiary: #8a8a8a;
+    --accent-primary: #3b82f6;
+    --accent-secondary: #2563eb;
+    --border-primary: #2a2a2a;
+    --border-secondary: #333333;
+    --shadow-primary: rgba(0, 0, 0, 0.5);
+    --shadow-secondary: rgba(0, 0, 0, 0.3);
+    --error-color: #ef4444;
+    --success-color: #10b981;
 }
 
-/* Tema oscuro */
-body.dark-theme {
-    --background: #0d1b2a !important;
-    --text-color: #dbe9f4 !important;
-    --item-background: #1b263b !important;
-    --item-hover: #253b56 !important;
-    --border-color: #2c3e50 !important;
-    --accent-color: #4d9fff !important;
-    --secondary-text: #a0b4c7 !important;
-    --unread-indicator: #4d9fff !important;
-    --icon-background: rgba(77, 159, 255, 0.15) !important;
-    --header-background: #0d1b2a !important;
-    --toolbar-border: #1b263b !important;
-
-    /* Variables específicas de Ionic */
-    --ion-background-color: var(--background) !important;
-    --ion-text-color: var(--text-color) !important;
-    --ion-toolbar-background: var(--header-background) !important;
-    --ion-item-background: var(--item-background) !important;
+/* Header - Modo oscuro */
+.dark-mode .header-toolbar {
+    --background: linear-gradient(135deg, var(--background-primary), var(--background-secondary));
+    --color: var(--text-primary);
+    border-bottom: 1px solid var(--border-primary);
+    box-shadow: 0 2px 10px var(--shadow-secondary);
 }
 
-/* Estilos generales */
-.notifications-content {
-    background-color: var(--background);
-    color: var(--text-color);
-    --background: var(--background);
-}
-
-/* Estilos del encabezado */
-.header-toolbar {
-    --background: var(--header-background);
-    --color: var(--text-color);
-    border-bottom: 1px solid var(--toolbar-border);
-}
-
-.notifications-title {
+.dark-mode .notifications-title {
+    color: var(--text-primary);
     font-weight: 600;
-    color: var(--text-color);
+    font-size: 20px;
 }
 
-/* Lista de notificaciones */
-.notification-list {
-    padding: 8px;
-    background-color: var(--background);
+/* Content - Modo oscuro */
+.dark-mode .notifications-content {
+    --background: var(--background-secondary);
+    --color: var(--text-primary);
 }
 
-ion-list {
-    background-color: var(--background);
+/* Lista de notificaciones - Modo oscuro */
+.dark-mode .notification-list {
+    --background: transparent;
+    padding: 16px;
 }
 
-ion-item {
-    --background: var(--item-background);
-    --color: var(--text-color);
-    --border-color: transparent;
-    margin: 8px 0;
-    border-radius: 12px;
-    --padding-start: 16px;
-    --padding-end: 16px;
+.dark-mode .notification-list ion-item {
+    --background: var(--surface-elevated);
+    --color: var(--text-primary);
+    --border-color: var(--border-primary);
+    --padding-start: 20px;
+    --padding-end: 20px;
+    --inner-padding-end: 20px;
+    --min-height: 80px;
+    margin-bottom: 12px;
+    border-radius: 16px;
+    border: 1px solid var(--border-primary);
+    box-shadow: 0 2px 8px var(--shadow-secondary);
+    transition: all 0.2s ease;
 }
 
-ion-item::part(native) {
-    background: var(--item-background);
+.dark-mode .notification-list ion-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px var(--shadow-primary);
+    border-color: var(--accent-primary);
 }
 
-/* Estilos del contenido de la notificación */
-ion-label h2 {
-    color: var(--text-color);
+.dark-mode .notification-list ion-label h2 {
+    color: var(--text-primary);
+    font-weight: 600;
     font-size: 16px;
-    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.dark-mode .notification-list ion-label p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.4;
     margin-bottom: 4px;
 }
 
-ion-label p {
-    color: var(--secondary-text);
+.dark-mode .notification-time {
+    color: var(--text-tertiary) !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+}
+
+/* Icono de eliminar - Modo oscuro */
+.dark-mode .delete-icon-circle {
+    color: var(--error-color);
+    font-size: 20px;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.dark-mode .delete-icon-circle:hover {
+    background: rgba(239, 68, 68, 0.15);
+    transform: scale(1.1);
+}
+
+/* Botón eliminar todo - Modo oscuro */
+.dark-mode .delete-all-fab {
+    --background: var(--error-color);
+    --background-hover: #dc2626;
+    --color: #ffffff;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.dark-mode .delete-all-fab:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+/* ========================================
+   MODO CLARO - NOTIFICACIONES
+   ======================================== */
+.notifications-page.light-mode {
+    /* Variables del modo claro */
+    --background-primary: #ffffff;
+    --background-secondary: #f8fafc;
+    --background-tertiary: #f1f5f9;
+    --surface-elevated: #ffffff;
+    --text-primary: #000000;
+    --text-secondary: #1a1a1a;
+    --text-tertiary: #333333;
+    --accent-primary: #3b82f6;
+    --accent-secondary: #2563eb;
+    --border-primary: #e2e8f0;
+    --border-secondary: #cbd5e1;
+    --shadow-primary: rgba(0, 0, 0, 0.1);
+    --shadow-secondary: rgba(0, 0, 0, 0.05);
+    --error-color: #dc2626;
+    --success-color: #059669;
+}
+
+/* Header - Modo claro */
+.light-mode .header-toolbar {
+    --background: linear-gradient(135deg, var(--background-primary), var(--background-secondary));
+    --color: var(--text-primary);
+    border-bottom: 1px solid var(--border-primary);
+    box-shadow: 0 2px 15px var(--shadow-secondary);
+}
+
+.light-mode .notifications-title {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 20px;
+}
+
+/* Content - Modo claro */
+.light-mode .notifications-content {
+    --background: var(--background-secondary);
+    --color: var(--text-primary);
+}
+
+/* Lista de notificaciones - Modo claro */
+.light-mode .notification-list {
+    --background: transparent;
+    padding: 16px;
+}
+
+.light-mode .notification-list ion-item {
+    --background: var(--surface-elevated);
+    --color: var(--text-primary);
+    --border-color: var(--border-primary);
+    --padding-start: 20px;
+    --padding-end: 20px;
+    --inner-padding-end: 20px;
+    --min-height: 80px;
+    margin-bottom: 12px;
+    border-radius: 16px;
+    border: 1px solid var(--border-primary);
+    box-shadow: 0 2px 8px var(--shadow-secondary);
+    transition: all 0.2s ease;
+}
+
+.light-mode .notification-list ion-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px var(--shadow-primary);
+    border-color: var(--accent-primary);
+}
+
+.light-mode .notification-list ion-label h2 {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.light-mode .notification-list ion-label p {
+    color: var(--text-secondary);
     font-size: 14px;
+    line-height: 1.4;
+    margin-bottom: 4px;
 }
 
-.notification-time {
-    font-size: 12px;
-    margin-top: 4px;
+.light-mode .notification-time {
+    color: var(--text-tertiary) !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
 }
 
-/* Sobreescribir estilos de Ionic */
-ion-content::part(background),
-ion-content::part(scroll) {
-    background: var(--background);
+/* Icono de eliminar - Modo claro */
+.light-mode .delete-icon-circle {
+    color: var(--error-color);
+    font-size: 20px;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
-ion-toolbar {
-    --background: var(--header-background);
-    --color: var(--text-color);
+.light-mode .delete-icon-circle:hover {
+    background: rgba(220, 38, 38, 0.08);
+    transform: scale(1.1);
 }
 
-/* Media queries */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --ion-color-step-50: #0d1b2a;
-        --ion-color-step-100: #1b263b;
-        --ion-color-step-150: #253b56;
-        --ion-color-step-200: #2c3e50;
+/* Botón eliminar todo - Modo claro */
+.light-mode .delete-all-fab {
+    --background: var(--error-color);
+    --background-hover: #b91c1c;
+    --color: #ffffff;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.25);
+    backdrop-filter: blur(10px);
+}
+
+.light-mode .delete-all-fab:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.3);
+}
+
+/* ========================================
+   ESTILOS GLOBALES PARA TEMAS
+   ======================================== */
+
+/* Aplicar tema al body cuando no hay clase específica en la página */
+body.dark-theme {
+    --ion-background-color: #000000;
+    --ion-background-color-rgb: 0, 0, 0;
+    --ion-text-color: #ffffff;
+    --ion-text-color-rgb: 255, 255, 255;
+    --ion-color-step-50: #0a0a0a;
+    --ion-color-step-100: #141414;
+    --ion-color-step-150: #1a1a1a;
+    --ion-color-step-200: #2a2a2a;
+    --ion-color-step-250: #333333;
+    --ion-color-step-300: #404040;
+    --ion-color-step-350: #4d4d4d;
+    --ion-color-step-400: #5a5a5a;
+    --ion-color-step-450: #666666;
+    --ion-color-step-500: #737373;
+    --ion-color-step-550: #808080;
+    --ion-color-step-600: #8c8c8c;
+    --ion-color-step-650: #999999;
+    --ion-color-step-700: #a6a6a6;
+    --ion-color-step-750: #b3b3b3;
+    --ion-color-step-800: #bfbfbf;
+    --ion-color-step-850: #cccccc;
+    --ion-color-step-900: #d9d9d9;
+    --ion-color-step-950: #e6e6e6;
+}
+
+body.light-theme {
+    --ion-background-color: #ffffff;
+    --ion-background-color-rgb: 255, 255, 255;
+    --ion-text-color: #000000;
+    --ion-text-color-rgb: 0, 0, 0;
+    --ion-color-step-50: #f2f2f2;
+    --ion-color-step-100: #e6e6e6;
+    --ion-color-step-150: #d9d9d9;
+    --ion-color-step-200: #cccccc;
+    --ion-color-step-250: #bfbfbf;
+    --ion-color-step-300: #b3b3b3;
+    --ion-color-step-350: #a6a6a6;
+    --ion-color-step-400: #999999;
+    --ion-color-step-450: #8c8c8c;
+    --ion-color-step-500: #808080;
+    --ion-color-step-550: #737373;
+    --ion-color-step-600: #666666;
+    --ion-color-step-650: #5a5a5a;
+    --ion-color-step-700: #4d4d4d;
+    --ion-color-step-750: #404040;
+    --ion-color-step-800: #333333;
+    --ion-color-step-850: #262626;
+    --ion-color-step-900: #1a1a1a;
+    --ion-color-step-950: #0d0d0d;
+}
+
+/* ========================================
+   ANIMACIONES Y TRANSICIONES
+   ======================================== */
+
+/* Animación de entrada para notificaciones */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-/* Ajustes responsive */
+.notification-list ion-item {
+    animation: slideInUp 0.3s ease forwards;
+}
+
+.notification-list ion-item:nth-child(1) { animation-delay: 0.1s; }
+.notification-list ion-item:nth-child(2) { animation-delay: 0.15s; }
+.notification-list ion-item:nth-child(3) { animation-delay: 0.2s; }
+.notification-list ion-item:nth-child(4) { animation-delay: 0.25s; }
+.notification-list ion-item:nth-child(5) { animation-delay: 0.3s; }
+
+/* Animación del FAB */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.delete-all-fab {
+    animation: fadeInScale 0.4s ease forwards;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
 @media (max-width: 768px) {
-    ion-item {
-        --padding-start: 12px;
-        --padding-end: 12px;
+    .notification-list {
+        padding: 12px;
     }
 
-    ion-label h2 {
-        font-size: 15px;
+    .notification-list ion-item {
+        --min-height: 70px;
+        margin-bottom: 10px;
+        border-radius: 12px;
     }
 
-    ion-label p {
-        font-size: 13px;
+    .notifications-title {
+        font-size: 18px !important;
+    }
+
+    .delete-all-fab {
+        bottom: 15px !important;
+        right: 15px !important;
+        --padding-start: 16px !important;
+        --padding-end: 16px !important;
     }
 }
 
 @media (max-width: 480px) {
-    ion-item {
-        --padding-start: 8px;
-        --padding-end: 8px;
+    .notification-list {
+        padding: 8px;
     }
 
-    ion-label h2 {
+    .notification-list ion-item {
+        --padding-start: 16px;
+        --padding-end: 16px;
+        --inner-padding-end: 16px;
+    }
+
+    .delete-all-fab {
         font-size: 14px;
     }
-
-    ion-label p {
-        font-size: 12px;
-    }
-}
-.delete-icon-circle {
-    background: var(--accent-color);
-    padding: 8px;
-    border-radius: 50%;
-    color: white;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.delete-icon-circle:hover {
-    opacity: 0.8;
-    cursor: pointer;
-}
-
-/* Agrega estos estilos en tu archivo Notification.css */
-.delete-all-fab {
-    z-index: 1000;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.delete-all-fab:hover {
-    opacity: 0.9;
 }

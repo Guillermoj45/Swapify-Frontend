@@ -22,8 +22,25 @@ const Notifications: React.FC = () => {
 
     // Función para aplicar el tema
     const applyTheme = (isDark: boolean) => {
+        // Remover todas las clases de tema existentes
         document.body.classList.remove("dark-theme", "light-theme");
+
+        // Aplicar la clase correspondiente al body
         document.body.classList.add(isDark ? "dark-theme" : "light-theme");
+
+        // También aplicar al contenedor de navegación si existe
+        const navegacionContainer = document.querySelector('.navegacion-container');
+        if (navegacionContainer) {
+            navegacionContainer.classList.remove('dark-mode', 'light-mode');
+            navegacionContainer.classList.add(isDark ? 'dark-mode' : 'light-mode');
+        }
+
+        // Aplicar al contenedor de la página actual
+        const pageContainer = document.querySelector('.notifications-page');
+        if (pageContainer) {
+            pageContainer.classList.remove('dark-mode', 'light-mode');
+            pageContainer.classList.add(isDark ? 'dark-mode' : 'light-mode');
+        }
     };
 
     // Efecto para cargar la preferencia del tema
@@ -34,6 +51,11 @@ const Notifications: React.FC = () => {
                 const isDarkMode = storedTheme === "true";
                 setDarkMode(isDarkMode);
                 applyTheme(isDarkMode);
+            } else {
+                // Si no hay preferencia guardada, usar modo claro por defecto
+                setDarkMode(false);
+                applyTheme(false);
+                sessionStorage.setItem("modoOscuroClaro", "false");
             }
         };
 
@@ -57,8 +79,22 @@ const Notifications: React.FC = () => {
 
     // Hook para aplicar tema cuando la vista se activa
     useIonViewDidEnter(() => {
-        applyTheme(darkMode);
+        // Volver a verificar la preferencia del sessionStorage al entrar a la vista
+        const storedTheme = sessionStorage.getItem("modoOscuroClaro");
+        if (storedTheme !== null) {
+            const isDarkMode = storedTheme === "true";
+            setDarkMode(isDarkMode);
+            applyTheme(isDarkMode);
+        }
     });
+
+    // Función para cambiar el tema manualmente (opcional)
+    const toggleTheme = () => {
+        const newDarkMode = !darkMode;
+        setDarkMode(newDarkMode);
+        applyTheme(newDarkMode);
+        sessionStorage.setItem("modoOscuroClaro", newDarkMode.toString());
+    };
 
     const deleteNotification = async (notification: MensajeRecibeDTO) => {
         try {
@@ -91,17 +127,29 @@ const Notifications: React.FC = () => {
     };
 
     return (
-        <IonPage>
+        <IonPage className={`notifications-page ${darkMode ? 'dark-mode' : 'light-mode'}`}>
             <IonHeader>
                 <IonToolbar className="header-toolbar">
                     <IonButtons slot="start">
                         <IonMenuButton>
-                            <IonIcon icon={menuOutline} style={{ color: 'white', fontSize: '24px' }} />
+                            <IonIcon
+                                icon={menuOutline}
+                                style={{
+                                    color: darkMode ? 'white' : 'black',
+                                    fontSize: '24px'
+                                }}
+                            />
                         </IonMenuButton>
                     </IonButtons>
                     <IonTitle className="notifications-title">
                         Notificaciones ({notifications.length})
                     </IonTitle>
+                    {/* Botón opcional para cambiar tema manualmente */}
+                    {/* <IonButtons slot="end">
+                        <IonButton onClick={toggleTheme}>
+                            <IonIcon icon={darkMode ? sunnyOutline : moonOutline} />
+                        </IonButton>
+                    </IonButtons> */}
                 </IonToolbar>
             </IonHeader>
             <IonContent className="notifications-content">

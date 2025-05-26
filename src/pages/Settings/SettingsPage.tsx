@@ -549,10 +549,16 @@ const Settings: React.FC = () => {
 
             <IonPage id="main-content" className={profile.preferencias?.modo_oscuro ? 'dark-theme' : 'light-theme'}>
                 <IonHeader className="ion-no-border">
-                    <IonToolbar color="primary" className="main-toolbar">
+                    <IonToolbar className="main-toolbar" style={{ '--background': '4a80e4' }}>
                         <IonButtons slot="start">
                             <IonMenuButton>
-                                <IonIcon icon={menuOutline} style={{ color: 'white', fontSize: '24px' }} />
+                                <IonIcon
+                                    icon={menuOutline}
+                                    style={{
+                                        color: profile.preferencias?.modo_oscuro ? 'white' : 'black',
+                                        fontSize: '24px'
+                                    }}
+                                />
                             </IonMenuButton>
                         </IonButtons>
                         <IonTitle className="toolbar-title">
