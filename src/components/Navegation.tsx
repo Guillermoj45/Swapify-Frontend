@@ -13,7 +13,6 @@ import {
     IonFooter,
     IonTabBar,
     IonTabButton,
-    IonButton,
 } from '@ionic/react';
 import {
     homeOutline,
@@ -23,8 +22,7 @@ import {
     logOut,
     settings,
     shieldCheckmark,
-    moon,
-    sunny,
+
 } from 'ionicons/icons';
 import './Navegation.css';
 
@@ -52,11 +50,6 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
             document.body.classList.remove('light-mode', 'dark-mode');
         };
     }, [darkMode]);
-
-    // Función para alternar entre modo oscuro y claro
-    const toggleTheme = () => {
-        setDarkMode(!darkMode);
-    };
 
     // Función para manejar la navegación con un enfoque más directo
     const navigateTo = (path: string) => {
