@@ -428,19 +428,6 @@ const ProductsPage = () => {
         setShowToast(true);
     };
 
-    // Function to get the Cloudinary URL for an image
-    const getImageUrl = (imagePath: string | null): string | null => {
-        if (!imagePath) return null;
-
-        try {
-            // Replace with your Cloudinary configuration
-            return imagePath;
-        } catch (error) {
-            console.error("Error generating image URL:", error);
-            return null;
-        }
-    };
-
     // Load user profile and saved products
     // Modifica el primer useEffect donde se carga el perfil
     useEffect(() => {
@@ -972,7 +959,7 @@ const ProductsPage = () => {
                     <div className="product-image">
                         {product.imagenes && product.imagenes.length > 0 ? (
                             <img
-                                src={getImageUrl(product.imagenes[currentImageIndex]) || ''}
+                                src={product.imagenes[currentImageIndex] || ''}
                                 alt={product.name}
                                 className="product-img"
                                 onError={(e) => {

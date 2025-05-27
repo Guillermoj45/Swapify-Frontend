@@ -49,6 +49,7 @@ import { ConversationService, ConversationDTO } from '../../Services/IAService';
 import useAuthRedirect from "../../Services/useAuthRedirect";
 import { Settings as SettingsService } from '../../Services/SettingsService';
 import {ProductService} from "../../Services/ProductService";
+import cloudinaryImage from "../../Services/CloudinaryService";
 
 interface Message {
     id: number | string;
@@ -215,10 +216,10 @@ const AIChatPage: React.FC = () => {
 
     const [showProductSidebar, setShowProductSidebar] = useState<boolean>(false);
     const [productInfo, setProductInfo] = useState({
-        name: "Auriculares Premium XM4",
+        name: "",
         image: "",
         price: 0,
-        description: "Auriculares inalámbricos con cancelación de ruido activa, hasta 30 horas de batería y sonido de alta resolución. Perfectos para trabajo y ocio.",
+        description: "",
     });
 
     const [productSummaryMode, setProductSummaryMode] = useState<boolean>(false);
@@ -228,16 +229,6 @@ const AIChatPage: React.FC = () => {
         console.log('🚀 Componente montado, iniciando carga de conversaciones...');
         loadConversationsFromBackend();
     }, []);
-
-    useEffect(() => {
-        console.log('📊 Estado actual:', {
-            chatSessions: chatSessions.length,
-            activeChatId,
-            messages: messages.length,
-            isLoadingConversations,
-            loadingError
-        });
-    }, [chatSessions, activeChatId, messages, isLoadingConversations, loadingError]);
 
     const loadConversationMessages = async (conversationId: string) => {
         try {
@@ -364,8 +355,6 @@ const AIChatPage: React.FC = () => {
                     };
 
                     // ✅ CARGAR LOS MENSAJES COMPLETOS DE LA CONVERSACIÓN
-                    // En lugar de usar conversation.messages (que no existe en ConversIADTO),
-                    // cargamos los mensajes usando el endpoint de detalle
                     try {
                         console.log('💬 Cargando mensajes completos para conversación:', conversation.id);
                         const conversationDetail = await ConversationService.getConversationDetail(conversation.id);
@@ -374,7 +363,7 @@ const AIChatPage: React.FC = () => {
                             const processedMessages = conversationDetail.messages.map((msg: any) => ({
                                 id: msg.id || Date.now(),
                                 text: msg.message || msg.text || '',
-                                sender: msg.user ? 'user' : 'ai', // ✅ CORREGIDO: usar msg.user del backend MessageIADTO
+                                sender: msg.user ? 'user' : 'ai',
                                 timestamp: msg.createdAt ? new Date(msg.createdAt) : new Date(),
                                 images: msg.images || undefined
                             }));
@@ -753,7 +742,7 @@ const AIChatPage: React.FC = () => {
                 if (response && response.product) {
                     setProductInfo({
                         name: response.product.name || 'Producto detectado',
-                        image: response.product.points?.toString() || "0",
+                        image: response.product.imagenes[0],
                         price: response.product.points || productInfo.price,
                         description: response.product.description || 'IA ha detectado un posible producto basado en tu imagen.'
                     });
@@ -1374,7 +1363,7 @@ const AIChatPage: React.FC = () => {
 
             <div className="product-info-container">
                 <div className="product-image-container">
-                    <img src={productInfo.image || "/api/placeholder/400/220"} alt={productInfo.name} className="product-image" />
+                    <img src={cloudinaryImage(productInfo.image)} alt={productInfo.name} className="product-image" />
                 </div>
 
                 <div className="product-name">
