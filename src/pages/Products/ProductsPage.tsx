@@ -27,7 +27,10 @@ import {
     arrowForward,
     arrowBack,
     star,
-    informationCircleOutline, menuOutline
+    informationCircleOutline,
+    menuOutline,
+    funnelOutline,
+    closeOutline
 } from 'ionicons/icons';
 import './ProductsPage.css';
 import { useHistory, useLocation } from "react-router-dom";
@@ -72,6 +75,12 @@ interface ImageIndexes {
 // Define type for favorites
 interface Favorites {
     [key: string]: boolean;
+}
+
+interface FilterOptions {
+    sortBy: 'points_asc' | 'points_desc' | 'date_desc' | 'none';
+    minPoints: number;
+    maxPoints: number;
 }
 
 const ProductsPage = () => {
@@ -247,9 +256,6 @@ const ProductsPage = () => {
         menuTour.drive();
     };
 
-
-
-
     const history = useHistory();
     const location = useLocation<CustomLocationState>();
 
@@ -280,6 +286,18 @@ const ProductsPage = () => {
     const [savingFavorite, setSavingFavorite] = useState<boolean>(false);
     const [profileId, setProfileId] = useState<string>('');
     const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
+
+    const [showFilterPopover, setShowFilterPopover] = useState(false);
+    const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+        sortBy: 'none',
+        minPoints: 0,
+        maxPoints: 1000
+    });
+    const [tempFilterOptions, setTempFilterOptions] = useState<FilterOptions>({
+        sortBy: 'none',
+        minPoints: 0,
+        maxPoints: 1000
+    });
 
     // State to store available categories
     const [availableCategories, setAvailableCategories] = useState<string[]>([]);
@@ -328,6 +346,110 @@ const ProductsPage = () => {
         // Pause slider temporarily when user interacts with product images
         pauseSlider();
         setTimeout(resumeSlider, 5000);
+    };
+
+    // Función para aplicar filtros a los productos
+    const applyFiltersToProducts = (products: Product[]): Product[] => {
+        let filtered = [...products];
+
+        // Filtrar por rango de puntos
+        if (filterOptions.minPoints > 0 || filterOptions.maxPoints < 1000) {
+            filtered = filtered.filter(product => {
+                const points = product.points || 0; // Manejar casos donde points pueda ser undefined
+                return points >= filterOptions.minPoints && points <= filterOptions.maxPoints;
+            });
+        }
+
+        // Ordenar productos
+        switch (filterOptions.sortBy) {
+            case 'points_asc':
+                filtered.sort((a, b) => (a.points || 0) - (b.points || 0));
+                break;
+            case 'points_desc':
+                filtered.sort((a, b) => (b.points || 0) - (a.points || 0));
+                break;
+            case 'date_desc':
+                filtered.sort((a, b) => {
+                    const dateA = new Date(a.createdAt).getTime();
+                    const dateB = new Date(b.createdAt).getTime();
+                    return dateB - dateA; // Más recientes primero
+                });
+                break;
+            default:
+                // No aplicar ordenamiento para 'none'
+                break;
+        }
+
+        return filtered;
+    };
+
+    // Función para aplicar filtros
+    const handleApplyFilters = () => {
+        setFilterOptions(tempFilterOptions);
+        setShowFilterPopover(false);
+
+        // Aplicar filtros inmediatamente después de actualizar las opciones
+        let productsToFilter: Product[] = [];
+
+        if (searchText) {
+            // Si hay texto de búsqueda, filtrar desde todos los productos
+            productsToFilter = allProducts.filter(product =>
+                product.name.toLowerCase().includes(searchText.toLowerCase())
+            );
+        } else if (selectedCategories.length > 0) {
+            // Si hay categorías seleccionadas, obtener productos de esas categorías
+            productsToFilter = getCategoryProducts();
+        } else {
+            // Si no hay filtros de categoría ni búsqueda, usar todos los productos
+            productsToFilter = allProducts;
+        }
+
+        // Aplicar los filtros de ordenamiento y puntos
+        const filtered = applyFiltersToProducts(productsToFilter);
+        setFilteredProducts(filtered);
+        setIsSearching(true); // Activar modo de búsqueda para mostrar los resultados filtrados
+    };
+
+    // Función para limpiar filtros
+    const handleClearFilters = () => {
+        const defaultFilters: FilterOptions = {
+            sortBy: 'none',
+            minPoints: 0,
+            maxPoints: 1000
+        };
+        setTempFilterOptions(defaultFilters);
+        setFilterOptions(defaultFilters);
+        setShowFilterPopover(false);
+
+        // Recargar productos sin filtros adicionales
+        if (searchText) {
+            // Si hay búsqueda activa, recargar resultados de búsqueda sin filtros
+            const searchResults = allProducts.filter(product =>
+                product.name.toLowerCase().includes(searchText.toLowerCase())
+            );
+            setFilteredProducts(searchResults);
+        } else if (selectedCategories.length > 0) {
+            // Si hay categorías seleccionadas, recargar esas categorías sin filtros adicionales
+            const categoryProducts = getCategoryProducts();
+            setFilteredProducts(categoryProducts);
+        } else {
+            // Si no hay filtros activos, salir del modo de búsqueda
+            setFilteredProducts([]);
+            setIsSearching(false);
+        }
+    };
+
+    // Función auxiliar para obtener productos de categorías seleccionadas
+    const getCategoryProducts = (): Product[] => {
+        let filtered: Product[] = [];
+        if (recommendedData && recommendedData.titles && recommendedData.products) {
+            recommendedData.titles.forEach((title, index) => {
+                if (selectedCategories.includes(title) && recommendedData.products[index]) {
+                    filtered = [...filtered, ...recommendedData.products[index]];
+                }
+            });
+        }
+        return filtered;
     };
 
     // Function to handle favorite/save product
@@ -474,7 +596,18 @@ const ProductsPage = () => {
         }
     }, []);
 
+    useEffect(() => {
+        if (isSearching) {
+            const productsToFilter = searchText ?
+                allProducts.filter(product =>
+                    product.name.toLowerCase().includes(searchText.toLowerCase())
+                ) :
+                selectedCategories.length > 0 ? getCategoryProducts() : filteredProducts;
 
+            const filtered = applyFiltersToProducts(productsToFilter);
+            setFilteredProducts(filtered);
+        }
+    }, [filterOptions]);
 
     // Load recommended data from backend
     useEffect(() => {
@@ -582,9 +715,12 @@ const ProductsPage = () => {
             return;
         }
 
-        const filtered = allProducts.filter(product =>
+        let filtered = allProducts.filter(product =>
             product.name.toLowerCase().includes(normalizedQuery)
         );
+
+        // Aplicar filtros activos a los resultados de búsqueda
+        filtered = applyFiltersToProducts(filtered);
 
         setFilteredProducts(filtered);
         setShowSearchResults(false); // Hide suggestions after search
@@ -841,6 +977,32 @@ const ProductsPage = () => {
         setFilteredProducts([]);
         setIsSearching(false);
         setShowSearchResults(false);
+        // Si no hay categorías seleccionadas, también resetear los filtros
+        if (selectedCategories.length === 0) {
+            const defaultFilters: FilterOptions = {
+                sortBy: 'none',
+                minPoints: 0,
+                maxPoints: 1000
+            };
+            setFilterOptions(defaultFilters);
+            setTempFilterOptions(defaultFilters);
+        }
+    };
+
+    const clearCategoryFilters = () => {
+        setSelectedCategories([]);
+        // Si no hay búsqueda activa, también resetear los filtros
+        if (!searchText) {
+            const defaultFilters: FilterOptions = {
+                sortBy: 'none',
+                minPoints: 0,
+                maxPoints: 1000
+            };
+            setFilterOptions(defaultFilters);
+            setTempFilterOptions(defaultFilters);
+            setIsSearching(false);
+            setFilteredProducts([]);
+        }
     };
 
     // Function to handle category selection/deselection
@@ -856,35 +1018,50 @@ const ProductsPage = () => {
         });
     };
 
+    useEffect(() => {
+        if (isSearching) {
+            let productsToFilter: Product[] = [];
+
+            if (searchText) {
+                // Si hay texto de búsqueda, filtrar desde todos los productos
+                productsToFilter = allProducts.filter(product =>
+                    product.name.toLowerCase().includes(searchText.toLowerCase())
+                );
+            } else if (selectedCategories.length > 0) {
+                // Si hay categorías seleccionadas, obtener productos de esas categorías
+                productsToFilter = getCategoryProducts();
+            } else {
+                // Si no hay filtros de categoría ni búsqueda, usar productos filtrados existentes
+                productsToFilter = filteredProducts;
+            }
+
+            // Aplicar los filtros de ordenamiento y puntos
+            const filtered = applyFiltersToProducts(productsToFilter);
+            setFilteredProducts(filtered);
+        }
+    }, [filterOptions, searchText, selectedCategories, allProducts, recommendedData]);
+
     // Filter products by selected categories
     useEffect(() => {
         if (selectedCategories.length === 0) {
-            // If no categories selected, don't apply filter
-            setIsSearching(false);
-            setFilteredProducts([]);
+            // Si no hay categorías seleccionadas y no hay búsqueda, salir del modo filtrado
+            if (!searchText) {
+                setIsSearching(false);
+                setFilteredProducts([]);
+            }
             return;
-
-
         }
 
         setIsSearching(true);
 
-        // Filter products that belong to selected categories
-        let filtered: Product[] = [];
+        // Obtener productos de las categorías seleccionadas
+        let filtered = getCategoryProducts();
 
-        if (recommendedData && recommendedData.titles && recommendedData.products) {
-            recommendedData.titles.forEach((title, index) => {
-                if (selectedCategories.includes(title) && recommendedData.products[index]) {
-                    filtered = [...filtered, ...recommendedData.products[index]];
-                }
-            });
-        }
+        // Aplicar filtros activos
+        filtered = applyFiltersToProducts(filtered);
 
         setFilteredProducts(filtered);
-    }, [selectedCategories, recommendedData]);
-
-
-
+    }, [selectedCategories, recommendedData, filterOptions]);
 
     // Function to format points
     const formatPoints = (points: number): string => {
@@ -1107,19 +1284,132 @@ const ProductsPage = () => {
                                     </IonList>
                                 </div>
                             )}
-                            {/* Botones de la barra superior - Desactivado temporalmente
-                                <IonButtons slot="end" className="header-buttons">
-                                    <IonButton className="theme-toggle-button">
-                                           <SwitchDark darkMode={darkMode} toggleDarkMode={toggleDarkMode}/>
-                                    </IonButton>
-                                </IonButtons>
-                             */}
 
-                            <IonIcon onClick={startProductsTour} slot="start" icon={informationCircleOutline} />
-
+                            <div className="header-icons">
+                                <IonIcon
+                                    onClick={startProductsTour}
+                                    icon={informationCircleOutline}
+                                    className="header-icon"
+                                />
+                                {/* Solo mostrar el filtro si estamos buscando o hay categorías seleccionadas */}
+                                {(isSearching || selectedCategories.length > 0) && (
+                                    <IonIcon
+                                        onClick={() => setShowFilterPopover(!showFilterPopover)}
+                                        icon={funnelOutline}
+                                        className={`header-icon filter-icon ${(filterOptions.sortBy !== 'none' || filterOptions.minPoints > 0 || filterOptions.maxPoints < 1000) ? 'active' : ''}`}
+                                    />
+                                )}
+                            </div>
                         </div>
                     </IonToolbar>
+
+                    {/* Popover de filtros */}
+                    {showFilterPopover && (
+                        <div className="filter-popover">
+                            <div className="filter-header">
+                                <h3>Filtros</h3>
+                                <IonIcon
+                                    icon={closeOutline}
+                                    onClick={() => setShowFilterPopover(false)}
+                                    className="close-icon"
+                                />
+                            </div>
+
+                            <div className="filter-content">
+                                {/* Ordenar por */}
+                                <div className="filter-section">
+                                    <h4>Ordenar por</h4>
+                                    <div className="filter-options">
+                                        <label className="filter-option">
+                                            <input
+                                                type="radio"
+                                                name="sortBy"
+                                                value="none"
+                                                checked={tempFilterOptions.sortBy === 'none'}
+                                                onChange={(e) => setTempFilterOptions({...tempFilterOptions, sortBy: e.target.value as any})}
+                                            />
+                                            <span>Sin ordenar</span>
+                                        </label>
+                                        <label className="filter-option">
+                                            <input
+                                                type="radio"
+                                                name="sortBy"
+                                                value="points_desc"
+                                                checked={tempFilterOptions.sortBy === 'points_desc'}
+                                                onChange={(e) => setTempFilterOptions({...tempFilterOptions, sortBy: e.target.value as any})}
+                                            />
+                                            <span>Más puntos primero</span>
+                                        </label>
+                                        <label className="filter-option">
+                                            <input
+                                                type="radio"
+                                                name="sortBy"
+                                                value="points_asc"
+                                                checked={tempFilterOptions.sortBy === 'points_asc'}
+                                                onChange={(e) => setTempFilterOptions({...tempFilterOptions, sortBy: e.target.value as any})}
+                                            />
+                                            <span>Menos puntos primero</span>
+                                        </label>
+                                        <label className="filter-option">
+                                            <input
+                                                type="radio"
+                                                name="sortBy"
+                                                value="date_desc"
+                                                checked={tempFilterOptions.sortBy === 'date_desc'}
+                                                onChange={(e) => setTempFilterOptions({...tempFilterOptions, sortBy: e.target.value as any})}
+                                            />
+                                            <span>Más recientes</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* Rango de puntos */}
+                                <div className="filter-section">
+                                    <h4>Rango de puntos</h4>
+                                    <div className="range-inputs">
+                                        <div className="range-input">
+                                            <label>Mínimo:</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="1000"
+                                                value={tempFilterOptions.minPoints}
+                                                onChange={(e) => setTempFilterOptions({...tempFilterOptions, minPoints: parseInt(e.target.value) || 0})}
+                                            />
+                                        </div>
+                                        <div className="range-input">
+                                            <label>Máximo:</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="1000"
+                                                value={tempFilterOptions.maxPoints}
+                                                onChange={(e) => setTempFilterOptions({...tempFilterOptions, maxPoints: parseInt(e.target.value) || 1000})}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="filter-actions">
+                                <IonButton
+                                    fill="clear"
+                                    size="small"
+                                    onClick={handleClearFilters}
+                                >
+                                    Limpiar
+                                </IonButton>
+                                <IonButton
+                                    size="small"
+                                    onClick={handleApplyFilters}
+                                >
+                                    Aplicar filtros
+                                </IonButton>
+                            </div>
+                        </div>
+                    )}
                 </IonHeader>
+
 
                 <IonContent className="wallapop-content">
                     {/* Toast for notifications */}
@@ -1134,21 +1424,21 @@ const ProductsPage = () => {
 
                     {isSearching && searchText && (
                         <div className="search-results-header">
-                            <h2>Results for "{searchText}"</h2>
+                            <h2>Resultados para "{searchText}"</h2>
                         <IonButton fill="clear" onClick={clearSearch}>
-                            Back
+                            Atrás
                         </IonButton>
                     </div>
                 )}
 
-                {isSearching && selectedCategories.length > 0 && !searchText && (
-                    <div className="search-results-header">
-                        <h2>Filtered by categories: {selectedCategories.join(', ')}</h2>
-                        <IonButton fill="clear" onClick={() => setSelectedCategories([])}>
-                            Limpiar filtros
-                        </IonButton>
-                    </div>
-                )}
+                    {isSearching && selectedCategories.length > 0 && !searchText && (
+                        <div className="search-results-header">
+                            <h2>Filtered by categories: {selectedCategories.join(', ')}</h2>
+                            <IonButton fill="clear" onClick={clearCategoryFilters}>
+                                Limpiar filtros
+                            </IonButton>
+                        </div>
+                    )}
 
                 {!isSearching && (
                     <>
@@ -1277,7 +1567,7 @@ const ProductsPage = () => {
                         )}
                         <IonButton onClick={() => {
                             clearSearch();
-                            setSelectedCategories([]);
+                            clearCategoryFilters();
                         }}>Ver todos los productos</IonButton>
                     </div>
                 ) : (
