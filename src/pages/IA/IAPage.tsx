@@ -342,7 +342,7 @@ const AIChatPage: React.FC = () => {
             // ✅ PROCESAR CADA CONVERSACIÓN INDIVIDUALMENTE
             const frontendConversations: ChatSession[] = [];
 
-            for (const conversation: ConversationDTO of conversations) {
+            for (const conversation of conversations) {
                 console.log('🔄 Procesando conversación:', conversation);
 
                 try {
@@ -379,7 +379,7 @@ const AIChatPage: React.FC = () => {
                                 images: msg.images || undefined
                             }));
 
-                            chatSession.messages = processedMessages;
+                            chatSession.messages = processedMessages as Message[];
 
                             // Actualizar el último mensaje con el texto real del último mensaje
                             const lastMsg = processedMessages[processedMessages.length - 1];

@@ -1,7 +1,14 @@
 import { Client, Message, StompSubscription } from '@stomp/stompjs';
 import ProfileService from "./ProfileService";
 
-type MessageCallback = (message: { content: string, roomId: string }) => void;
+type MessageCallback = (message: {
+  timestamp: string,
+  content: string,
+  roomId: string,
+  type: string,
+  userName: string,
+  senderName: string,
+}) => void;
 
 export interface MensajeRecibeDTO {
   content: string;

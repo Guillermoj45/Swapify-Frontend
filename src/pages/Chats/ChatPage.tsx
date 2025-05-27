@@ -23,7 +23,7 @@ import {
     menuOutline
 } from 'ionicons/icons';
 import Navegacion from '../../components/Navegation';
-import { WebSocketService } from "../../Services/websocket";
+import {MensajeRecibeDTO, WebSocketService} from "../../Services/websocket";
 import useAuthRedirect from "../../Services/useAuthRedirect";
 
 // Interfaces para los tipos de datos
@@ -38,6 +38,7 @@ interface Message {
 }
 
 interface Chat {
+    id: string; // ID del chat, opcional para chats generales
     idProduct: string; //UUID del producto
     idProfileProduct: string; //UUID del perfil del producto
     idProfile: string; //UUID del perfil
@@ -62,6 +63,7 @@ const ChatPage: React.FC = () => {
     // Estado para los chats
     const [chats, setChats] = useState<Chat[]>([
         {
+            id: 'general',
             idProduct: 'bcc107d2-79a9-4d86-a4ec-59d7906be5e2',
             idProfileProduct: '1ff84f03-e1aa-4ce3-b458-ced67dcaeb9f',
             idProfile: '45552e96-18ad-4115-9859-986f591441a8',
@@ -74,6 +76,9 @@ const ChatPage: React.FC = () => {
         },
         {
             id: 'soporte',
+            idProduct: 'f3a92b1c-8d47-4c61-9e4d-123456789abc',
+            idProfileProduct: 'a1b2c3d4-5e6f-7g8h-9i0j-klmnopqrstuv',
+            idProfile: 'b2c3d4e5-6f7g-8h9i-0j1k-lmnopqrstuvw',
             name: 'Soporte Técnico',
             avatar: 'S',
             lastMessage: '¿Cómo podemos ayudarte?',
@@ -83,6 +88,9 @@ const ChatPage: React.FC = () => {
         },
         {
             id: 'desarrollo',
+            idProduct: 'e4f5g6h7-8i9j-0k1l-2m3n-opqrstuvwxyz',
+            idProfileProduct: 'c4d5e6f7-8g9h-0i1j-2k3l-mnopqrstuvwx',
+            idProfile: 'd5e6f7g8-9h0i-1j2k-3l4m-nopqrstuvwxy',
             name: 'Grupo Desarrollo',
             avatar: 'D',
             lastMessage: 'Discusión sobre el próximo sprint',
@@ -301,10 +309,11 @@ const ChatPage: React.FC = () => {
     const sendMessage = () => {
         if (inputMessage.trim() === '' || !activeChat || !isConnected) return;
 
-        const messageToSend = {
+        const messageToSend : MensajeRecibeDTO = {
             content: inputMessage,
             senderName: currentUserName,
-            token: sessionStorage.getItem('token'),
+            userName: currentUserName,
+            token: sessionStorage.getItem('token') || '',
             timestamp: new Date().toISOString(),
             type: 'chat'
         };
