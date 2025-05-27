@@ -816,3 +816,58 @@
     transform: scale(1.1);
     box-shadow: 0 3px 8px rgba(0,0,0,0.3);
 }
+
+/* Estados de conexión */
+.connection-status {
+    padding: 8px 16px;
+    margin: 8px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.status-connecting, .status-error, .status-disconnected {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-connecting {
+    background-color: #ffa500;
+    color: white;
+}
+
+.status-error {
+    background-color: #ff4444;
+    color: white;
+}
+
+.status-disconnected {
+    background-color: #666;
+    color: white;
+}
+
+.reconnect-button, .connect-button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.loading-chats, .no-chats {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+}
+
+.reload-button {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
