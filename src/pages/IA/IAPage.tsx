@@ -109,7 +109,6 @@ const AIChatPage: React.FC = () => {
         timestamp: new Date()
     };
 
-    // Añade esta función dentro del componente AIChatPage antes del return
     const startIATutorial = () => {
         const driverObj = driver({
             showProgress: true,
@@ -117,48 +116,57 @@ const AIChatPage: React.FC = () => {
                 {
                     element: '.chat-sidebar-toggle',
                     popover: {
-                        title: 'Panel de Chats',
-                        description: 'Accede a todas tus conversaciones guardadas y crea nuevas.',
+                        title: '📂 Panel de Chats',
+                        description: 'Accede a todas tus conversaciones guardadas y crea nuevas 🗂️.',
                         side: "right"
                     }
                 },
                 {
                     element: '.custom-side-content',
                     popover: {
-                        title: 'Lista de Conversaciones',
-                        description: 'Aquí encontrarás todas tus conversaciones con la IA.',
+                        title: '🧾 Lista de Conversaciones',
+                        description: 'Aquí encontrarás todas tus conversaciones con la IA 🤖.',
                         side: "right"
                     }
                 },
                 {
                     element: '.action-button',
                     popover: {
-                        title: 'Adjuntar Imágenes',
-                        description: 'Aquí puedes subir imágenes para que la IA las analice.',
+                        title: '📷 Adjuntar Imágenes',
+                        description: 'Aquí puedes subir imágenes para que la IA las analice 🧠.',
+                        side: "top"
+                    }
+
+                },
+                {
+                    element: '.reader-icon',
+                    popover: {
+                        title: '🛍️ Subir productos',
+                        description: 'Al pulsarlo dices a la IA que quieres subir un producto para que otros usuarios lo vean 🌐.',
                         side: "top"
                     }
                 },
                 {
                     element: '.chat-input',
                     popover: {
-                        title: 'Escribe tu Mensaje',
-                        description: 'Escribe aquí tus preguntas o mensajes para la IA.',
+                        title: '💬 Escribe tu Mensaje',
+                        description: 'Escribe aquí tus preguntas o mensajes para la IA ✍️.',
                         side: "top"
                     }
                 },
                 {
                     element: '.send-button',
                     popover: {
-                        title: 'Enviar Mensaje',
-                        description: 'Presiona este botón para enviar tu mensaje a la IA.',
+                        title: '📨 Enviar Mensaje',
+                        description: 'Presiona este botón para enviar tu mensaje a la IA 🚀.',
                         side: "left"
                     }
                 },
                 {
                     element: '.refresh-icon',
                     popover: {
-                        title: 'Limpiar Conversación',
-                        description: 'Reinicia la conversación actual para comenzar una nueva.',
+                        title: '🔄 Limpiar Conversación',
+                        description: 'Reinicia la conversación actual para comenzar una nueva 🧼.',
                         side: "left"
                     }
                 }
@@ -168,6 +176,7 @@ const AIChatPage: React.FC = () => {
         });
         driverObj.drive();
     };
+
 
     const [messages, setMessages] = useState<Message[]>([initialAIMessage]);
     const [inputText, setInputText] = useState<string>('');
