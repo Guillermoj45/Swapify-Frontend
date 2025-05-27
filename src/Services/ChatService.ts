@@ -1,5 +1,5 @@
 import API from './api';
-import SockJS from 'sockjs-client';
+import SockJS from 'sockjs-client/dist/sockjs';
 import { Stomp, CompatClient } from '@stomp/stompjs';
 
 // Interfaces para los DTOs
