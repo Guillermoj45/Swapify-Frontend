@@ -15,6 +15,7 @@ export interface IAChatResponse {
     product?: {
         id: string;
         name: string;
+        imagenes: string[];
         description: string;
         points: number;
         createdAt: string;

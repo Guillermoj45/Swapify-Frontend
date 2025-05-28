@@ -1,7 +1,8 @@
+window.global ||= window;
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import {WebSocketService} from "./Services/websocket";
 
 const container = document.getElementById('root');
 const root = createRoot(container!);
