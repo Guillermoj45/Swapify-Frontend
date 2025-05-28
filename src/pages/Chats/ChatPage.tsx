@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './Chat.css';
 import {
     IonIcon,
@@ -7,7 +7,6 @@ import {
     IonMenuButton
 } from '@ionic/react';
 import {
-    chatbubbleEllipsesOutline,
     sunnyOutline,
     moonOutline,
     searchOutline,
@@ -20,11 +19,13 @@ import {
     sendOutline,
     micOutline,
     chatbubblesOutline,
-    menuOutline
+    menuOutline,
+    refreshOutline
 } from 'ionicons/icons';
 import Navegacion from '../../components/Navegation';
 import { chatService, ChatDTO, MensajeRecibeDTO } from "../../Services/ChatService";
 import useAuthRedirect from "../../Services/useAuthRedirect";
+import { ProductService } from "../../Services/ProductService";
 
 // Interfaces para los tipos de datos
 interface Message {
@@ -38,10 +39,10 @@ interface Message {
 }
 
 interface Chat {
-    id: string; // ID del chat, opcional para chats generales
-    idProduct: string; //UUID del producto
-    idProfileProduct: string; //UUID del perfil del producto
-    idProfile: string; //UUID del perfil
+    id: string;
+    idProduct: string;
+    idProfileProduct: string;
+    idProfile: string;
     name: string;
     avatar: string;
     lastMessage: string;
@@ -51,8 +52,7 @@ interface Chat {
 }
 
 const ChatPage: React.FC = () => {
-
-    useAuthRedirect()
+    useAuthRedirect();
 
     // Estado de conexión
     const [isConnected, setIsConnected] = useState(false);
@@ -94,137 +94,386 @@ const ChatPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Ref para el contenedor de mensajes
+    // Refs
     const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    // Ref para el input de mensaje
     const inputRef = useRef<HTMLInputElement>(null);
-
-    // Ref para el contenedor principal
     const chatMainRef = useRef<HTMLDivElement>(null);
 
-    // Función para convertir ChatDTO a Chat
-    const convertChatDTOToChat = (chatDTO: ChatDTO): Chat => {
-        return {
+    const [loadingProductNames, setLoadingProductNames] = useState<Set<string>>(new Set());
+
+    // Función para cargar el nombre del producto de un chat específico
+    const loadProductNameForChat = useCallback(async (chatId: string, productId: string, profileProductId: string) => {
+        if (!productId || !profileProductId) {
+            console.warn('No se pueden cargar nombres sin IDs válidos:', { productId, profileProductId });
+            return;
+        }
+
+        setLoadingProductNames(prev => new Set(prev).add(chatId));
+
+        try {
+            console.log(`Cargando nombre del producto para chat ${chatId}:`, { productId, profileProductId });
+            const product = await ProductService.getProductById(productId, profileProductId);
+
+            console.log('Producto obtenido:', product);
+
+            const productName = product.name || 'Producto sin nombre';
+            const productAvatar = productName.charAt(0).toUpperCase();
+
+            // Actualizar el chat específico con el nombre del producto
+            setChats(prevChats =>
+                prevChats.map(chat =>
+                    chat.id === chatId
+                        ? {
+                            ...chat,
+                            name: productName,
+                            avatar: productAvatar
+                        }
+                        : chat
+                )
+            );
+
+            console.log(`Nombre del producto actualizado para chat ${chatId}: ${productName}`);
+        } catch (error) {
+            console.error(`Error al cargar nombre del producto para chat ${chatId}:`, error);
+
+            // Actualizar con un mensaje de error
+            setChats(prevChats =>
+                prevChats.map(chat =>
+                    chat.id === chatId
+                        ? { ...chat, name: 'Producto no disponible', avatar: 'X' }
+                        : chat
+                )
+            );
+        } finally {
+            setLoadingProductNames(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(chatId);
+                return newSet;
+            });
+        }
+    }, []);
+
+    // Función para convertir ChatDTO a Chat - simplificada
+    const convertChatDTOToChat = useCallback((chatDTO: ChatDTO): Chat => {
+        // Usar el nombre que viene del DTO si está disponible, sino usar un placeholder
+        let chatName = chatDTO.productName || chatDTO.otherUserName || 'Cargando...';
+        let chatAvatar = chatName !== 'Cargando...' ? chatName.charAt(0).toUpperCase() : 'C';
+
+        const chat: Chat = {
             id: chatDTO.id,
             idProduct: chatDTO.productId,
             idProfileProduct: chatDTO.profileProductId,
             idProfile: chatDTO.profileId,
-            name: chatDTO.productName || chatDTO.otherUserName || 'Chat sin nombre',
-            avatar: chatDTO.productName?.charAt(0) || chatDTO.otherUserName?.charAt(0) || 'C',
+            name: chatName,
+            avatar: chatAvatar,
             lastMessage: chatDTO.lastMessage || 'No hay mensajes',
             timestamp: chatDTO.lastMessageTime ? new Date(chatDTO.lastMessageTime) : new Date(),
             unreadCount: 0,
-            isOnline: true // Esto podría venir del backend en el futuro
+            isOnline: true
         };
-    };
 
-    // Función para cargar los chats desde el backend
-    const loadChats = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const chatDTOs = await chatService.getChats();
-            const convertedChats = chatDTOs.map(convertChatDTOToChat);
-            setChats(convertedChats);
-        } catch (error) {
-            console.error('Error al cargar chats:', error);
-            setError('Error al cargar los chats');
-            // Fallback a chats por defecto si hay error
-            setChats([
-                {
-                    id: 'general',
-                    idProduct: 'bcc107d2-79a9-4d86-a4ec-59d7906be5e2',
-                    idProfileProduct: '1ff84f03-e1aa-4ce3-b458-ced67dcaeb9f',
-                    idProfile: '45552e96-18ad-4115-9859-986f591441a8',
-                    name: 'Chat General',
-                    avatar: 'G',
-                    lastMessage: 'Bienvenido al chat general',
-                    timestamp: new Date(),
-                    unreadCount: 0,
-                    isOnline: true
-                }
-            ]);
-        } finally {
-            setLoading(false);
-        }
-    };
+        return chat;
+    }, []);
 
-    // Función para conectar al WebSocket
-    const connectToWebSocket = async () => {
-        if (isConnecting || isConnected) return;
-
-        try {
-            setIsConnecting(true);
-            setError(null);
-
-            await chatService.connect(
-                // onConnected callback
-                () => {
-                    console.log('Conectado al chat service');
-                    setIsConnected(true);
-                    setIsConnecting(false);
-                },
-                // onError callback
-                (error) => {
-                    console.error('Error de conexión:', error);
-                    setError('Error de conexión al chat');
-                    setIsConnected(false);
-                    setIsConnecting(false);
-                }
-            );
-        } catch (error) {
-            console.error('Error al conectar:', error);
-            setError('Error al conectar con el servicio de chat');
-            setIsConnected(false);
-            setIsConnecting(false);
-        }
-    };
+    // Actualizar el último mensaje de un chat
+    const updateLastMessage = useCallback((chatId: string, message: string, timestamp: Date) => {
+        setChats(prevChats =>
+            prevChats.map(chat =>
+                chat.id === chatId
+                    ? {
+                        ...chat,
+                        lastMessage: message,
+                        timestamp,
+                        unreadCount: chat.id !== activeChat?.id ? chat.unreadCount + 1 : 0
+                    }
+                    : chat
+            )
+        );
+    }, [activeChat?.id]);
 
     // Función para manejar mensajes recibidos
-    const handleMessageReceived = (messageData: MensajeRecibeDTO) => {
+    const handleMessageReceived = useCallback((messageData: MensajeRecibeDTO) => {
         try {
-            console.log("Mensaje recibido:", messageData);
+            console.log("Mensaje recibido por WebSocket:", messageData);
 
-            // Crear un nuevo mensaje para el chat
+            if (!messageData.content) {
+                console.warn('Mensaje recibido sin contenido:', messageData);
+                return;
+            }
+
             const newMessage: Message = {
-                id: Date.now().toString(),
+                id: `${Date.now()}-${Math.random()}`,
                 content: messageData.content,
                 sender: messageData.userName === currentUserName ? 'user' : 'other',
-                senderName: messageData.userName || 'Otro usuario',
+                senderName: messageData.userName || 'Usuario desconocido',
                 timestamp: messageData.timestamp ? new Date(messageData.timestamp) : new Date(),
                 read: false
             };
 
-            // Añadir el mensaje a la lista de mensajes
+            console.log('Mensaje procesado:', newMessage);
             setMessages(prev => [...prev, newMessage]);
 
-            // Actualizar el último mensaje en la lista de chats
             if (activeChat) {
                 updateLastMessage(activeChat.id, newMessage.content, newMessage.timestamp);
             }
         } catch (error) {
             console.error("Error al procesar el mensaje recibido:", error);
         }
-    };
+    }, [currentUserName, activeChat, updateLastMessage]);
+
+    // Función para cargar los chats desde el backend
+    const loadChats = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) {
+                setError('No se encontró token de autenticación. Por favor, inicia sesión nuevamente.');
+                setChats([]);
+                setLoading(false);
+                return;
+            }
+
+            console.log('Cargando chats del backend...');
+            const chatDTOs = await chatService.getChats();
+            console.log('Chats recibidos del backend:', chatDTOs);
+
+            // Convertir todos los chats de forma síncrona primero
+            const convertedChats = chatDTOs.map(chatDTO => convertChatDTOToChat(chatDTO));
+            setChats(convertedChats);
+
+            console.log('Chats convertidos y cargados:', convertedChats);
+
+            // Después, cargar los nombres de productos de forma asíncrona para los que lo necesiten
+            const chatsNeedingProductNames = convertedChats.filter(chat =>
+                chat.name === 'Cargando...' && chat.idProduct && chat.idProfileProduct
+            );
+
+            console.log('Chats que necesitan cargar nombres de productos:', chatsNeedingProductNames);
+
+            // Cargar nombres de productos de forma paralela
+            const loadPromises = chatsNeedingProductNames.map(chat =>
+                loadProductNameForChat(chat.id, chat.idProduct, chat.idProfileProduct)
+            );
+
+            if (loadPromises.length > 0) {
+                await Promise.allSettled(loadPromises);
+                console.log('Carga de nombres de productos completada');
+            }
+
+        } catch (error: any) {
+            console.error('Error al cargar chats:', error);
+
+            if (error?.response?.status === 401 || error?.response?.status === 403) {
+                setError('Sesión expirada. Por favor, inicia sesión nuevamente.');
+            } else if (error?.response?.status === 500) {
+                setError('Error del servidor. Inténtalo más tarde.');
+            } else if (error?.message?.includes('Network Error')) {
+                setError('Error de conexión. Verifica tu conexión a internet.');
+            } else {
+                setError('Error al cargar los chats. Inténtalo de nuevo.');
+            }
+
+            if (error?.response?.status !== 401 && error?.response?.status !== 403) {
+                setChats([]);
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [convertChatDTOToChat, loadProductNameForChat]);
 
     // Función para manejar errores en suscripciones
-    const handleSubscriptionError = (error: any) => {
+    const handleSubscriptionError = useCallback((error: any) => {
         console.error("Error en suscripción:", error);
-        setError('Error en la conexión del chat');
-    };
+        setError('Error en la conexión del chat. Intentando reconectar...');
+    }, []);
+
+    // Función para conectar al WebSocket
+    const connectToWebSocket = useCallback(async () => {
+        if (isConnecting || isConnected) return;
+
+        try {
+            setIsConnecting(true);
+            setError(null);
+
+            console.log('Iniciando conexión WebSocket...');
+
+            await chatService.connect(
+                () => {
+                    console.log('WebSocket conectado exitosamente');
+                    setIsConnected(true);
+                    setIsConnecting(false);
+                    setError(null);
+                },
+                (error) => {
+                    console.error('Error de conexión WebSocket:', error);
+                    setIsConnected(false);
+                    setIsConnecting(false);
+
+                    if (error?.toString().includes('401') || error?.toString().includes('403')) {
+                        setError('Error de autenticación en el chat. Inicia sesión nuevamente.');
+                    } else {
+                        setError('Error de conexión al chat. Reintentando...');
+                    }
+                }
+            );
+        } catch (error: any) {
+            console.error('Error al conectar WebSocket:', error);
+            setIsConnected(false);
+            setIsConnecting(false);
+
+            if (error?.message?.includes('autenticación')) {
+                setError('Error de autenticación. Por favor, inicia sesión nuevamente.');
+            } else {
+                setError('No se pudo conectar al servicio de chat.');
+            }
+        }
+    }, [isConnecting, isConnected]);
+
+    // Función para enviar mensaje
+    const sendMessage = useCallback(async () => {
+        if (inputMessage.trim() === '' || !activeChat || !isConnected) {
+            console.warn('No se puede enviar mensaje:', {
+                hasMessage: inputMessage.trim() !== '',
+                hasActiveChat: !!activeChat,
+                isConnected
+            });
+            return;
+        }
+
+        const messageContent = inputMessage.trim();
+
+        try {
+            setInputMessage('');
+
+            const newMessage: Message = {
+                id: `temp-${Date.now()}-${Math.random()}`,
+                content: messageContent,
+                sender: 'user',
+                timestamp: new Date(),
+                read: true
+            };
+
+            setMessages(prev => [...prev, newMessage]);
+            updateLastMessage(activeChat.id, messageContent, new Date());
+
+            console.log('Enviando mensaje:', messageContent);
+            chatService.sendMessage(
+                activeChat.idProduct,
+                activeChat.idProfileProduct,
+                activeChat.idProfile,
+                messageContent
+            );
+
+            console.log('Mensaje enviado exitosamente');
+
+        } catch (error) {
+            console.error('Error al enviar mensaje:', error);
+            setError('Error al enviar el mensaje. Inténtalo de nuevo.');
+            setInputMessage(messageContent);
+            setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
+        }
+    }, [inputMessage, activeChat, isConnected, updateLastMessage]);
+
+    // Manejar cambio de chat
+    const handleChatSelect = useCallback(async (chat: Chat) => {
+        setActiveChat(chat);
+
+        // Marcar como leído
+        setChats(prevChats =>
+            prevChats.map(c =>
+                c.id === chat.id ? { ...c, unreadCount: 0 } : c
+            )
+        );
+
+        // Si el chat todavía muestra "Cargando..." y tiene los IDs necesarios, intentar cargar el nombre
+        if (chat.name === 'Cargando...' && chat.idProduct && chat.idProfileProduct) {
+            loadProductNameForChat(chat.id, chat.idProduct, chat.idProfileProduct);
+        }
+
+        if (isMobile) {
+            setShowChatPanel(true);
+        }
+    }, [isMobile, loadProductNameForChat]);
+
+    // Volver a la lista de chats (para móvil)
+    const handleBackToList = useCallback(() => {
+        setShowChatPanel(false);
+        setActiveChat(null);
+    }, []);
+
+    // Cambiar modo claro/oscuro
+    const toggleTheme = useCallback(() => {
+        setDarkMode(prev => !prev);
+    }, []);
+
+    // Función para recargar chats
+    const handleRefreshChats = useCallback(async () => {
+        await loadChats();
+    }, [loadChats]);
+
+    // Función para reintentar conexión
+    const handleRetryConnection = useCallback(async () => {
+        console.log('Reintentando conexión completa...');
+        setError(null);
+
+        try {
+            if (chatService.isWebSocketConnected()) {
+                chatService.disconnect();
+                setIsConnected(false);
+            }
+
+            await loadChats();
+            await connectToWebSocket();
+        } catch (error) {
+            console.error('Error al reintentar conexión:', error);
+        }
+    }, [loadChats, connectToWebSocket]);
+
+    // Formateo de tiempo
+    const formatMessageTime = useCallback((date: Date) => {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }, []);
+
+    const formatChatTime = useCallback((date: Date) => {
+        const now = new Date();
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        if (date.toDateString() === now.toDateString()) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (date.toDateString() === yesterday.toDateString()) {
+            return 'Ayer';
+        } else {
+            return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+        }
+    }, []);
 
     // Efecto para inicializar la conexión y cargar chats
     useEffect(() => {
         const initializeChat = async () => {
-            await loadChats();
-            await connectToWebSocket();
+            console.log('Inicializando chat...');
+
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) {
+                setError('No se encontró token de autenticación. Por favor, inicia sesión.');
+                setLoading(false);
+                return;
+            }
+
+            try {
+                await loadChats();
+                await connectToWebSocket();
+            } catch (error) {
+                console.error('Error en inicialización:', error);
+            }
         };
 
         initializeChat();
 
-        // Cleanup al desmontar el componente
         return () => {
+            console.log('Limpiando conexiones de chat...');
             if (activeSubscription) {
                 chatService.unsubscribeFromChat(activeSubscription);
             }
@@ -245,11 +494,9 @@ const ChatPage: React.FC = () => {
     // Efecto para detectar cuando el teclado virtual aparece/desaparece
     useEffect(() => {
         const handleVisibilityChange = () => {
-            // En dispositivos móviles, la altura de la ventana disminuye cuando aparece el teclado
             const isKeyboardOpen = window.innerHeight < window.outerHeight * 0.75;
             setIsKeyboardVisible(isKeyboardOpen);
 
-            // Si el teclado está visible, aseguramos que el input sea visible
             if (isKeyboardOpen && inputRef.current) {
                 setTimeout(() => {
                     inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -261,38 +508,6 @@ const ChatPage: React.FC = () => {
         return () => window.removeEventListener('resize', handleVisibilityChange);
     }, []);
 
-    // Efecto para manejar el enfoque en el input
-    useEffect(() => {
-        const handleFocus = () => {
-            if (inputRef.current && chatMainRef.current) {
-                // Esperamos un poco para que el teclado se abra completamente
-                setTimeout(() => {
-                    // Desplazamos la vista para asegurar que el input sea visible
-                    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                    // Desplazamos el contenedor principal hacia abajo
-                    chatMainRef.current?.scrollTo({
-                        top: chatMainRef.current.scrollHeight,
-                        behavior: 'smooth'
-                    });
-                }, 300);
-            }
-        };
-
-        // Añadir listeners para focus y click
-        if (inputRef.current) {
-            inputRef.current.addEventListener('focus', handleFocus);
-            inputRef.current.addEventListener('click', handleFocus);
-        }
-
-        return () => {
-            if (inputRef.current) {
-                inputRef.current.removeEventListener('focus', handleFocus);
-                inputRef.current.removeEventListener('click', handleFocus);
-            }
-        };
-    }, [activeChat]);
-
     // Scroll al último mensaje cuando se añaden nuevos mensajes
     useEffect(() => {
         if (messagesEndRef.current) {
@@ -303,14 +518,15 @@ const ChatPage: React.FC = () => {
     // Suscribirse a la sala de chat cuando cambia el chat activo
     useEffect(() => {
         if (isConnected && activeChat) {
-            // Desuscribirse de la sala anterior
+            console.log('Configurando suscripción para chat:', activeChat.name);
+
             if (activeSubscription) {
+                console.log('Cancelando suscripción anterior:', activeSubscription);
                 chatService.unsubscribeFromChat(activeSubscription);
                 setActiveSubscription(null);
             }
 
             try {
-                // Suscribirse a la nueva sala
                 const subscriptionKey = chatService.subscribeToChat(
                     activeChat.idProduct,
                     activeChat.idProfileProduct,
@@ -321,136 +537,23 @@ const ChatPage: React.FC = () => {
 
                 setActiveSubscription(subscriptionKey);
 
-                // Cargar mensajes iniciales del chat
-                const initialMessage: Message = {
+                const welcomeMessage: Message = {
                     id: 'welcome',
-                    content: `Bienvenido a ${activeChat.name}`,
+                    content: `Chat con ${activeChat.name}`,
                     sender: 'ai',
                     timestamp: new Date(),
                     read: true
                 };
 
-                setMessages([initialMessage]);
+                setMessages([welcomeMessage]);
+
+                console.log(`Suscrito exitosamente al chat: ${activeChat.name}`);
             } catch (error) {
                 console.error('Error al suscribirse al chat:', error);
-                setError('Error al conectar con el chat');
+                setError('Error al conectar con el chat. Inténtalo de nuevo.');
             }
         }
-    }, [isConnected, activeChat]);
-
-    // Formato de fecha para los mensajes
-    const formatMessageTime = (date: Date) => {
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    };
-
-    // Formato de fecha para la lista de chats
-    const formatChatTime = (date: Date) => {
-        const now = new Date();
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-
-        if (date.toDateString() === now.toDateString()) {
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        } else if (date.toDateString() === yesterday.toDateString()) {
-            return 'Ayer';
-        } else {
-            return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
-        }
-    };
-
-    // Actualizar el último mensaje de un chat
-    const updateLastMessage = (chatId: string, message: string, timestamp: Date) => {
-        setChats(prevChats =>
-            prevChats.map(chat =>
-                chat.id === chatId
-                    ? { ...chat, lastMessage: message, timestamp, unreadCount: chat.id !== activeChat?.id ? chat.unreadCount + 1 : 0 }
-                    : chat
-            )
-        );
-    };
-
-    // Función para enviar mensaje
-    const sendMessage = async () => {
-        if (inputMessage.trim() === '' || !activeChat || !isConnected) return;
-
-        try {
-            // Enviar el mensaje a través del ChatService
-            chatService.sendMessage(
-                activeChat.idProduct,
-                activeChat.idProfileProduct,
-                activeChat.idProfile,
-                inputMessage
-            );
-
-            // Añadir el mensaje a la UI inmediatamente (optimistic update)
-            const newMessage: Message = {
-                id: Date.now().toString(),
-                content: inputMessage,
-                sender: 'user',
-                timestamp: new Date(),
-                read: true
-            };
-
-            setMessages(prev => [...prev, newMessage]);
-
-            // Actualizar el último mensaje en la lista de chats
-            updateLastMessage(activeChat.id, inputMessage, new Date());
-
-            // Limpiar el input
-            setInputMessage('');
-
-            // Simular indicador de escritura (opcional)
-            setIsTyping(true);
-            setTimeout(() => {
-                setIsTyping(false);
-            }, 1000);
-
-        } catch (error) {
-            console.error('Error al enviar mensaje:', error);
-            setError('Error al enviar el mensaje');
-        }
-    };
-
-    // Manejar cambio de chat
-    const handleChatSelect = (chat: Chat) => {
-        setActiveChat(chat);
-
-        // Marcar como leído
-        const updatedChats = chats.map(c => {
-            if (c.id === chat.id) {
-                return { ...c, unreadCount: 0 };
-            }
-            return c;
-        });
-        setChats(updatedChats);
-
-        // En móvil, mostrar el panel de chat
-        setShowChatPanel(true);
-    };
-
-    // Volver a la lista de chats (para móvil)
-    const handleBackToList = () => {
-        setShowChatPanel(false);
-    };
-
-    // Cambiar modo claro/oscuro
-    const toggleTheme = () => {
-        setDarkMode(!darkMode);
-    };
-
-    // Función para recargar chats
-    const handleRefreshChats = async () => {
-        await loadChats();
-    };
-
-    // Función para reintentar conexión
-    const handleRetryConnection = async () => {
-        await connectToWebSocket();
-    };
-
-    // Determinar si debemos mostrar el TabBar
-    // Solo se muestra en móvil cuando estamos en la vista de lista de chats (no en un chat específico)
-    const shouldShowNavigation = isMobile && !showChatPanel;
+    }, [isConnected, activeChat, handleMessageReceived, handleSubscriptionError, activeSubscription]);
 
     // Enfoque en el input cuando se cambia de chat
     useEffect(() => {
@@ -460,6 +563,9 @@ const ChatPage: React.FC = () => {
             }, 300);
         }
     }, [activeChat, isMobile]);
+
+    // Determinar si debemos mostrar el TabBar
+    const shouldShowNavigation = isMobile && !showChatPanel;
 
     // Mostrar indicador de carga inicial
     if (loading) {
@@ -475,41 +581,56 @@ const ChatPage: React.FC = () => {
 
     return (
         <div className={`chat-view ${darkMode ? '' : 'light-mode'}`}>
-            {/* Mostrar error si existe */}
+            {/* Banner de error */}
             {error && (
                 <div className="error-banner">
                     <span>{error}</span>
-                    <button onClick={() => setError(null)}>×</button>
+                    <button onClick={() => setError(null)} aria-label="Cerrar error">×</button>
                 </div>
             )}
 
+            {/* Sidebar de chats */}
             <div className={`chat-sidebar ${showChatPanel ? 'hidden-mobile' : ''}`}>
                 <div className="sidebar-header">
                     <div className="user-profile">
-                        {/* Agregar botón de menú hamburguesa para dispositivos móviles */}
                         {!isMobile && (
                             <IonButtons slot="start" className="hamburger-menu-button">
                                 <IonMenuButton>
-                                    <IonIcon icon={menuOutline} style={{ color: darkMode ? 'white' : 'black', fontSize: '24px' }} />
+                                    <IonIcon
+                                        icon={menuOutline}
+                                        style={{ color: darkMode ? 'white' : 'black', fontSize: '24px' }}
+                                    />
                                 </IonMenuButton>
                             </IonButtons>
                         )}
-                        <div className="user-avatar">U</div>
+                        <div className="user-avatar">{currentUserName.charAt(0).toUpperCase()}</div>
                         <h3>{currentUserName}</h3>
-                        {/* Indicador de estado de conexión */}
                         <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
                             {isConnecting ? 'Conectando...' : isConnected ? 'En línea' : 'Desconectado'}
                         </div>
                     </div>
+
                     <div className="header-actions">
-                        <button className="action-icon-button" onClick={handleRefreshChats}>
-                            <IonIcon icon={chatbubbleEllipsesOutline} />
+                        <button
+                            className="action-icon-button"
+                            onClick={handleRefreshChats}
+                            title="Recargar chats"
+                        >
+                            <IonIcon icon={refreshOutline} />
                         </button>
-                        <button className="action-icon-button" onClick={toggleTheme}>
+                        <button
+                            className="action-icon-button"
+                            onClick={toggleTheme}
+                            title="Cambiar tema"
+                        >
                             <IonIcon icon={darkMode ? sunnyOutline : moonOutline} />
                         </button>
                         {!isConnected && (
-                            <button className="action-icon-button retry-button" onClick={handleRetryConnection}>
+                            <button
+                                className="action-icon-button retry-button"
+                                onClick={handleRetryConnection}
+                                title="Reintentar conexión"
+                            >
                                 <IonIcon icon={checkmarkOutline} />
                             </button>
                         )}
@@ -537,10 +658,13 @@ const ChatPage: React.FC = () => {
                                 onClick={() => handleChatSelect(chat)}
                             >
                                 <div className={`chat-avatar ${chat.isOnline ? 'online' : ''}`}>
-                                    {chat.avatar === 'ai' ?
-                                        <div className="ai-avatar">AI</div> :
-                                        <div className="user-avatar-chat">{chat.avatar}</div>
-                                    }
+                                    <div className="user-avatar-chat">
+                                        {loadingProductNames.has(chat.id) ? (
+                                            <IonSpinner name="crescent" />
+                                        ) : (
+                                            chat.avatar
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="chat-info">
                                     <div className="chat-header">
@@ -559,7 +683,6 @@ const ChatPage: React.FC = () => {
                     )}
                 </div>
 
-                {/* Navegación de pie de página solo para móvil y solo en la vista de lista de chats */}
                 {shouldShowNavigation && (
                     <div className="chat-mobile-footer">
                         <Navegacion isDesktop={false} isChatView={true} />
@@ -567,22 +690,18 @@ const ChatPage: React.FC = () => {
                 )}
             </div>
 
-            <div
-                className={`chat-main ${showChatPanel ? 'shown-mobile' : ''}`}
-                ref={chatMainRef}
-            >
+            {/* Panel principal del chat */}
+            <div className={`chat-main ${showChatPanel ? 'shown-mobile' : ''}`} ref={chatMainRef}>
                 {activeChat ? (
                     <>
+                        {/* Header del chat */}
                         <div className="chat-header">
                             <div className="header-content">
                                 <button className="back-button" onClick={handleBackToList}>
                                     <IonIcon icon={arrowBackOutline} />
                                 </button>
                                 <div className={`chat-avatar ${activeChat.isOnline ? 'online' : ''}`}>
-                                    {activeChat.avatar === 'ai' ?
-                                        <div className="ai-avatar">AI</div> :
-                                        <div className="user-avatar-chat">{activeChat.avatar}</div>
-                                    }
+                                    <div className="user-avatar-chat">{activeChat.avatar}</div>
                                 </div>
                                 <div className="chat-info">
                                     <h3>{activeChat.name}</h3>
@@ -604,6 +723,7 @@ const ChatPage: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Contenedor de mensajes */}
                         <div className="messages-container" id="messages-container">
                             <div className="messages-list">
                                 {messages.map(message => (
@@ -618,9 +738,13 @@ const ChatPage: React.FC = () => {
                                             {message.sender === 'ai' ? (
                                                 <div className="ai-avatar">AI</div>
                                             ) : message.sender === 'user' ? (
-                                                <div className="user-avatar">U</div>
+                                                <div className="user-avatar">
+                                                    {currentUserName.charAt(0).toUpperCase()}
+                                                </div>
                                             ) : (
-                                                <div className="user-avatar-chat">{message.senderName?.charAt(0) || 'O'}</div>
+                                                <div className="user-avatar-chat">
+                                                    {message.senderName?.charAt(0).toUpperCase() || 'O'}
+                                                </div>
                                             )}
                                         </div>
                                         <div className="message-content">
@@ -630,7 +754,11 @@ const ChatPage: React.FC = () => {
                                             <div className="message-bubble">
                                                 {message.image && (
                                                     <div className="message-image-container">
-                                                        <img src={message.image} alt="Imagen adjunta" className="message-image" />
+                                                        <img
+                                                            src={message.image}
+                                                            alt="Imagen adjunta"
+                                                            className="message-image"
+                                                        />
                                                     </div>
                                                 )}
                                                 <div className="message-text">{message.content}</div>
@@ -638,7 +766,9 @@ const ChatPage: React.FC = () => {
                                                     {formatMessageTime(message.timestamp)}
                                                     {message.sender === 'user' && (
                                                         <span className="read-status">
-                                                            <IonIcon icon={message.read ? checkmarkDoneOutline : checkmarkOutline} />
+                                                            <IonIcon
+                                                                icon={message.read ? checkmarkDoneOutline : checkmarkOutline}
+                                                            />
                                                         </span>
                                                     )}
                                                 </div>
@@ -664,10 +794,8 @@ const ChatPage: React.FC = () => {
                             </div>
                         </div>
 
-                        <div
-                            className={`chat-footer ${isKeyboardVisible ? 'keyboard-visible' : ''}`}
-                            id="chat-footer"
-                        >
+                        {/* Footer del chat (input de mensaje) */}
+                        <div className={`chat-footer ${isKeyboardVisible ? 'keyboard-visible' : ''}`}>
                             <div className="input-container">
                                 <button className="action-button">
                                     <IonIcon icon={addOutline} />
@@ -685,14 +813,6 @@ const ChatPage: React.FC = () => {
                                         onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                                         ref={inputRef}
                                         disabled={!isConnected}
-                                        onClick={() => {
-                                            // Asegurar que el input está visible cuando se hace clic en él
-                                            if (isMobile) {
-                                                setTimeout(() => {
-                                                    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                                }, 100);
-                                            }
-                                        }}
                                     />
                                 </div>
                                 {inputMessage.trim() ? (
