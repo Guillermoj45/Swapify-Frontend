@@ -35,8 +35,12 @@ interface Message {
     sender: 'user' | 'ai' | 'other';
     timestamp: Date;
     read: boolean;
+    delivered: boolean;
+    status: 'sending' | 'sent' | 'delivered' | 'read' | 'error';
     image?: string;
     senderName?: string;
+    senderId?: string; // AGREGAR ESTA LÍNEA
+    isTemporary?: boolean; // AGREGAR ESTA LÍNEA
 }
 
 interface Chat {
@@ -50,6 +54,7 @@ interface Chat {
     timestamp: Date;
     unreadCount: number;
     isOnline: boolean;
+    lastSeen?: Date;
 }
 
 const ChatPage: React.FC = () => {
@@ -60,6 +65,11 @@ const ChatPage: React.FC = () => {
     const [isConnecting, setIsConnecting] = useState(false);
     const currentUserId = sessionStorage.getItem('userId') || 'user';
     const currentUserName = sessionStorage.getItem('nickname') || 'Usuario';
+
+    const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected' | 'error'>('disconnected');
+    const [messageStatuses, setMessageStatuses] = useState<Map<string, string>>(new Map());
+    const [retryAttempts, setRetryAttempts] = useState(0);
+    const [offlineMessages, setOfflineMessages] = useState<Message[]>([]);
 
     // Estado para los chats
     const [chats, setChats] = useState<Chat[]>([]);
@@ -156,15 +166,23 @@ const ChatPage: React.FC = () => {
     }, []);
 
     const convertMessageDTOToMessage = useCallback((messageDTO: MessageDTO): Message => {
+        // Determinar quién envió el mensaje comparando con el usuario actual
+        const isCurrentUser = messageDTO.senderNickname === currentUserName ||
+            messageDTO.senderNickname === currentUserId;
+
         return {
             id: messageDTO.id,
             content: messageDTO.content,
-            sender: messageDTO.senderNickname === currentUserName ? 'user' : 'other',
+            sender: isCurrentUser ? 'user' : 'other',
             senderName: messageDTO.senderNickname,
+            senderId: messageDTO.senderNickname, // Usar nickname como ID temporal
             timestamp: new Date(messageDTO.createdAt),
-            read: true // Los mensajes históricos se consideran leídos
+            read: true,
+            delivered: true,
+            status: 'delivered',
+            isTemporary: false
         };
-    }, [currentUserName]);
+    }, [currentUserName, currentUserId]);
 
     const loadChatMessages = useCallback(async (chat: Chat) => {
         if (!chat.idProduct || !chat.idProfileProduct || !chat.idProfile) {
@@ -293,25 +311,73 @@ const ChatPage: React.FC = () => {
                 return;
             }
 
+            // Determinar si el mensaje es del usuario actual
+            const isFromCurrentUser = messageData.userName === currentUserName ||
+                messageData.senderNickname === currentUserName ||
+                messageData.userName === currentUserId ||
+                messageData.senderNickname === currentUserId;
+
+            // Si el mensaje es del usuario actual, actualizar el estado del mensaje temporal
+            if (isFromCurrentUser) {
+                setMessages(prev => {
+                    const updated = prev.map(msg => {
+                        if (msg.isTemporary && msg.content === messageData.content) {
+                            return {
+                                ...msg,
+                                id: messageData.messageId || msg.id,
+                                status: 'delivered',
+                                delivered: true,
+                                isTemporary: false
+                            };
+                        }
+                        return msg;
+                    });
+                    return updated;
+                });
+
+                // Actualizar estado del mensaje
+                if (messageData.messageId) {
+                    setMessageStatuses(prev => new Map(prev).set(messageData.messageId!, 'delivered'));
+                }
+                return;
+            }
+
+            // Crear nuevo mensaje para mensajes de otros usuarios
             const newMessage: Message = {
-                id: `${Date.now()}-${Math.random()}`,
+                id: messageData.messageId || `${Date.now()}-${Math.random()}`,
                 content: messageData.content,
-                sender: messageData.userName === currentUserName ? 'user' : 'other',
-                senderName: messageData.userName || 'Usuario desconocido',
+                sender: 'other',
+                senderName: messageData.senderNickname || messageData.userName || 'Usuario desconocido',
+                senderId: messageData.senderNickname || messageData.userName,
                 timestamp: messageData.timestamp ? new Date(messageData.timestamp) : new Date(),
-                read: false
+                read: false,
+                delivered: true,
+                status: 'delivered',
+                isTemporary: false
             };
 
             console.log('Mensaje procesado:', newMessage);
-            setMessages(prev => [...prev, newMessage]);
 
+            // Agregar solo si no existe ya
+            setMessages(prev => {
+                const exists = prev.some(msg =>
+                    msg.id === newMessage.id ||
+                    (msg.content === newMessage.content &&
+                        Math.abs(msg.timestamp.getTime() - newMessage.timestamp.getTime()) < 1000)
+                );
+
+                if (exists) return prev;
+                return [...prev, newMessage];
+            });
+
+            // Actualizar último mensaje del chat
             if (activeChat) {
                 updateLastMessage(activeChat.id, newMessage.content, newMessage.timestamp);
             }
         } catch (error) {
             console.error("Error al procesar el mensaje recibido:", error);
         }
-    }, [currentUserName, activeChat, updateLastMessage]);
+    }, [currentUserName, currentUserId, activeChat, updateLastMessage]);
 
     // Función para cargar los chats desde el backend
     const loadChats = useCallback(async () => {
