@@ -23,9 +23,10 @@ import {
     refreshOutline
 } from 'ionicons/icons';
 import Navegacion from '../../components/Navegation';
-import { chatService, ChatDTO, MensajeRecibeDTO } from "../../Services/ChatService";
+import { chatService, ChatDTO, MensajeRecibeDTO, MessageDTO } from "../../Services/ChatService";
 import useAuthRedirect from "../../Services/useAuthRedirect";
 import { ProductService } from "../../Services/ProductService";
+import cloudinaryImage from "../../Services/CloudinaryService";
 
 // Interfaces para los tipos de datos
 interface Message {
@@ -100,6 +101,7 @@ const ChatPage: React.FC = () => {
     const chatMainRef = useRef<HTMLDivElement>(null);
 
     const [loadingProductNames, setLoadingProductNames] = useState<Set<string>>(new Set());
+    const [loadingMessages, setLoadingMessages] = useState(false);
 
     // Función para cargar el nombre del producto de un chat específico
     const loadProductNameForChat = useCallback(async (chatId: string, productId: string, profileProductId: string) => {
@@ -153,25 +155,115 @@ const ChatPage: React.FC = () => {
         }
     }, []);
 
+    const convertMessageDTOToMessage = useCallback((messageDTO: MessageDTO): Message => {
+        return {
+            id: messageDTO.id,
+            content: messageDTO.content,
+            sender: messageDTO.senderNickname === currentUserName ? 'user' : 'other',
+            senderName: messageDTO.senderNickname,
+            timestamp: new Date(messageDTO.createdAt),
+            read: true // Los mensajes históricos se consideran leídos
+        };
+    }, [currentUserName]);
+
+    const loadChatMessages = useCallback(async (chat: Chat) => {
+        if (!chat.idProduct || !chat.idProfileProduct || !chat.idProfile) {
+            console.warn('No se pueden cargar mensajes sin IDs válidos:', chat);
+            return;
+        }
+
+        setLoadingMessages(true);
+        try {
+            console.log('Cargando mensajes para chat:', chat.name);
+
+            const messageDTOs = await chatService.getMessages(
+                chat.idProduct,
+                chat.idProfileProduct,
+                chat.idProfile
+            );
+
+            console.log('Mensajes cargados:', messageDTOs);
+
+            // Convertir MessageDTOs a Messages
+            const historicalMessages = messageDTOs.map(convertMessageDTOToMessage);
+
+            // Agregar mensaje de bienvenida si no hay mensajes históricos
+            const welcomeMessage: Message = {
+                id: 'welcome',
+                content: `Chat con ${chat.name}`,
+                sender: 'ai',
+                timestamp: new Date(),
+                read: true
+            };
+
+            // Si no hay mensajes históricos, solo mostrar el mensaje de bienvenida
+            if (historicalMessages.length === 0) {
+                setMessages([welcomeMessage]);
+            } else {
+                // Mostrar mensajes históricos sin el mensaje de bienvenida
+                setMessages(historicalMessages);
+            }
+
+            console.log(`Cargados ${historicalMessages.length} mensajes históricos para ${chat.name}`);
+
+        } catch (error) {
+            console.error('Error al cargar mensajes históricos:', error);
+            setError('Error al cargar los mensajes. Inténtalo de nuevo.');
+
+            // En caso de error, mostrar solo el mensaje de bienvenida
+            const welcomeMessage: Message = {
+                id: 'welcome',
+                content: `Chat con ${chat.name}`,
+                sender: 'ai',
+                timestamp: new Date(),
+                read: true
+            };
+            setMessages([welcomeMessage]);
+        } finally {
+            setLoadingMessages(false);
+        }
+    }, [convertMessageDTOToMessage]);
+
     // Función para convertir ChatDTO a Chat - simplificada
     const convertChatDTOToChat = useCallback((chatDTO: ChatDTO): Chat => {
-        // Usar el nombre que viene del DTO si está disponible, sino usar un placeholder
-        let chatName = chatDTO.productName || chatDTO.otherUserName || 'Cargando...';
-        let chatAvatar = chatName !== 'Cargando...' ? chatName.charAt(0).toUpperCase() : 'C';
+        console.log('Convirtiendo ChatDTO:', chatDTO);
+
+        // Extraer datos de la estructura real del backend
+        const productId = chatDTO.product?.id || '';
+        const profileProductId = chatDTO.product?.profile?.id || '';
+        const profileId = chatDTO.profileNoProduct?.id || '';
+
+        // Determinar quién es el "otro usuario" y el nombre del chat
+        let chatName: string;
+        let chatAvatar: string;
+
+        if (chatDTO.profileProductSender) {
+            // Si el sender es el dueño del producto, el chat se llama como el usuario sin producto
+            chatName = chatDTO.profileNoProduct?.nickname || 'Usuario desconocido';
+            chatAvatar = chatDTO.profileNoProduct?.avatar || chatName.charAt(0).toUpperCase();
+        } else {
+            // Si el sender no es el dueño del producto, el chat se llama como el producto
+            chatName = chatDTO.product?.name || 'Producto desconocido';
+            chatAvatar = chatName.charAt(0).toUpperCase();
+        }
+
+        // Crear un ID único para el chat combinando los IDs relevantes
+        const chatId = `${productId}-${profileProductId}-${profileId}`;
 
         const chat: Chat = {
-            id: chatDTO.id,
-            idProduct: chatDTO.productId,
-            idProfileProduct: chatDTO.profileProductId,
-            idProfile: chatDTO.profileId,
+            id: chatId,
+            idProduct: productId,
+            idProfileProduct: profileProductId,
+            idProfile: profileId,
             name: chatName,
             avatar: chatAvatar,
-            lastMessage: chatDTO.lastMessage || 'No hay mensajes',
-            timestamp: chatDTO.lastMessageTime ? new Date(chatDTO.lastMessageTime) : new Date(),
+            lastMessage: chatDTO.message || 'No hay mensajes',
+            timestamp: chatDTO.createdAt ? new Date(chatDTO.createdAt) : new Date(),
             unreadCount: 0,
             isOnline: true
         };
 
+        console.log('Chat convertido:', chat);
         return chat;
     }, []);
 
@@ -378,6 +470,13 @@ const ChatPage: React.FC = () => {
 
     // Manejar cambio de chat
     const handleChatSelect = useCallback(async (chat: Chat) => {
+        console.log('Seleccionando chat:', chat); // Para debug
+        console.log('IDs del chat:', {
+            idProduct: chat.idProduct,
+            idProfileProduct: chat.idProfileProduct,
+            idProfile: chat.idProfile
+        });
+
         setActiveChat(chat);
 
         // Marcar como leído
@@ -537,15 +636,8 @@ const ChatPage: React.FC = () => {
 
                 setActiveSubscription(subscriptionKey);
 
-                const welcomeMessage: Message = {
-                    id: 'welcome',
-                    content: `Chat con ${activeChat.name}`,
-                    sender: 'ai',
-                    timestamp: new Date(),
-                    read: true
-                };
-
-                setMessages([welcomeMessage]);
+                // Cargar mensajes históricos en lugar de solo mostrar mensaje de bienvenida
+                loadChatMessages(activeChat);
 
                 console.log(`Suscrito exitosamente al chat: ${activeChat.name}`);
             } catch (error) {
@@ -553,7 +645,8 @@ const ChatPage: React.FC = () => {
                 setError('Error al conectar con el chat. Inténtalo de nuevo.');
             }
         }
-    }, [isConnected, activeChat, handleMessageReceived, handleSubscriptionError, activeSubscription]);
+    }, [isConnected, activeChat, handleMessageReceived, handleSubscriptionError, activeSubscription, loadChatMessages]);
+
 
     // Enfoque en el input cuando se cambia de chat
     useEffect(() => {
@@ -662,7 +755,7 @@ const ChatPage: React.FC = () => {
                                         {loadingProductNames.has(chat.id) ? (
                                             <IonSpinner name="crescent" />
                                         ) : (
-                                            chat.avatar
+                                            <img src={cloudinaryImage(chat.avatar)}/>
                                         )}
                                     </div>
                                 </div>
@@ -701,7 +794,9 @@ const ChatPage: React.FC = () => {
                                     <IonIcon icon={arrowBackOutline} />
                                 </button>
                                 <div className={`chat-avatar ${activeChat.isOnline ? 'online' : ''}`}>
-                                    <div className="user-avatar-chat">{activeChat.avatar}</div>
+                                    <div className="user-avatar-chat">
+                                        <img src={cloudinaryImage(activeChat.avatar)} alt={"Avatar"}/>
+                                    </div>
                                 </div>
                                 <div className="chat-info">
                                     <h3>{activeChat.name}</h3>
@@ -725,73 +820,80 @@ const ChatPage: React.FC = () => {
 
                         {/* Contenedor de mensajes */}
                         <div className="messages-container" id="messages-container">
-                            <div className="messages-list">
-                                {messages.map(message => (
-                                    <div
-                                        key={message.id}
-                                        className={`message-container ${
-                                            message.sender === 'user' ? 'user-message' :
-                                                message.sender === 'ai' ? 'ai-message' : 'other-message'
-                                        }`}
-                                    >
-                                        <div className="message-avatar">
-                                            {message.sender === 'ai' ? (
-                                                <div className="ai-avatar">AI</div>
-                                            ) : message.sender === 'user' ? (
-                                                <div className="user-avatar">
-                                                    {currentUserName.charAt(0).toUpperCase()}
-                                                </div>
-                                            ) : (
-                                                <div className="user-avatar-chat">
-                                                    {message.senderName?.charAt(0).toUpperCase() || 'O'}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="message-content">
-                                            {message.sender === 'other' && (
-                                                <div className="sender-name">{message.senderName}</div>
-                                            )}
-                                            <div className="message-bubble">
-                                                {message.image && (
-                                                    <div className="message-image-container">
-                                                        <img
-                                                            src={message.image}
-                                                            alt="Imagen adjunta"
-                                                            className="message-image"
-                                                        />
+                            {loadingMessages ? (
+                                <div className="loading-messages">
+                                    <IonSpinner name="crescent" />
+                                    <p>Cargando mensajes...</p>
+                                </div>
+                            ) : (
+                                <div className="messages-list">
+                                    {messages.map(message => (
+                                        <div
+                                            key={message.id}
+                                            className={`message-container ${
+                                                message.sender === 'user' ? 'user-message' :
+                                                    message.sender === 'ai' ? 'ai-message' : 'other-message'
+                                            }`}
+                                        >
+                                            <div className="message-avatar">
+                                                {message.sender === 'ai' ? (
+                                                    <div className="ai-avatar">AI</div>
+                                                ) : message.sender === 'user' ? (
+                                                    <div className="user-avatar">
+                                                        {currentUserName.charAt(0).toUpperCase()}
+                                                    </div>
+                                                ) : (
+                                                    <div className="user-avatar-chat">
+                                                        {message.senderName?.charAt(0).toUpperCase() || 'O'}
                                                     </div>
                                                 )}
-                                                <div className="message-text">{message.content}</div>
-                                                <div className="message-time">
-                                                    {formatMessageTime(message.timestamp)}
-                                                    {message.sender === 'user' && (
-                                                        <span className="read-status">
-                                                            <IonIcon
-                                                                icon={message.read ? checkmarkDoneOutline : checkmarkOutline}
+                                            </div>
+                                            <div className="message-content">
+                                                {message.sender === 'other' && (
+                                                    <div className="sender-name">{message.senderName}</div>
+                                                )}
+                                                <div className="message-bubble">
+                                                    {message.image && (
+                                                        <div className="message-image-container">
+                                                            <img
+                                                                src={message.image}
+                                                                alt="Imagen adjunta"
+                                                                className="message-image"
                                                             />
-                                                        </span>
+                                                        </div>
                                                     )}
+                                                    <div className="message-text">{message.content}</div>
+                                                    <div className="message-time">
+                                                        {formatMessageTime(message.timestamp)}
+                                                        {message.sender === 'user' && (
+                                                            <span className="read-status">
+                                        <IonIcon
+                                            icon={message.read ? checkmarkDoneOutline : checkmarkOutline}
+                                        />
+                                    </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
 
-                                {isTyping && (
-                                    <div className="message-container ai-message">
-                                        <div className="message-avatar">
-                                            <div className="ai-avatar">AI</div>
-                                        </div>
-                                        <div className="message-content">
-                                            <div className="message-bubble typing-indicator">
-                                                <IonSpinner name="dots" />
+                                    {isTyping && (
+                                        <div className="message-container ai-message">
+                                            <div className="message-avatar">
+                                                <div className="ai-avatar">AI</div>
+                                            </div>
+                                            <div className="message-content">
+                                                <div className="message-bubble typing-indicator">
+                                                    <IonSpinner name="dots" />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                <div ref={messagesEndRef}></div>
-                            </div>
+                                    <div ref={messagesEndRef}></div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Footer del chat (input de mensaje) */}

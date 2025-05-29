@@ -10,15 +10,63 @@ export interface MensajeRecibeDTO {
     userName?: string;
 }
 
-export interface ChatDTO {
+export interface ProfileDTO {
     id: string;
-    productId: string;
-    profileProductId: string;
-    profileId: string;
+    nickname: string;
+    avatar: string;
+    banAt: boolean;
+    premium: string;
+    ubicacion: string | null;
+    banner?: string;
+    newUser: boolean;
+}
+
+export interface CategoryDTO {
+    name: string;
+    description: string;
+}
+
+export interface ProductDTO {
+    id: string;
+    name: string;
+    description: string;
+    points: number;
+    createdAt: string;
+    updatedAt: string;
+    imagenes: string[];
+    profile: ProfileDTO;
+    categories: CategoryDTO[];
+}
+
+// Interfaz actualizada para el ChatDTO que viene del backend
+export interface ChatDTO {
+    profileNoProduct: ProfileDTO;
+    product: ProductDTO;
+    createdAt: string;
+    message: string;
+    profileProductSender: boolean;
+
+    // Campos opcionales para mantener compatibilidad con código existente
+    id?: string;
+    productId?: string;
+    profileProductId?: string;
+    profileId?: string;
+    idProduct?: string;
+    idProfileProduct?: string;
+    idProfile?: string;
     lastMessage?: string;
     lastMessageTime?: string;
     productName?: string;
     otherUserName?: string;
+}
+
+// Nueva interfaz para los mensajes individuales
+export interface MessageDTO {
+    id: string;
+    content: string;
+    createdAt: string;
+    isProfileProductSender: boolean;
+    senderNickname: string;
 }
 
 export interface MessageCallback {
@@ -67,6 +115,42 @@ class ChatService {
             return response.data;
         } catch (error) {
             console.error('Error al obtener chats:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtiene todos los mensajes entre dos usuarios relacionados con un producto específico
+     */
+    async getMessages(
+        idProduct: string,
+        idProfileProduct: string,
+        idProfileNoProduct: string
+    ): Promise<MessageDTO[]> {
+        try {
+            const token = this.getAuthToken();
+            if (!token) {
+                throw new Error('No se encontró token de autenticación');
+            }
+
+            // Validar parámetros
+            if (!this.validateChatParams(idProduct, idProfileProduct, idProfileNoProduct)) {
+                throw new Error('Parámetros inválidos para obtener mensajes');
+            }
+
+            const response = await API.get(
+                `/chat/messages/${idProduct}/${idProfileProduct}/${idProfileNoProduct}`,
+                {
+                    headers: {
+                        'Authorization': token
+                    }
+                }
+            );
+
+            console.log('✅ Mensajes obtenidos exitosamente:', response.data.length);
+            return response.data;
+        } catch (error) {
+            console.error('❌ Error al obtener mensajes:', error);
             throw error;
         }
     }
