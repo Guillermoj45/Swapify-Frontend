@@ -381,7 +381,7 @@ const Settings: React.FC = () => {
                 <IonCardContent className="profile-form-content">
                     <IonList className="profile-form-list">
                         <IonItem className="ion-margin-bottom editable-field">
-                            <IonLabel position="floating">Nickname</IonLabel>
+                            <IonLabel style={{ marginBottom: '15px' }} position="floating">Nickname</IonLabel>
                             <IonInput
                                 value={profile.nickname}
                                 onIonChange={(e) => handleInputChange(e, 'nickname')}
@@ -389,7 +389,7 @@ const Settings: React.FC = () => {
                         </IonItem>
 
                         <IonItem className="ion-margin-bottom readonly-field">
-                            <IonLabel position="floating">Email</IonLabel>
+                            <IonLabel  style={{ marginBottom: '15px' }} position="floating">Email</IonLabel>
                             <IonInput
                                 value={profile.email}
                                 readonly
@@ -398,7 +398,7 @@ const Settings: React.FC = () => {
                         </IonItem>
 
                         <IonItem className="ion-margin-bottom readonly-field">
-                            <IonLabel position="floating">Premium</IonLabel>
+                            <IonLabel  style={{ marginBottom: '15px' }} position="floating">Premium</IonLabel>
                             <IonInput
                                 value={profile.premium}
                                 readonly

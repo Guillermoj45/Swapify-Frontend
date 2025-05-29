@@ -1276,8 +1276,12 @@ const ProductsPage = () => {
                                 <div className="search-suggestions">
                                     <IonList>
                                         {searchResults.map((product) => (
-                                            <IonItem key={product.id} onClick={() => handleSelectSuggestion(product)}>
-                                                <IonIcon icon={search} slot="start"/>
+                                            <IonItem
+                                                key={product.id}
+                                                onClick={() => handleSelectSuggestion(product)}
+                                                style={{ marginLeft: '200px' }}
+                                            >
+                                                <IonIcon icon={search} slot="start" />
                                                 <IonLabel>{product.name}</IonLabel>
                                             </IonItem>
                                         ))}
@@ -1454,11 +1458,14 @@ const ProductsPage = () => {
                             onTouchMove={handleTouchMove}
                             onTouchEnd={handleTouchEnd}
                         >
-                            {sliderItems.map((item) => (
+                            {sliderItems.map((item, index) => (
                                 <div
                                     key={item.id}
                                     className={`slider-item slide-${item.id}`}
-                                    style={{backgroundColor: item.backgroundColor}}
+                                    style={{
+                                        backgroundColor: item.backgroundColor,
+                                        marginLeft: index === 0 ? '0' : '10px' // Agrega margen solo a los elementos después del primero
+                                    }}
                                 >
                                     <div className="slider-content">
                                         <div className="slider-text" style={{color: item.textColor}}>

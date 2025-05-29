@@ -441,6 +441,11 @@ body.dark-theme .danger-zone-title {
     color: var(--dark-danger, #f87171);
 }
 
+.light-theme .danger-zone-title {
+    color: #f87171 !important;
+}
+
+
 .logout-button {
     margin-bottom: 12px;
     --border-radius: 12px;
@@ -500,13 +505,7 @@ body.dark-theme .profile-section-card {
     margin-bottom: 20px;
 }
 
-/* Enhanced styling for editable fields con mejor feedback visual */
-.profile-form-list ion-item.editable-field {
-    --background: transparent;
-    border-bottom: 2px solid var(--light-border);
-    transition: border-color 0.3s ease;
-    padding-bottom: 6px;
-}
+
 
 body.dark-theme .profile-form-list ion-item.editable-field {
     border-bottom-color: var(--dark-border);
@@ -526,10 +525,18 @@ body.dark-theme .profile-form-list ion-item.editable-field:focus-within {
 
 /* Enhanced styling for read-only fields con mejor diseño visual */
 .profile-form-list ion-item.readonly-field {
-    --background: var(--light-input-bg);
-    border-radius: 10px;
-    opacity: 0.9;
-    padding: 8px 12px;
+    --background: transparent;
+    border-bottom: 2px solid var(--light-border);
+    transition: border-color 0.3s ease;
+    padding-bottom: 6px;
+}
+
+/* Enhanced styling for editable fields con mejor feedback visual */
+.profile-form-list ion-item.editable-field {
+    --background: transparent;
+    border-bottom: 2px solid var(--light-border);
+    transition: border-color 0.3s ease;
+    padding-bottom: 6px;
 }
 
 body.dark-theme .profile-form-list ion-item.readonly-field {
