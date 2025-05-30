@@ -1,6 +1,5 @@
-
 import { Redirect, Route } from 'react-router-dom';
-import {IonApp, IonRouterOutlet, IonToast, setupIonicReact} from '@ionic/react';
+import { IonApp, IonRouterOutlet, IonToast, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { useState, useEffect } from 'react';
 import Navegacion from './components/Navegation';
@@ -36,7 +35,7 @@ import SuscripcionPage from "./pages/Suscripcion/SuscripcionPage";
 import PagoPremium from "./pages/PagoPremium/PagoPremium";
 import ProductDetailPage from "./pages/ProductDetail/ProductDetailPage";
 import SettingsPage from "./pages/Settings/SettingsPage";
-import {WebSocketService} from "./Services/websocket";
+import { WebSocketService } from "./Services/websocket";
 import Notification from "./pages/Notification/Notification";
 import { MensajeRecibeDTO } from './Services/websocket';
 import { addNotification } from './Services/DatosParaExoportar';
@@ -53,8 +52,6 @@ const App: React.FC = () => {
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
 
-
-    // NUEVO useEffect para manejar la conexión WebSocket
     useEffect(() => {
         WebSocketService.connect()
             .then((conectado) => {
@@ -77,8 +74,15 @@ const App: React.FC = () => {
                             // Usar la función global para agregar la notificación
                             addNotification(transformedNotification);
 
-                            setToastMessage(`${transformedNotification.senderName}: ${transformedNotification.content}`);
-                            setShowToast(true);
+                            // Verificar condiciones antes de mostrar el Toast
+                            if (
+                                !isChatView &&
+                                transformedNotification.content !== `${transformedNotification.senderName} te ha escrito:` &&
+                                transformedNotification.content.trim() !== ''
+                            )  {
+                                setToastMessage(`${transformedNotification.senderName}: ${transformedNotification.content}`);
+                                setShowToast(true);
+                            }
                         });
                     });
                 }
@@ -146,50 +150,51 @@ const App: React.FC = () => {
                         <ProfilePage />
                     </Route>
                     <Route exact path="/passwordRecover">
-                        <PasswordRecover/>
+                        <PasswordRecover />
                     </Route>
                     <Route exact path="/IA">
-                        <IA/>
+                        <IA />
                     </Route>
                     <Route exact path="/premiumSuscribe">
                         <SuscripcionPage />
                     </Route>
                     <Route exact path="/paymentGateway">
-                        <PagoPremium/>
+                        <PagoPremium />
                     </Route>
                     <Route exact path="/chat">
-                        <ChatPage/>
+                        <ChatPage />
                     </Route>
                     <Route exact path="/product/:id/:profileId">
-                        <ProductDetailPage/>
+                        <ProductDetailPage />
                     </Route>
                     <Route exact path="/settings">
                         <SettingsPage />
                     </Route>
                     <Route exact path="/notification">
-                        <Notification/>
+                        <Notification />
                     </Route>
                 </IonRouterOutlet>
             </IonReactRouter>
 
-            <IonToast
-                isOpen={showToast}
-                onDidDismiss={() => setShowToast(false)}
-                message={toastMessage}
-                duration={3000}
-                position="bottom"
-                buttons={[
-                    {
-                        text: 'Ver',
-                        handler: () => {
-                            window.location.href = '/notification';
+            {!isChatView && (
+                <IonToast
+                    isOpen={showToast}
+                    onDidDismiss={() => setShowToast(false)}
+                    message={toastMessage}
+                    duration={3000}
+                    position="bottom"
+                    buttons={[
+                        {
+                            text: 'Ver',
+                            handler: () => {
+                                window.location.href = '/notification';
+                            }
                         }
-                    }
-                ]}
-            />
+                    ]}
+                />
+            )}
         </IonApp>
     );
 };
 
 export default App;
-

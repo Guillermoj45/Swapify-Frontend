@@ -2,6 +2,7 @@ import api from "./apiConfig";
 import { ProfileSettings } from "../Models/ProfileSettings";
 
 interface ProfileWithFile extends Omit<ProfileSettings, 'avatar'> {
+    ubicacion: string;
     avatar?: string | File;
 }
 
@@ -47,6 +48,7 @@ export class Settings {
 
             formData.append('nickname', profile.nickname || '');
             formData.append('email', profile.email || '');
+            formData.append('ubicacion', profile.ubicacion || '');
 
             if (profile.avatar) {
                 if (profile.avatar instanceof File) {

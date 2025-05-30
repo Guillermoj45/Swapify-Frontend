@@ -50,6 +50,7 @@ import useAuthRedirect from "../../Services/useAuthRedirect";
 import { Settings as SettingsService } from '../../Services/SettingsService';
 import {ProductService} from "../../Services/ProductService";
 import cloudinaryImage from "../../Services/CloudinaryService";
+import './chat-alert.css'; // Import the CSS file
 
 interface Message {
     id: number | string;
@@ -1320,107 +1321,36 @@ const AIChatPage: React.FC = () => {
         </IonContent>
     );
 
+
+
     const NewChatAlert = () => (
         <IonPopover
             isOpen={showNewChatAlert}
             onDidDismiss={() => setShowNewChatAlert(false)}
             className="new-chat-alert"
-            style={{
-                '--background': '#e0e0e0', // Fondo gris
-                '--border-radius': '12px',
-                '--box-shadow': '0 4px 12px rgba(0, 0, 0, 0.1)',
-                padding: '20px',
-                maxWidth: '400px',
-                width: '90%',
-            }}
         >
-            <div
-                className="alert-content"
-                style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '16px',
-                    textAlign: 'center',
-                }}
-            >
-                <h3
-                    style={{
-                        fontSize: '1.5rem',
-                        fontWeight: 'bold',
-                        color: '#000000', // Letras en negro
-                        marginBottom: '8px',
-                    }}
-                >
-                    Nueva conversación
-                </h3>
-                <IonItem
-                    style={{
-                        '--background': 'transparent',
-                        '--border-radius': '8px',
-                        '--padding-start': '0',
-                        '--padding-end': '0',
-                    }}
-                >
-                    <IonLabel
-                        position="floating"
-                        style={{
-                            fontSize: '1rem',
-                            color: '#000000', // Letras en negro
-                        }}
-                    >
+            <div className="alert-content">
+                <h3>Nueva conversación</h3>
+
+                    <IonLabel position="floating" className="label-with-margin">
                         Título
                     </IonLabel>
                     <IonInput
                         value={newChatTitle}
                         onIonChange={(e) => setNewChatTitle(e.detail.value || '')}
                         placeholder="Ej: Consulta sobre IA"
-                        style={{
-                            fontSize: '1rem',
-                            padding: '8px',
-                            border: '1px solid #cccccc',
-                            borderRadius: '8px',
-                            backgroundColor: '#ffffff',
-                            color: '#000000', // Letras en negro
-                        }}
                     />
-                </IonItem>
-                <div
-                    className="alert-buttons"
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        gap: '12px',
-                    }}
-                >
-                    <IonButton
-                        onClick={() => setShowNewChatAlert(false)}
-                        style={{
-                            flex: '1',
-                            backgroundColor: '#f5f5f5',
-                            color: '#000000', // Letras en negro
-                            borderRadius: '8px',
-                            fontWeight: 'bold',
-                        }}
-                    >
+
+                <div className="alert-buttons">
+                    <IonButton onClick={() => setShowNewChatAlert(false)}>
                         Cancelar
                     </IonButton>
-                    <IonButton
-                        onClick={handleCreateNewChat}
-                        strong={true}
-                        style={{
-                            flex: '1',
-                            backgroundColor: '#007bff',
-                            color: '#ffffff',
-                            borderRadius: '8px',
-                            fontWeight: 'bold',
-                        }}
-                    >
+                    <IonButton onClick={handleCreateNewChat} strong={true}>
                         Crear
                     </IonButton>
                 </div>
             </div>
         </IonPopover>
-
     );
 
     const ProductSidePanel: React.FC<ProductSidePanelProps> = ({ showProductSidebar, setShowProductSidebar, productInfo, handleProductAction }) => (

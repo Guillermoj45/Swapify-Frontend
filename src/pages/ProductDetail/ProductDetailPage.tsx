@@ -463,7 +463,7 @@ const ProductDetailPage: React.FC = () => {
                             {/* Ubicación */}
                             <div className="modern-location">
                                 <IonIcon icon={locationOutline} />
-                                <span>Ubicación no especificada</span>
+                                <span>{product.profile.ubicacion || "Ubicación no especificada"}</span>
                             </div>
 
                             {/* Botones de acción */}

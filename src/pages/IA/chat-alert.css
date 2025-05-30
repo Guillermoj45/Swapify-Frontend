@@ -1,0 +1,240 @@
+/* New Chat Alert Styles */
+.new-chat-alert {
+    --popup-background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    --popup-border: rgba(148, 163, 184, 0.2);
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --input-background: #ffffff;
+    --input-border: #e2e8f0;
+    --input-focus: linear-gradient(135deg, #3b82f6, #8b5cf6, #06b6d4);
+    --button-cancel-bg: #f1f5f9;
+    --button-cancel-text: #475569;
+    --button-cancel-hover: #e2e8f0;
+    --button-create-bg: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #06b6d4 100%);
+    --button-create-hover: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #0891b2 100%);
+    --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --ai-accent: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4, #10b981);
+}
+
+/* Dark mode variables */
+@media (prefers-color-scheme: dark) {
+    .new-chat-alert {
+        --popup-background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        --popup-border: rgba(71, 85, 105, 0.3);
+        --text-primary: #f1f5f9;
+        --text-secondary: #cbd5e1;
+        --input-background: #334155;
+        --input-border: #475569;
+        --button-cancel-bg: #374151;
+        --button-cancel-text: #d1d5db;
+        --button-cancel-hover: #4b5563;
+        --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* Manual dark mode class */
+.dark .new-chat-alert {
+    --popup-background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    --popup-border: rgba(71, 85, 105, 0.3);
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --input-background: #334155;
+    --input-border: #475569;
+    --button-cancel-bg: #374151;
+    --button-cancel-text: #d1d5db;
+    --button-cancel-hover: #4b5563;
+    --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+.new-chat-alert {
+    --background: transparent !important;
+    --border-radius: 16px !important;
+    --box-shadow: var(--shadow) !important;
+    padding: 0 !important;
+    max-width: 420px !important;
+    width: 90% !important;
+}
+
+.new-chat-alert::part(content) {
+    background: var(--popup-background);
+    border: 1px solid var(--popup-border);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* AI accent border */
+.new-chat-alert::part(content)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--ai-accent);
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { background-position: 200% 0; }
+    50% { background-position: -200% 0; }
+}
+
+.alert-content {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+    padding: 24px !important;
+    text-align: center !important;
+}
+
+.alert-content h3 {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+    margin: 0 !important;
+    background: var(--ai-accent);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+.alert-content ion-item {
+    --background: transparent !important;
+    --border-radius: 12px !important;
+    --padding-start: 0 !important;
+    --padding-end: 0 !important;
+    --inner-padding-end: 0 !important;
+    --inner-padding-start: 0 !important;
+    margin: 0 !important;
+}
+
+.alert-content ion-label {
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: var(--text-secondary) !important;
+    margin-bottom: 8px !important;
+}
+
+.alert-content ion-input {
+    --background: var(--input-background) !important;
+    --color: var(--text-primary) !important;
+    --placeholder-color: var(--text-secondary) !important;
+    --padding-start: 16px !important;
+    --padding-end: 16px !important;
+    --padding-top: 12px !important;
+    --padding-bottom: 12px !important;
+    border: 2px solid var(--input-border) !important;
+    border-radius: 12px !important;
+    font-size: 1rem !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+}
+
+.alert-content ion-input:focus-within {
+    border: 2px solid transparent !important;
+    background: var(--input-focus) !important;
+    background-clip: padding-box !important;
+    box-shadow: 0 0 0 2px var(--input-background), 0 0 0 4px var(--ai-accent) !important;
+}
+
+.alert-buttons {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    margin-top: 8px !important;
+}
+
+.alert-buttons ion-button {
+    flex: 1 !important;
+    height: 48px !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    text-transform: none !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.alert-buttons ion-button:first-child {
+    --background: var(--button-cancel-bg) !important;
+    --color: var(--button-cancel-text) !important;
+    border: 1px solid var(--popup-border) !important;
+}
+
+.alert-buttons ion-button:first-child:hover {
+    --background: var(--button-cancel-hover) !important;
+    transform: translateY(-1px) !important;
+}
+
+.alert-buttons ion-button:last-child {
+    --background: var(--button-create-bg) !important;
+    --color: #ffffff !important;
+    border: none !important;
+    position: relative !important;
+}
+
+.alert-buttons ion-button:last-child::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--button-create-hover);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.alert-buttons ion-button:last-child:hover::before {
+    opacity: 1;
+}
+
+.alert-buttons ion-button:last-child:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .new-chat-alert {
+        width: 95% !important;
+        max-width: 350px !important;
+    }
+
+    .alert-content {
+        padding: 20px !important;
+        gap: 16px !important;
+    }
+
+    .alert-content h3 {
+        font-size: 1.25rem !important;
+    }
+
+    .alert-buttons ion-button {
+        height: 44px !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+/* Animation for popup entrance */
+.new-chat-alert {
+    animation: popupEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popupEnter {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
