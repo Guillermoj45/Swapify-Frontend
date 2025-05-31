@@ -211,12 +211,6 @@ const SuscripcionPage: React.FC = () => {
                                             </div>
                                             +20 puntos al precio evaluado
                                         </li>
-                                        <li>
-                                            <div className="check-container free-check">
-                                                <IonIcon icon={checkmarkCircle} className="check-icon" />
-                                            </div>
-                                            Acceso a todos los productos sin restricción
-                                        </li>
                                     </ul>
 
                                     <IonButton
@@ -262,12 +256,6 @@ const SuscripcionPage: React.FC = () => {
                                                 <IonIcon icon={closeCircle} className="limited-icon" />
                                             </div>
                                             Sin bonus al precio evaluado
-                                        </li>
-                                        <li>
-                                            <div className="check-container limited-check">
-                                                <IonIcon icon={closeCircle} className="limited-icon" />
-                                            </div>
-                                            Acceso limitado a productos
                                         </li>
                                     </ul>
 
