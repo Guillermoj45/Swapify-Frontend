@@ -107,7 +107,7 @@ class ChatService {
                 throw new Error('No se encontró token de autenticación');
             }
 
-            const response = await API.get('/chat/get', {
+            const response = await API.get('/chat/conversations-native', {
                 headers: {
                     'Authorization': token
                 }
