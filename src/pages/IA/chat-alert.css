@@ -14,6 +14,14 @@
     --button-create-hover: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #0891b2 100%);
     --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     --ai-accent: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4, #10b981);
+
+    /* Center positioning */
+    --offset-y: 0 !important;
+    --offset-x: 0 !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
 }
 
 /* Dark mode variables */
@@ -237,4 +245,3 @@
         transform: scale(1) translateY(0);
     }
 }
-
