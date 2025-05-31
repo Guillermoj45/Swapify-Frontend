@@ -164,6 +164,7 @@ const AIChatPage: React.FC = () => {
     const [conversationsPage, setConversationsPage] = useState<number>(0)
     const [hasMoreConversations, setHasMoreConversations] = useState<boolean>(true)
     const [loadingError, setLoadingError] = useState<string | null>(null)
+    const [isButtonSelected, setIsButtonSelected] = useState<boolean>(false);
 
     // Product state
     const [showProductSidebar, setShowProductSidebar] = useState<boolean>(false)
@@ -654,13 +655,10 @@ const AIChatPage: React.FC = () => {
 
     // ==================== MESSAGE HANDLING ====================
     const handleSend = async (): Promise<void> => {
-        console.log("handleSend called - inputText:", `"${inputText}"`, "selectedImages:", selectedImages.length)
 
         const currentText = inputText.trim()
         const currentImages = [...selectedImages]
         const currentPreviews = [...previewImages]
-
-        console.log("Current values - text:", `"${currentText}"`, "images:", currentImages.length)
 
         if (currentText === "" && !currentImages) {
             console.log("No text and no images, aborting send")
@@ -713,14 +711,11 @@ const AIChatPage: React.FC = () => {
                 }
             }
 
-            console.log("Message to API:", messageToAPI)
-            console.log("Title to send:", tituloToSend)
-
             setInputText("")
             setSelectedImages([])
             setPreviewImages([])
 
-            console.log("Inputs cleared, calling IAChat")
+            const guille = isButtonSelected.valueOf()
 
             const response = await IAChat(
                 currentImages,
@@ -728,6 +723,7 @@ const AIChatPage: React.FC = () => {
                 currentChatId || undefined,
                 productId || undefined,
                 tituloToSend,
+                guille
             )
 
             if (response) {
@@ -1558,7 +1554,10 @@ const AIChatPage: React.FC = () => {
 
                             <IonButton
                                 fill="clear"
-                                onClick={toggleProductSummaryMode}
+                                onClick={() => {
+                                    toggleProductSummaryMode();
+                                    setIsButtonSelected((prev) => !prev);
+                                }}
                                 className="action-button"
                                 color={productSummaryMode ? "primary" : "medium"}
                             >
