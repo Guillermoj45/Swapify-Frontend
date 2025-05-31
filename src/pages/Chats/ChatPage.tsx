@@ -4,11 +4,9 @@ import {
     IonIcon,
     IonSpinner,
     IonButtons,
-    IonMenuButton
+    IonMenuButton, IonContent, IonPage
 } from '@ionic/react';
 import {
-    sunnyOutline,
-    moonOutline,
     searchOutline,
     arrowBackOutline,
     ellipsisVerticalOutline,
@@ -27,6 +25,8 @@ import { chatService, ChatDTO, MensajeRecibeDTO, MessageDTO } from "../../Servic
 import useAuthRedirect from "../../Services/useAuthRedirect";
 import { ProductService } from "../../Services/ProductService";
 import cloudinaryImage from "../../Services/CloudinaryService";
+import { ProfileService, ProfileDTO } from '../../Services/ProfileService';
+import { Settings as SettingsService } from '../../Services/SettingsService';
 
 // Interfaces para los tipos de datos
 interface Message {
@@ -39,8 +39,8 @@ interface Message {
     status: 'sending' | 'sent' | 'delivered' | 'read' | 'error';
     image?: string;
     senderName?: string;
-    senderId?: string; // AGREGAR ESTA LÍNEA
-    isTemporary?: boolean; // AGREGAR ESTA LÍNEA
+    senderId?: string;
+    isTemporary?: boolean;
 }
 
 interface Chat {
@@ -66,10 +66,10 @@ const ChatPage: React.FC = () => {
     const currentUserId = sessionStorage.getItem('userId') || 'user';
     const currentUserName = sessionStorage.getItem('nickname') || 'Usuario';
 
-    const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected' | 'error'>('disconnected');
-    const [messageStatuses, setMessageStatuses] = useState<Map<string, string>>(new Map());
-    const [retryAttempts, setRetryAttempts] = useState(0);
-    const [offlineMessages, setOfflineMessages] = useState<Message[]>([]);
+    const [currentUserProfile, setCurrentUserProfile] = useState<ProfileDTO | null>(null);
+    const [loadingProfile, setLoadingProfile] = useState(true);
+
+    const [, setMessageStatuses] = useState<Map<string, string>>(new Map());
 
     // Estado para los chats
     const [chats, setChats] = useState<Chat[]>([]);
@@ -166,23 +166,43 @@ const ChatPage: React.FC = () => {
     }, []);
 
     const convertMessageDTOToMessage = useCallback((messageDTO: MessageDTO): Message => {
-        // Determinar quién envió el mensaje comparando con el usuario actual
-        const isCurrentUser = messageDTO.senderNickname === currentUserName ||
-            messageDTO.senderNickname === currentUserId;
+        if (!currentUserProfile || !activeChat) {
+            // Fallback si no tenemos la información necesaria
+            return {
+                id: messageDTO.id,
+                content: messageDTO.content,
+                sender: 'other',
+                timestamp: new Date(messageDTO.createdAt),
+                read: true,
+                delivered: true,
+                status: 'read',
+                senderName: messageDTO.senderNickname,
+                senderId: messageDTO.senderNickname,
+                isTemporary: false
+            };
+        }
+
+        // Verificar si el usuario actual es el dueño del producto
+        const isCurrentUserProductOwner = activeChat.idProfileProduct === currentUserProfile.id;
+
+        // Determinar si el mensaje es del usuario actual
+        const isFromCurrentUser = isCurrentUserProductOwner
+            ? messageDTO.profileProductSender
+            : !messageDTO.profileProductSender;
 
         return {
             id: messageDTO.id,
             content: messageDTO.content,
-            sender: isCurrentUser ? 'user' : 'other',
-            senderName: messageDTO.senderNickname,
-            senderId: messageDTO.senderNickname, // Usar nickname como ID temporal
+            sender: isFromCurrentUser ? 'user' : 'other',
             timestamp: new Date(messageDTO.createdAt),
             read: true,
             delivered: true,
-            status: 'delivered',
+            status: 'read',
+            senderName: messageDTO.senderNickname,
+            senderId: messageDTO.senderNickname,
             isTemporary: false
         };
-    }, [currentUserName, currentUserId]);
+    }, [activeChat, currentUserProfile]);
 
     const loadChatMessages = useCallback(async (chat: Chat) => {
         if (!chat.idProduct || !chat.idProfileProduct || !chat.idProfile) {
@@ -568,11 +588,6 @@ const ChatPage: React.FC = () => {
         setActiveChat(null);
     }, []);
 
-    // Cambiar modo claro/oscuro
-    const toggleTheme = useCallback(() => {
-        setDarkMode(prev => !prev);
-    }, []);
-
     // Función para recargar chats
     const handleRefreshChats = useCallback(async () => {
         await loadChats();
@@ -614,6 +629,108 @@ const ChatPage: React.FC = () => {
             return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
         }
     }, []);
+
+    // useEffect para cargar el perfil del usuario actual al montar el componente
+    useEffect(() => {
+        const loadCurrentUserProfile = async () => {
+            try {
+                setLoadingProfile(true);
+
+                // Cargar modo oscuro primero
+                try {
+                    const modo = await SettingsService.getModoOcuro();
+                    // Si modo es true = modo oscuro, si es false = modo claro
+                    sessionStorage.setItem('modoOscuroClaro', modo.toString());
+                    setDarkMode(modo);
+                    console.log('Modo oscuro cargado del backend:', modo);
+                } catch (error) {
+                    console.error('Error al obtener modo oscuro del backend:', error);
+                    const modoOscuroStorage = sessionStorage.getItem('modoOscuroClaro');
+                    if (modoOscuroStorage !== null) {
+                        setDarkMode(modoOscuroStorage === 'true');
+                    } else {
+                        // Valor por defecto: modo claro
+                        sessionStorage.setItem('modoOscuroClaro', 'false');
+                        setDarkMode(false);
+                    }
+                }
+
+                // Cargar perfil del usuario
+                const profile = await ProfileService.getProfileInfo();
+                setCurrentUserProfile(profile);
+                console.log('Perfil del usuario actual cargado:', profile.nickname);
+
+            } catch (error) {
+                console.error('Error al cargar el perfil del usuario actual:', error);
+                // En caso de error con el perfil, aún establecer modo oscuro
+                const modoOscuroStorage = sessionStorage.getItem('modoOscuroClaro');
+                if (modoOscuroStorage !== null) {
+                    setDarkMode(modoOscuroStorage === 'true');
+                } else {
+                    sessionStorage.setItem('modoOscuroClaro', 'true');
+                    setDarkMode(true);
+                }
+            } finally {
+                setLoadingProfile(false);
+            }
+        };
+
+        // Solo cargar si hay token de autenticación
+        if (sessionStorage.getItem("token") || localStorage.getItem("token")) {
+            loadCurrentUserProfile();
+        } else {
+            setLoadingProfile(false);
+            // Incluso sin token, cargar el modo desde sessionStorage si existe
+            const modoOscuroStorage = sessionStorage.getItem('modoOscuroClaro');
+            if (modoOscuroStorage !== null) {
+                setDarkMode(modoOscuroStorage === 'true');
+            }
+        }
+    }, []);
+
+// También agrega este useEffect adicional para escuchar cambios en sessionStorage
+    useEffect(() => {
+        // Función para verificar y aplicar el modo desde sessionStorage
+        const checkAndApplyMode = () => {
+            const modoOscuroStorage = sessionStorage.getItem('modoOscuroClaro');
+            if (modoOscuroStorage !== null) {
+                const shouldBeDark = modoOscuroStorage === 'true';
+                if (darkMode !== shouldBeDark) {
+                    setDarkMode(shouldBeDark);
+                    console.log('Modo actualizado desde sessionStorage:', shouldBeDark);
+                }
+            }
+        };
+
+        // Verificar al montar
+        checkAndApplyMode();
+
+        // Escuchar cambios en el sessionStorage (para cambios desde otras pestañas)
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'modoOscuroClaro' && e.newValue !== null) {
+                const shouldBeDark = e.newValue === 'true';
+                setDarkMode(shouldBeDark);
+                console.log('Modo actualizado por storage event:', shouldBeDark);
+            }
+        };
+
+        // Escuchar cambios en el sessionStorage desde la misma pestaña
+        const handleSessionStorageChange = () => {
+            checkAndApplyMode();
+        };
+
+        // Intervalo para verificar cambios (fallback)
+        const interval = setInterval(checkAndApplyMode, 1000);
+
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('sessionstoragechange', handleSessionStorageChange);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('sessionstoragechange', handleSessionStorageChange);
+            clearInterval(interval);
+        };
+    }, [darkMode]);
 
     // Efecto para inicializar la conexión y cargar chats
     useEffect(() => {
@@ -682,7 +799,7 @@ const ChatPage: React.FC = () => {
 
     // Suscribirse a la sala de chat cuando cambia el chat activo
     useEffect(() => {
-        if (isConnected && activeChat) {
+        if (isConnected && activeChat && currentUserProfile && !loadingProfile) {
             console.log('Configurando suscripción para chat:', activeChat.name);
 
             if (activeSubscription) {
@@ -702,7 +819,7 @@ const ChatPage: React.FC = () => {
 
                 setActiveSubscription(subscriptionKey);
 
-                // Cargar mensajes históricos en lugar de solo mostrar mensaje de bienvenida
+                // Cargar mensajes históricos
                 loadChatMessages(activeChat);
 
                 console.log(`Suscrito exitosamente al chat: ${activeChat.name}`);
@@ -711,7 +828,7 @@ const ChatPage: React.FC = () => {
                 setError('Error al conectar con el chat. Inténtalo de nuevo.');
             }
         }
-    }, [isConnected, activeChat, handleMessageReceived, handleSubscriptionError, activeSubscription, loadChatMessages]);
+    }, [isConnected, activeChat, handleMessageReceived, handleSubscriptionError, activeSubscription, loadChatMessages, currentUserProfile, loadingProfile]);
 
 
     // Enfoque en el input cuando se cambia de chat
@@ -729,17 +846,35 @@ const ChatPage: React.FC = () => {
     // Mostrar indicador de carga inicial
     if (loading) {
         return (
-            <div className={`chat-view ${darkMode ? '' : 'light-mode'} loading-view`}>
+            <div className={`chat-view ${darkMode ? 'dark-theme' : 'light-theme'}`}>
                 <div className="loading-content">
-                    <IonSpinner name="crescent" />
+                    <IonSpinner name="crescent"/>
                     <p>Cargando chats...</p>
                 </div>
             </div>
         );
     }
 
+    if (loadingProfile) {
+        return (
+            <IonPage>
+                <IonContent>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '100%'
+                    }}>
+                        <IonSpinner name="crescent" />
+                        <p style={{ marginLeft: '10px' }}>Cargando perfil...</p>
+                    </div>
+                </IonContent>
+            </IonPage>
+        );
+    }
+
     return (
-        <div className={`chat-view ${darkMode ? '' : 'light-mode'}`}>
+        <div className={`chat-view ${darkMode ? 'dark-theme' : 'light-theme'}`}>
             {/* Banner de error */}
             {error && (
                 <div className="error-banner">
@@ -757,7 +892,7 @@ const ChatPage: React.FC = () => {
                                 <IonMenuButton>
                                     <IonIcon
                                         icon={menuOutline}
-                                        style={{ color: darkMode ? 'white' : 'black', fontSize: '24px' }}
+                                        style={{color: darkMode ? 'white' : 'black', fontSize: '24px'}}
                                     />
                                 </IonMenuButton>
                             </IonButtons>
@@ -775,14 +910,7 @@ const ChatPage: React.FC = () => {
                             onClick={handleRefreshChats}
                             title="Recargar chats"
                         >
-                            <IonIcon icon={refreshOutline} />
-                        </button>
-                        <button
-                            className="action-icon-button"
-                            onClick={toggleTheme}
-                            title="Cambiar tema"
-                        >
-                            <IonIcon icon={darkMode ? sunnyOutline : moonOutline} />
+                            <IonIcon icon={refreshOutline}/>
                         </button>
                         {!isConnected && (
                             <button
@@ -790,7 +918,7 @@ const ChatPage: React.FC = () => {
                                 onClick={handleRetryConnection}
                                 title="Reintentar conexión"
                             >
-                                <IonIcon icon={checkmarkOutline} />
+                                <IonIcon icon={checkmarkOutline}/>
                             </button>
                         )}
                     </div>
@@ -798,8 +926,8 @@ const ChatPage: React.FC = () => {
 
                 <div className="search-container">
                     <div className="chat-search">
-                        <IonIcon icon={searchOutline} />
-                        <input type="text" placeholder="Buscar chats" />
+                        <IonIcon icon={searchOutline}/>
+                        <input type="text" placeholder="Buscar chats"/>
                     </div>
                 </div>
 
@@ -819,7 +947,7 @@ const ChatPage: React.FC = () => {
                                 <div className={`chat-avatar ${chat.isOnline ? 'online' : ''}`}>
                                     <div className="user-avatar-chat">
                                         {loadingProductNames.has(chat.id) ? (
-                                            <IonSpinner name="crescent" />
+                                            <IonSpinner name="crescent"/>
                                         ) : (
                                             <img src={cloudinaryImage(chat.avatar)}/>
                                         )}
@@ -844,7 +972,7 @@ const ChatPage: React.FC = () => {
 
                 {shouldShowNavigation && (
                     <div className="chat-mobile-footer">
-                        <Navegacion isDesktop={false} isChatView={true} />
+                        <Navegacion isDesktop={false} isChatView={true}/>
                     </div>
                 )}
             </div>
@@ -857,7 +985,7 @@ const ChatPage: React.FC = () => {
                         <div className="chat-header">
                             <div className="header-content">
                                 <button className="back-button" onClick={handleBackToList}>
-                                    <IonIcon icon={arrowBackOutline} />
+                                    <IonIcon icon={arrowBackOutline}/>
                                 </button>
                                 <div className={`chat-avatar ${activeChat.isOnline ? 'online' : ''}`}>
                                     <div className="user-avatar-chat">
@@ -876,10 +1004,10 @@ const ChatPage: React.FC = () => {
                             </div>
                             <div className="header-actions">
                                 <button className="action-icon-button">
-                                    <IonIcon icon={searchOutline} />
+                                    <IonIcon icon={searchOutline}/>
                                 </button>
                                 <button className="action-icon-button">
-                                    <IonIcon icon={ellipsisVerticalOutline} />
+                                    <IonIcon icon={ellipsisVerticalOutline}/>
                                 </button>
                             </div>
                         </div>
@@ -888,7 +1016,7 @@ const ChatPage: React.FC = () => {
                         <div className="messages-container" id="messages-container">
                             {loadingMessages ? (
                                 <div className="loading-messages">
-                                    <IonSpinner name="crescent" />
+                                    <IonSpinner name="crescent"/>
                                     <p>Cargando mensajes...</p>
                                 </div>
                             ) : (
@@ -933,10 +1061,10 @@ const ChatPage: React.FC = () => {
                                                         {formatMessageTime(message.timestamp)}
                                                         {message.sender === 'user' && (
                                                             <span className="read-status">
-                                        <IonIcon
-                                            icon={message.read ? checkmarkDoneOutline : checkmarkOutline}
-                                        />
-                                    </span>
+                                                                <IonIcon
+                                                                    icon={message.read ? checkmarkDoneOutline : checkmarkOutline}
+                                                                />
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -951,7 +1079,7 @@ const ChatPage: React.FC = () => {
                                             </div>
                                             <div className="message-content">
                                                 <div className="message-bubble typing-indicator">
-                                                    <IonSpinner name="dots" />
+                                                    <IonSpinner name="dots"/>
                                                 </div>
                                             </div>
                                         </div>
@@ -966,10 +1094,10 @@ const ChatPage: React.FC = () => {
                         <div className={`chat-footer ${isKeyboardVisible ? 'keyboard-visible' : ''}`}>
                             <div className="input-container">
                                 <button className="action-button">
-                                    <IonIcon icon={addOutline} />
+                                    <IonIcon icon={addOutline}/>
                                 </button>
                                 <button className="action-button">
-                                    <IonIcon icon={imageOutline} />
+                                    <IonIcon icon={imageOutline}/>
                                 </button>
                                 <div className="message-input-wrapper">
                                     <input
@@ -989,11 +1117,11 @@ const ChatPage: React.FC = () => {
                                         onClick={sendMessage}
                                         disabled={!isConnected}
                                     >
-                                        <IonIcon icon={sendOutline} />
+                                        <IonIcon icon={sendOutline}/>
                                     </button>
                                 ) : (
                                     <button className="action-button">
-                                        <IonIcon icon={micOutline} />
+                                        <IonIcon icon={micOutline}/>
                                     </button>
                                 )}
                             </div>
@@ -1002,7 +1130,7 @@ const ChatPage: React.FC = () => {
                 ) : (
                     <div className="no-chat-selected">
                         <div className="no-chat-content">
-                            <IonIcon icon={chatbubblesOutline} size="large" />
+                            <IonIcon icon={chatbubblesOutline} size="large"/>
                             <h2>Selecciona un chat para comenzar</h2>
                             <p>Escoge una conversación de la lista para ver los mensajes</p>
                             {!isConnected && (

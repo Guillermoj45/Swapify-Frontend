@@ -1,18 +1,60 @@
-/* Estilos base y variables de tema */
-.chat-view {
-    --background-color: #0a0a0a;
-    --card-background: #141414;
-    --text-color: #ffffff;
-    --text-secondary: #b0b0b0;
-    --border-color: #2c2c2c;
-    --header-bg: #000000;
-    --searchbar-bg: #1c1c1c;
-    --chip-bg: #202020;
-    --chip-color: #e0e0e0;
-    --accent-color: #3a76dc; /* Color azul principal */
-    --hover-color: #2760c0; /* Azul oscuro para hover */
-    --shadow-color: rgba(0, 0, 0, 0.4);
+/* Variables globales */
+:root {
+    --transition-standard: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 
+/* Variables tema claro y oscuro */
+.light-theme {
+    --background-color: #f8f9fc;
+    --card-background: #ffffff;
+    --text-color: #1a1c2a;
+    --text-secondary: #606478;
+    --border-color: #e4e7f2;
+    --header-bg: rgba(255, 255, 255, 0.98);
+    --searchbar-bg: #f0f2f8;
+    --chip-bg: #f0f2f8;
+    --chip-color: #505570;
+    --accent-color: #4a80e4;
+    --hover-color: #3a6fd0;
+    --shadow-color: rgba(23, 43, 99, 0.08);
+    --card-shadow: 0 6px 16px rgba(23, 43, 99, 0.06), 0 2px 6px rgba(23, 43, 99, 0.03);
+    --button-shadow: 0 4px 12px rgba(74, 128, 228, 0.3);
+    --gradient-primary: linear-gradient(135deg, #4a80e4, #5c8fee);
+    --gradient-secondary: linear-gradient(135deg, #f8f9fc, #ffffff);
+    /* AGREGADO: Variables específicas para mensajes */
+    --user-message-bg: linear-gradient(135deg, #4a80e4, #5c8fee);
+    --user-message-text: #ffffff;
+    --ai-message-bg: #ffffff;
+    --ai-message-text: #1a1c2a;
+}
+
+.dark-theme {
+    --background-color: #111219;
+    --card-background: #1a1c2a;
+    --text-color: #f0f2f8;
+    --text-secondary: #a0a4bc;
+    --border-color: #2a2d3d;
+    --header-bg: rgba(15, 16, 24, 0.98);
+    --searchbar-bg: #232536;
+    --chip-bg: #232536;
+    --chip-color: #c0c4da;
+    --accent-color: #4a80e4;
+    --hover-color: #5c8fee;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --card-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15);
+    --button-shadow: 0 4px 20px rgba(74, 128, 228, 0.45);
+    --gradient-primary: linear-gradient(135deg, #4a80e4, #6495fa);
+    --gradient-secondary: linear-gradient(135deg, #1a1c2a, #232536);
+    /* AGREGADO: Variables específicas para mensajes */
+    --user-message-bg: linear-gradient(135deg, #4a80e4, #6495fa);
+    --user-message-text: #ffffff;
+    --ai-message-bg: #1a1c2a;
+    --ai-message-text: #f0f2f8;
+}
+
+/* Estilos base del chat view */
+.chat-view {
     display: flex;
     height: 100vh;
     width: 100%;
@@ -20,22 +62,6 @@
     font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     color: var(--text-color);
     overflow: hidden;
-}
-
-/* Light Theme Variables */
-.chat-view.light-mode {
-    --background-color: #f5f6f8;
-    --card-background: #ffffff;
-    --text-color: #212121;
-    --text-secondary: #757575;
-    --border-color: #e0e0e0;
-    --header-bg: #ffffff;
-    --searchbar-bg: #f5f6f8;
-    --chip-bg: #f5f6f8;
-    --chip-color: #555555;
-    --accent-color: #3a76dc; /* Color azul principal */
-    --hover-color: #2760c0; /* Azul oscuro para hover */
-    --shadow-color: rgba(0, 0, 0, 0.08);
 }
 
 /* Sidebar (Lista de chats) */
@@ -48,6 +74,7 @@
     background-color: var(--card-background);
     overflow: hidden;
     flex-shrink: 0;
+    box-shadow: var(--card-shadow);
 }
 
 .sidebar-header {
@@ -57,7 +84,9 @@
     padding: 16px;
     background-color: var(--header-bg);
     height: 70px;
-    box-shadow: 0 1px 3px var(--shadow-color);
+    box-shadow: var(--card-shadow);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .user-profile {
@@ -69,7 +98,7 @@
 .user-avatar {
     width: 40px;
     height: 40px;
-    background: linear-gradient(135deg, #3a76dc, #2760c0);
+    background: var(--gradient-primary);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -77,13 +106,14 @@
     color: white;
     font-weight: 600;
     font-size: 16px;
-    box-shadow: 0 2px 6px rgba(58, 118, 220, 0.3);
+    box-shadow: var(--button-shadow);
 }
 
 .chat-sidebar h3 {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
+    color: var(--text-color);
 }
 
 .header-actions {
@@ -91,10 +121,11 @@
     gap: 8px;
 }
 
+/* CORREGIDO: Botones de acción más visibles */
 .action-icon-button {
     background: transparent;
-    border: none;
-    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
     font-size: 20px;
     cursor: pointer;
     width: 38px;
@@ -103,12 +134,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: var(--transition-standard);
 }
 
 .action-icon-button:hover {
-    background-color: rgba(58, 118, 220, 0.1);
-    color: var(--accent-color);
+    background-color: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    transform: scale(1.05);
 }
 
 .search-container {
@@ -123,6 +156,12 @@
     border-radius: 24px;
     padding: 0 16px;
     height: 38px;
+    transition: var(--transition-standard);
+}
+
+.chat-search:focus-within {
+    box-shadow: 0 0 0 2px rgba(74, 128, 228, 0.3);
+    background-color: var(--card-background);
 }
 
 .chat-search ion-icon {
@@ -155,15 +194,17 @@
     padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--transition-standard);
 }
 
 .chat-item:hover {
-    background-color: rgba(58, 118, 220, 0.05);
+    background-color: rgba(74, 128, 228, 0.05);
+    transform: translateX(2px);
 }
 
 .chat-item.active {
-    background-color: rgba(58, 118, 220, 0.1);
+    background-color: rgba(74, 128, 228, 0.1);
+    border-right: 3px solid var(--accent-color);
 }
 
 .chat-avatar {
@@ -187,7 +228,7 @@
 .ai-avatar {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, #3a76dc, #2760c0);
+    background: var(--gradient-primary);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -195,13 +236,13 @@
     color: white;
     font-weight: 600;
     font-size: 18px;
-    box-shadow: 0 2px 6px rgba(58, 118, 220, 0.3);
+    box-shadow: var(--button-shadow);
 }
 
 .user-avatar-chat {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, #3a76dc, #2760c0);
+    background: var(--gradient-primary);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -209,7 +250,35 @@
     color: white;
     font-weight: 600;
     font-size: 18px;
-    box-shadow: 0 2px 6px rgba(58, 118, 220, 0.3);
+    box-shadow: var(--button-shadow);
+}
+
+/* CORREGIDO: Estilos para mensajes de otros usuarios */
+.other-message {
+    align-self: flex-start;
+}
+
+.other-message .message-bubble {
+    background-color: var(--ai-message-bg);
+    border-top-left-radius: 4px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.other-message .message-text {
+    color: var(--ai-message-text);
+}
+
+.other-message .message-time {
+    color: var(--text-secondary);
+}
+
+/* CORREGIDO: Estilo para el nombre del remitente */
+.sender-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+    font-weight: 500;
 }
 
 .chat-info {
@@ -231,6 +300,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--text-color);
 }
 
 .chat-time {
@@ -256,7 +326,7 @@
 }
 
 .unread-badge {
-    background-color: var(--accent-color);
+    background: var(--gradient-primary);
     color: white;
     font-size: 12px;
     font-weight: 600;
@@ -267,6 +337,7 @@
     align-items: center;
     justify-content: center;
     padding: 0 6px;
+    box-shadow: var(--button-shadow);
 }
 
 /* Panel principal de chat */
@@ -278,14 +349,17 @@
     overflow: hidden;
 }
 
-.chat-header {
+/* CORREGIDO: Header del chat principal */
+.chat-main .chat-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
     background-color: var(--header-bg);
     height: 70px;
-    box-shadow: 0 1px 3px var(--shadow-color);
+    box-shadow: var(--card-shadow);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .header-content {
@@ -294,13 +368,27 @@
     gap: 12px;
 }
 
+/* CORREGIDO: Botón de regreso más visible */
 .back-button {
     display: none;
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
+    background: var(--searchbar-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
     font-size: 24px;
     cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-standard);
+}
+
+.back-button:hover {
+    background-color: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
 }
 
 .status-text {
@@ -310,10 +398,10 @@
 
 .messages-container {
     width: 100%;
-    height: calc(100vh - 120px); /* Adjust depending on your header and footer heights */
+    height: calc(100vh - 120px);
     overflow-y: auto;
     padding: 10px 0;
-    background-color: var(--background-color, #f5f6f8);
+    background-color: var(--background-color);
 }
 
 .messages-list {
@@ -322,6 +410,7 @@
     gap: 16px;
     max-width: 900px;
     margin: 0 auto;
+    padding: 0 16px;
 }
 
 .message-container {
@@ -330,6 +419,7 @@
     max-width: 80%;
 }
 
+/* CORREGIDO: Mensajes del usuario */
 .user-message {
     flex-direction: row-reverse;
     align-self: flex-end;
@@ -352,35 +442,51 @@
     gap: 4px;
 }
 
+/* CORREGIDO: Burbujas de mensaje más visibles */
 .message-bubble {
-    background-color: var(--card-background);
     border-radius: 18px;
     padding: 12px 16px;
-    box-shadow: 0 1px 2px var(--shadow-color);
     position: relative;
     overflow: hidden;
+    transition: var(--transition-standard);
+    box-shadow: var(--card-shadow);
 }
 
+.message-bubble:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(23, 43, 99, 0.12), 0 4px 8px rgba(23, 43, 99, 0.06);
+}
+
+/* CORREGIDO: Mensaje del usuario con mejor contraste */
 .user-message .message-bubble {
-    background: linear-gradient(to bottom right, #3a76dc, #2760c0);
+    background: var(--user-message-bg);
     border-top-right-radius: 4px;
+    box-shadow: var(--button-shadow);
+    border: none;
 }
 
+/* CORREGIDO: Mensaje de IA con mejor contraste */
 .ai-message .message-bubble {
-    background-color: var(--card-background);
+    background-color: var(--ai-message-bg);
     border-top-left-radius: 4px;
+    border: 1px solid var(--border-color);
 }
 
 .message-text {
     font-size: 15px;
     line-height: 1.5;
-    color: var(--text-color);
     white-space: pre-wrap;
     word-break: break-word;
 }
 
+/* CORREGIDO: Texto del mensaje del usuario */
 .user-message .message-text {
-    color: white;
+    color: var(--user-message-text);
+}
+
+/* CORREGIDO: Texto del mensaje de IA */
+.ai-message .message-text {
+    color: var(--ai-message-text);
 }
 
 .message-time {
@@ -437,6 +543,7 @@
     background-color: var(--header-bg);
     border-top: 1px solid var(--border-color);
     padding: 12px 16px;
+    backdrop-filter: blur(10px);
 }
 
 .input-container {
@@ -448,9 +555,17 @@
 .message-input-wrapper {
     flex: 1;
     background-color: var(--searchbar-bg);
+    border: 1px solid var(--border-color);
     border-radius: 24px;
     padding: 8px 16px;
     margin: 0 8px;
+    transition: var(--transition-standard);
+}
+
+.message-input-wrapper:focus-within {
+    box-shadow: 0 0 0 2px rgba(74, 128, 228, 0.3);
+    background-color: var(--card-background);
+    border-color: var(--accent-color);
 }
 
 .chat-input {
@@ -469,11 +584,12 @@
     color: var(--text-secondary);
 }
 
+/* CORREGIDO: Botón de envío más visible */
 .send-button {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #3a76dc, #2760c0);
+    background: var(--gradient-primary);
     border: none;
     display: flex;
     align-items: center;
@@ -481,13 +597,17 @@
     color: white;
     font-size: 18px;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(58, 118, 220, 0.3);
-    transition: all 0.2s ease;
+    box-shadow: var(--button-shadow);
+    transition: var(--transition-bounce);
 }
 
 .send-button:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 10px rgba(58, 118, 220, 0.4);
+    box-shadow: 0 6px 16px rgba(74, 128, 228, 0.4);
+}
+
+.send-button:active {
+    transform: scale(0.95);
 }
 
 .send-button ion-icon {
@@ -508,7 +628,7 @@
     max-width: 400px;
 }
 
-/* Estilos para el botón de limpiar búsqueda */
+/* CORREGIDO: Botón de limpiar búsqueda más visible */
 .search-clear-button {
     background: transparent;
     border: none;
@@ -517,12 +637,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
+    padding: 4px;
     margin-left: 4px;
+    border-radius: 50%;
+    transition: var(--transition-standard);
 }
 
 .search-clear-button:hover {
     color: var(--accent-color);
+    background-color: rgba(74, 128, 228, 0.1);
+    transform: scale(1.1);
 }
 
 .search-clear-button ion-icon {
@@ -539,7 +663,7 @@
 
 /* Resaltar términos de búsqueda */
 .search-highlight {
-    background-color: rgba(58, 118, 220, 0.2);
+    background-color: rgba(74, 128, 228, 0.2);
     padding: 0 2px;
     border-radius: 2px;
 }
@@ -547,13 +671,13 @@
 /* Animación para resultados de búsqueda */
 @keyframes pulse {
     0% {
-        background-color: rgba(58, 118, 220, 0.05);
+        background-color: rgba(74, 128, 228, 0.05);
     }
     50% {
-        background-color: rgba(58, 118, 220, 0.15);
+        background-color: rgba(74, 128, 228, 0.15);
     }
     100% {
-        background-color: rgba(58, 118, 220, 0.05);
+        background-color: rgba(74, 128, 228, 0.05);
     }
 }
 
@@ -561,23 +685,17 @@
     animation: pulse 2s infinite;
 }
 
-/* Mejorar la accesibilidad de la búsqueda */
-.chat-search input:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(58, 118, 220, 0.3);
-}
-
 /* Estilo para la barra de búsqueda activa */
 .chat-search.active {
     background-color: var(--card-background);
-    box-shadow: 0 2px 8px var(--shadow-color);
+    box-shadow: var(--card-shadow);
 }
 
 /* Asegurar que el contenedor principal permita scroll */
 .chat-main {
     position: relative;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch; /* Para un scroll más suave en iOS */
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Estilos para cuando el teclado está visible */
@@ -586,7 +704,7 @@
     bottom: 0;
     background-color: var(--header-bg);
     z-index: 20;
-    transition: all 0.3s ease;
+    transition: var(--transition-standard);
 }
 
 /* Mejora del footer para asegurar visibilidad */
@@ -595,8 +713,8 @@
     bottom: 0;
     z-index: 10;
     background-color: var(--header-bg);
-    box-shadow: 0 -1px 5px var(--shadow-color);
-    transition: transform 0.3s ease;
+    box-shadow: var(--card-shadow);
+    transition: var(--transition-standard);
 }
 
 /* Asegurar que el área de input no se oculte cuando el teclado aparece en dispositivos iOS */
@@ -612,85 +730,24 @@
 
 /* Mejoras específicas para dispositivos móviles */
 @media (max-width: 768px) {
-    /* Reducir ligeramente el padding en móvil para maximizar espacio */
     .chat-footer {
         padding: 8px 12px;
     }
 
-    /* Asegurar que el contenedor de mensajes se ajuste correctamente */
     .messages-container {
-        min-height: calc(100vh - 130px); /* Ligeramente menor para móviles */
+        min-height: calc(100vh - 130px);
     }
 
-    /* Mejoras de rendimiento para el scroll */
     .messages-list {
         will-change: transform;
         transform: translateZ(0);
     }
-}
 
-/* Asegurar que el footer siempre esté visible cuando se hace scroll */
-.messages-container::-webkit-scrollbar {
-    width: 6px;
-}
-
-.messages-container::-webkit-scrollbar-thumb {
-    background-color: var(--border-color);
-    border-radius: 3px;
-}
-
-/* Agregar un botón para hacer scroll al final (opcional) */
-.scroll-bottom-button {
-    position: absolute;
-    bottom: 80px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--card-background);
-    box-shadow: 0 2px 6px var(--shadow-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-color);
-    cursor: pointer;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.3s ease;
-    z-index: 5;
-}
-
-.scroll-bottom-button.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Ajustes para viewport virtual (importante para dispositivos móviles) */
-@media (max-height: 600px) {
-    .chat-header {
-        height: 60px; /* Header más pequeño */
-    }
-
-    .chat-footer {
-        padding: 6px 12px; /* Footer más compacto */
-    }
-
-    .message-bubble {
-        padding: 8px 12px; /* Burbujas de mensaje más compactas */
-    }
-
-    .messages-container {
-        min-height: calc(100vh - 110px); /* Ajustar para el nuevo tamaño del header/footer */
-    }
-}
-
-/* Añadir estilos para dispositivos móviles */
-@media (max-width: 768px) {
     .chat-sidebar {
         width: 100%;
         position: absolute;
         z-index: 10;
-        transition: transform 0.3s ease;
+        transition: var(--transition-standard);
     }
 
     .chat-sidebar.hidden-mobile {
@@ -706,7 +763,7 @@
     }
 
     .back-button {
-        display: flex;
+        display: flex !important;
         align-items: center;
         justify-content: center;
         width: 40px;
@@ -715,7 +772,8 @@
     }
 
     .back-button:hover {
-        background-color: rgba(58, 118, 220, 0.1);
+        background-color: var(--accent-color);
+        color: white;
     }
 
     .header-actions .action-icon-button {
@@ -724,11 +782,73 @@
     }
 }
 
-/* Estilos para el botón de acción */
+/* Asegurar que el footer siempre esté visible cuando se hace scroll */
+.messages-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 3px;
+}
+
+/* Agregar un botón para hacer scroll al final */
+.scroll-bottom-button {
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--card-background);
+    box-shadow: var(--card-shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: var(--transition-bounce);
+    z-index: 5;
+    border: 1px solid var(--border-color);
+}
+
+.scroll-bottom-button.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scroll-bottom-button:hover {
+    transform: scale(1.05);
+    background-color: var(--accent-color);
+    color: white;
+}
+
+/* Ajustes para viewport virtual */
+@media (max-height: 600px) {
+    .chat-header {
+        height: 60px;
+    }
+
+    .chat-footer {
+        padding: 6px 12px;
+    }
+
+    .message-bubble {
+        padding: 8px 12px;
+    }
+
+    .messages-container {
+        min-height: calc(100vh - 110px);
+    }
+}
+
+/* CORREGIDO: Estilos para el botón de acción */
 .action-button {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
+    background: var(--searchbar-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
     font-size: 18px;
     cursor: pointer;
     width: 38px;
@@ -737,27 +857,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: var(--transition-standard);
 }
 
 .action-button:hover {
-    background-color: rgba(58, 118, 220, 0.1);
-    color: var(--accent-color);
-}
-
-/* Mejorar animaciones de transición */
-.chat-item, .message-bubble, .action-icon-button, .action-button {
-    transition: all 0.2s ease-in-out;
+    background-color: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    transform: scale(1.05);
 }
 
 /* Estilo para resultados de búsqueda */
 .chat-item.search-result {
-    background-color: rgba(58, 118, 220, 0.15);
+    background-color: rgba(74, 128, 228, 0.15);
 }
 
 /* Estilo para el chat activo al hacer hover */
 .chat-item.active:hover {
-    background-color: rgba(58, 118, 220, 0.15);
+    background-color: rgba(74, 128, 228, 0.15);
 }
 
 /* Contenedor para la navegación del footer en modo móvil */
@@ -772,10 +889,9 @@
 /* Ajustes para evitar que el contenido se oculte detrás del footer en móvil */
 @media (max-width: 768px) {
     .chats-list {
-        padding-bottom: 56px; /* Altura del TabBar */
+        padding-bottom: 56px;
     }
 
-    /* Cuando se está en la vista de chat, ocultamos completamente el footer */
     .chat-view .shown-mobile + .chat-mobile-footer {
         display: none;
     }
@@ -783,7 +899,7 @@
 
 /* Estilos para la navegación dentro del chat */
 .chat-view .navegacion-container {
-    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--card-shadow);
 }
 
 /* Aseguramos que el pie de página de navegación solo aparezca en móvil */
@@ -798,7 +914,7 @@
     bottom: 80px;
     left: 20px;
     z-index: 1000;
-    background-color: var(--ion-color-primary);
+    background: var(--gradient-primary);
     color: white;
     border: none;
     border-radius: 50%;
@@ -808,13 +924,13 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    transition: all 0.3s ease;
+    box-shadow: var(--button-shadow);
+    transition: var(--transition-bounce);
 }
 
 .tutorial-button-chat:hover {
     transform: scale(1.1);
-    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 6px 16px rgba(74, 128, 228, 0.4);
 }
 
 /* Estados de conexión */
@@ -847,19 +963,25 @@
 }
 
 .reconnect-button, .connect-button {
-    background: #007bff;
+    background: var(--accent-color);
     color: white;
     border: none;
     padding: 4px 8px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
+    transition: var(--transition-standard);
+}
+
+.reconnect-button:hover, .connect-button:hover {
+    background: var(--hover-color);
+    transform: scale(1.05);
 }
 
 .loading-chats, .no-chats {
     padding: 20px;
     text-align: center;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .reload-button {
@@ -870,6 +992,12 @@
     border-radius: 4px;
     cursor: pointer;
     margin-top: 10px;
+    transition: var(--transition-standard);
+}
+
+.reload-button:hover {
+    background: #218838;
+    transform: scale(1.05);
 }
 
 .loading-messages {

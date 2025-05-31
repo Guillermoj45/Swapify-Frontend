@@ -65,8 +65,8 @@ export interface MessageDTO {
     id: string;
     content: string;
     createdAt: string;
-    isProfileProductSender: boolean;
     senderNickname: string;
+    profileProductSender: boolean;
 }
 
 export interface MessageCallback {
