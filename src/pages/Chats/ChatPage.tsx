@@ -57,6 +57,8 @@ interface Chat {
     lastSeen?: Date;
 }
 
+const profile = await ProfileService.getProfileInfo()
+
 const ChatPage: React.FC = () => {
     useAuthRedirect();
 
@@ -64,7 +66,7 @@ const ChatPage: React.FC = () => {
     const [isConnected, setIsConnected] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
     const currentUserId = sessionStorage.getItem('userId') || 'user';
-    const currentUserName = sessionStorage.getItem('nickname') || 'Usuario';
+
 
     const [currentUserProfile, setCurrentUserProfile] = useState<ProfileDTO | null>(null);
     const [loadingProfile, setLoadingProfile] = useState(true);
@@ -331,73 +333,10 @@ const ChatPage: React.FC = () => {
                 return;
             }
 
-            // Determinar si el mensaje es del usuario actual
-            const isFromCurrentUser = messageData.userName === currentUserName ||
-                messageData.senderNickname === currentUserName ||
-                messageData.userName === currentUserId ||
-                messageData.senderNickname === currentUserId;
-
-            // Si el mensaje es del usuario actual, actualizar el estado del mensaje temporal
-            if (isFromCurrentUser) {
-                setMessages(prev => {
-                    const updated = prev.map(msg => {
-                        if (msg.isTemporary && msg.content === messageData.content) {
-                            return {
-                                ...msg,
-                                id: messageData.messageId || msg.id,
-                                status: 'delivered',
-                                delivered: true,
-                                isTemporary: false
-                            };
-                        }
-                        return msg;
-                    });
-                    return updated;
-                });
-
-                // Actualizar estado del mensaje
-                if (messageData.messageId) {
-                    setMessageStatuses(prev => new Map(prev).set(messageData.messageId!, 'delivered'));
-                }
-                return;
-            }
-
-            // Crear nuevo mensaje para mensajes de otros usuarios
-            const newMessage: Message = {
-                id: messageData.messageId || `${Date.now()}-${Math.random()}`,
-                content: messageData.content,
-                sender: 'other',
-                senderName: messageData.senderNickname || messageData.userName || 'Usuario desconocido',
-                senderId: messageData.senderNickname || messageData.userName,
-                timestamp: messageData.timestamp ? new Date(messageData.timestamp) : new Date(),
-                read: false,
-                delivered: true,
-                status: 'delivered',
-                isTemporary: false
-            };
-
-            console.log('Mensaje procesado:', newMessage);
-
-            // Agregar solo si no existe ya
-            setMessages(prev => {
-                const exists = prev.some(msg =>
-                    msg.id === newMessage.id ||
-                    (msg.content === newMessage.content &&
-                        Math.abs(msg.timestamp.getTime() - newMessage.timestamp.getTime()) < 1000)
-                );
-
-                if (exists) return prev;
-                return [...prev, newMessage];
-            });
-
-            // Actualizar último mensaje del chat
-            if (activeChat) {
-                updateLastMessage(activeChat.id, newMessage.content, newMessage.timestamp);
-            }
         } catch (error) {
             console.error("Error al procesar el mensaje recibido:", error);
         }
-    }, [currentUserName, currentUserId, activeChat, updateLastMessage]);
+    }, [activeChat, updateLastMessage]);
 
     // Función para cargar los chats desde el backend
     const loadChats = useCallback(async () => {
@@ -897,8 +836,10 @@ const ChatPage: React.FC = () => {
                                 </IonMenuButton>
                             </IonButtons>
                         )}
-                        <div className="user-avatar">{currentUserName.charAt(0).toUpperCase()}</div>
-                        <h3>{currentUserName}</h3>
+                        <div className="user-avatar">
+                            <img src={profile.avatar} alt={"Avatar"}/>
+                        </div>
+                        <h3>{profile.nickname}</h3>
                         <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
                             {isConnecting ? 'Conectando...' : isConnected ? 'En línea' : 'Desconectado'}
                         </div>
@@ -1034,11 +975,11 @@ const ChatPage: React.FC = () => {
                                                     <div className="ai-avatar">AI</div>
                                                 ) : message.sender === 'user' ? (
                                                     <div className="user-avatar">
-                                                        {currentUserName.charAt(0).toUpperCase()}
+                                                        <img src={profile.avatar} alt={"Avatar"}/>
                                                     </div>
                                                 ) : (
                                                     <div className="user-avatar-chat">
-                                                        {message.senderName?.charAt(0).toUpperCase() || 'O'}
+                                                        <img src={cloudinaryImage(activeChat.avatar)} alt={"Avatar"}/>
                                                     </div>
                                                 )}
                                             </div>
