@@ -55,6 +55,18 @@ import { Settings as SettingsService } from "../../Services/SettingsService"
 import { ProductService } from "../../Services/ProductService"
 import cloudinaryImage from "../../Services/CloudinaryService"
 import "./chat-alert.css" // Import the CSS file
+    createOutline, readerOutline,informationCircleOutline
+} from 'ionicons/icons';
+import './IA.css';
+import Navegacion from '../../components/Navegation';
+import { IAChat } from '../../Services/IAService';
+import { ConversationService, ConversationDTO } from '../../Services/IAService';
+import useAuthRedirect from "../../Services/useAuthRedirect";
+import { Settings as SettingsService } from '../../Services/SettingsService';
+import {ProductService} from "../../Services/ProductService";
+import cloudinaryImage from "../../Services/CloudinaryService";
+import { ProfileService, ProfileDTO } from "../../Services/ProfileService";
+import aiAvatar from '../../../public/descarga.jpg';
 
 interface Message {
     id: number | string
@@ -222,7 +234,8 @@ const AIChatPage: React.FC = () => {
     const textareaRef = useRef<HTMLIonTextareaElement>(null)
     const sidebarRef = useRef<HTMLDivElement>(null)
 
-    const [loadingError, setLoadingError] = useState<string | null>(null)
+    const [loadingError, setLoadingError] = useState<string | null>(null);
+    const [profile, setProfile] = useState<ProfileDTO | null>(null);
 
     const [showProductSidebar, setShowProductSidebar] = useState<boolean>(false)
     const [productInfo, setProductInfo] = useState({
@@ -236,9 +249,22 @@ const AIChatPage: React.FC = () => {
 
     // Cargar conversaciones del backend al iniciar
     useEffect(() => {
-        console.log("🚀 Componente montado, iniciando carga de conversaciones...")
-        loadConversationsFromBackend()
-    }, [])
+        console.log('🚀 Componente montado, iniciando carga de conversaciones...');
+        loadConversationsFromBackend();
+    }, []);
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const data = await ProfileService.getProfileInfo();
+                setProfile(data);
+            } catch (error) {
+                console.error('No se pudo cargar el perfil:', error);
+            }
+        };
+
+        fetchProfile();
+    }, []);
 
     const loadConversationMessages = async (conversationId: string) => {
         try {
@@ -1500,11 +1526,17 @@ const AIChatPage: React.FC = () => {
                                 className={`message-container ${message.sender === "user" ? "user-message" : "ai-message"}`}
                             >
                                 <div className="message-avatar">
-                                    {message.sender === "ai" ? (
-                                        <div className="ai-avatar">AI</div>
+                                    {message.sender === 'ai' ? (
+                                        <IonAvatar>
+                                            <img src={aiAvatar} alt="AI Avatar" />
+                                        </IonAvatar>
                                     ) : (
                                         <IonAvatar>
-                                            <div className="user-avatar">TÚ</div>
+                                            {profile?.avatar ? (
+                                                <img src={profile.avatar} alt="Avatar del usuario" />
+                                            ) : (
+                                                <div className="user-avatar">TÚ</div>
+                                            )}
                                         </IonAvatar>
                                     )}
                                 </div>
