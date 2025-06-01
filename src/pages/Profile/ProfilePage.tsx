@@ -512,7 +512,12 @@ export default function ProfilePage() {
                 </IonToolbar>
             </IonHeader>
             <IonContent fullscreen className={sessionStorage.getItem("modoOscuroClaro") === "true" ? "dark-mode" : ""}>
-                <IonLoading isOpen={loading} message="Cargando perfil..." />
+                <IonLoading
+                    isOpen={loading}
+                    message="Cargando perfil..."
+                    spinner="crescent" // Cambia el spinner a uno más moderno
+                    cssClass="custom-loading-spinner"
+                />
 
                 <div
                     className="modern-hero-banner"
@@ -589,6 +594,7 @@ export default function ProfilePage() {
                             value={activeTab}
                             onIonChange={(e) => setActiveTab(String(e.detail.value))}
                             className="modern-segment"
+                            style={{ right: "16px" }}
                         >
                             <IonSegmentButton value="enVenta" className="modern-segment-button">
                                 <div className="segment-content">
@@ -613,6 +619,8 @@ export default function ProfilePage() {
                         <div className="tab-content-container">{renderTabContent()}</div>
                     </div>
                 </section>
+                <br/>
+                <br/>
             </IonContent>
         </IonPage>
     )
