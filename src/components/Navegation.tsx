@@ -218,6 +218,14 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                             <IonLabel>Chats</IonLabel>
                         </IonTabButton>
                         <IonTabButton
+                            tab="notification"
+                            onClick={() => navigateTo('/notification')}
+                            className={`custom-tab-button ${isActive('/chat') ? 'selected' : ''}`}
+                        >
+                            <IonIcon icon={notificationsCircleOutline} />
+                            <IonLabel>notifs</IonLabel>
+                        </IonTabButton>
+                        <IonTabButton
                             tab="premium"
                             onClick={() => navigateTo('/premiumSuscribe')}
                             className={`custom-tab-button ${isActive('/premiumSuscribe') ? 'selected' : ''}`}

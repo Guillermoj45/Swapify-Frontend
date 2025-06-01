@@ -528,12 +528,22 @@ const AIChatPage: React.FC = () => {
         }
     }
 
-    const handleCreateNewChat = () => {
-        // Primero cerramos el diálogo para evitar que se vuelva a mostrar
-        setShowNewChatAlert(false)
+    const [isCreatingChat, setIsCreatingChat] = useState<boolean>(false)
 
-        // Pequeño retraso para asegurar que el diálogo se cierra antes de continuar
-        setTimeout(() => {
+    const handleCreateNewChat = async () => {
+        // Prevenir múltiples ejecuciones
+        if (isCreatingChat) {
+            console.log("Ya se está creando un chat, ignorando...")
+            return
+        }
+
+        setIsCreatingChat(true)
+
+        try {
+            // Validar que hay un título o usar uno por defecto
+            const chatTitle = newChatTitle.trim() || "Nueva conversación"
+
+            // Crear el nuevo chat
             const newChatId = `temp-${Date.now()}`
             const initialMessage: Message = {
                 id: Date.now(),
@@ -541,8 +551,6 @@ const AIChatPage: React.FC = () => {
                 sender: "ai",
                 timestamp: new Date(),
             }
-
-            const chatTitle = newChatTitle.trim() || "Nueva conversación"
 
             const newChat: ChatSession = {
                 id: newChatId,
@@ -553,17 +561,28 @@ const AIChatPage: React.FC = () => {
                 loadedFromBackend: false,
             }
 
+            // Actualizar estados
             setChatSessions((prev) => [newChat, ...prev])
             setActiveChatId(newChatId)
             setMessages([initialMessage])
             setCurrentChatId(null)
             setProductId(null)
-            setNewChatTitle("")
+            setNewChatTitle("") // Limpiar el título
 
             if (!isDesktop) {
                 setShowChatSidebar(false)
             }
-        }, 100)
+
+            // Cerrar el alert después de crear el chat
+            setShowNewChatAlert(false)
+        } catch (error) {
+            console.error("Error al crear nuevo chat:", error)
+        } finally {
+            // Resetear el flag después de un pequeño delay para evitar problemas de timing
+            setTimeout(() => {
+                setIsCreatingChat(false)
+            }, 500)
+        }
     }
 
     const handleEditChatTitle = async (chatId: string, newTitle: string) => {
@@ -1236,7 +1255,12 @@ const AIChatPage: React.FC = () => {
     const NewChatAlert = () => (
         <IonPopover
             isOpen={showNewChatAlert}
-            onDidDismiss={() => setShowNewChatAlert(false)}
+            onDidDismiss={() => {
+                if (!isCreatingChat) {
+                    setShowNewChatAlert(false)
+                    setNewChatTitle("")
+                }
+            }}
             className="new-chat-alert centered-popover"
         >
             <div className="alert-content">
@@ -1250,17 +1274,29 @@ const AIChatPage: React.FC = () => {
                     onIonChange={(e) => setNewChatTitle(e.detail.value || "")}
                     placeholder="Ej: Consulta sobre IA"
                     onKeyDown={(e) => {
-                        if (e.key === "Enter") {
+                        if (e.key === "Enter" && !isCreatingChat) {
                             e.preventDefault()
+                            e.stopPropagation()
                             handleCreateNewChat()
                         }
                     }}
                 />
 
                 <div className="alert-buttons">
-                    <IonButton onClick={() => setShowNewChatAlert(false)}>Cancelar</IonButton>
-                    <IonButton onClick={handleCreateNewChat} strong={true}>
-                        Crear
+                    <IonButton
+                        onClick={() => {
+                            if (!isCreatingChat) {
+                                setShowNewChatAlert(false)
+                                setNewChatTitle("")
+                                setIsCreatingChat(false)
+                            }
+                        }}
+                        disabled={isCreatingChat}
+                    >
+                        Cancelar
+                    </IonButton>
+                    <IonButton onClick={handleCreateNewChat} strong={true} disabled={isCreatingChat}>
+                        {isCreatingChat ? "Creando..." : "Crear"}
                     </IonButton>
                 </div>
             </div>
@@ -1338,18 +1374,6 @@ const AIChatPage: React.FC = () => {
         }
     }
 
-    const getCurrentInputValue = async (): Promise<string> => {
-        if (textareaRef.current) {
-            try {
-                const nativeElement = await textareaRef.current.getInputElement()
-                return nativeElement.value || ""
-            } catch (error) {
-                console.error("Error getting input value:", error)
-                return inputText
-            }
-        }
-        return inputText
-    }
 
     // ==================== RENDER ====================
     return (
