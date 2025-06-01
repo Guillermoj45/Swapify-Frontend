@@ -164,7 +164,7 @@ const AIChatPage: React.FC = () => {
     const [conversationsPage, setConversationsPage] = useState<number>(0)
     const [hasMoreConversations, setHasMoreConversations] = useState<boolean>(true)
     const [loadingError, setLoadingError] = useState<string | null>(null)
-    const [isButtonSelected, setIsButtonSelected] = useState<boolean>(false);
+    const [isButtonSelected, setIsButtonSelected] = useState<boolean>(false)
 
     // Product state
     const [showProductSidebar, setShowProductSidebar] = useState<boolean>(false)
@@ -529,37 +529,41 @@ const AIChatPage: React.FC = () => {
     }
 
     const handleCreateNewChat = () => {
-        const newChatId = `temp-${Date.now()}`
-        const initialMessage: Message = {
-            id: Date.now(),
-            text: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
-            sender: "ai",
-            timestamp: new Date(),
-        }
-
-        const chatTitle = newChatTitle.trim() || "Nueva conversación"
-
-        const newChat: ChatSession = {
-            id: newChatId,
-            title: chatTitle,
-            lastMessage: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
-            timestamp: new Date(),
-            messages: [initialMessage],
-            loadedFromBackend: false,
-        }
-
-        setChatSessions((prev) => [newChat, ...prev])
-        setActiveChatId(newChatId)
-        setMessages([initialMessage])
-        setCurrentChatId(null)
-        setProductId(null)
-
+        // Primero cerramos el diálogo para evitar que se vuelva a mostrar
         setShowNewChatAlert(false)
-        setNewChatTitle("")
 
-        if (!isDesktop) {
-            setShowChatSidebar(false)
-        }
+        // Pequeño retraso para asegurar que el diálogo se cierra antes de continuar
+        setTimeout(() => {
+            const newChatId = `temp-${Date.now()}`
+            const initialMessage: Message = {
+                id: Date.now(),
+                text: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
+                sender: "ai",
+                timestamp: new Date(),
+            }
+
+            const chatTitle = newChatTitle.trim() || "Nueva conversación"
+
+            const newChat: ChatSession = {
+                id: newChatId,
+                title: chatTitle,
+                lastMessage: "Hola, soy tu asistente IA. ¿En qué puedo ayudarte hoy?",
+                timestamp: new Date(),
+                messages: [initialMessage],
+                loadedFromBackend: false,
+            }
+
+            setChatSessions((prev) => [newChat, ...prev])
+            setActiveChatId(newChatId)
+            setMessages([initialMessage])
+            setCurrentChatId(null)
+            setProductId(null)
+            setNewChatTitle("")
+
+            if (!isDesktop) {
+                setShowChatSidebar(false)
+            }
+        }, 100)
     }
 
     const handleEditChatTitle = async (chatId: string, newTitle: string) => {
@@ -655,7 +659,6 @@ const AIChatPage: React.FC = () => {
 
     // ==================== MESSAGE HANDLING ====================
     const handleSend = async (): Promise<void> => {
-
         const currentText = inputText.trim()
         const currentImages = [...selectedImages]
         const currentPreviews = [...previewImages]
@@ -723,7 +726,7 @@ const AIChatPage: React.FC = () => {
                 currentChatId || undefined,
                 productId || undefined,
                 tituloToSend,
-                guille
+                guille,
             )
 
             if (response) {
@@ -1246,16 +1249,17 @@ const AIChatPage: React.FC = () => {
                     value={newChatTitle}
                     onIonChange={(e) => setNewChatTitle(e.detail.value || "")}
                     placeholder="Ej: Consulta sobre IA"
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault()
+                            handleCreateNewChat()
+                        }
+                    }}
                 />
 
                 <div className="alert-buttons">
                     <IonButton onClick={() => setShowNewChatAlert(false)}>Cancelar</IonButton>
-                    <IonButton
-                        onClick={() => {
-                            handleCreateNewChat()
-                        }}
-                        strong={true}
-                    >
+                    <IonButton onClick={handleCreateNewChat} strong={true}>
                         Crear
                     </IonButton>
                 </div>
@@ -1555,8 +1559,8 @@ const AIChatPage: React.FC = () => {
                             <IonButton
                                 fill="clear"
                                 onClick={() => {
-                                    toggleProductSummaryMode();
-                                    setIsButtonSelected((prev) => !prev);
+                                    toggleProductSummaryMode()
+                                    setIsButtonSelected((prev) => !prev)
                                 }}
                                 className="action-button"
                                 color={productSummaryMode ? "primary" : "medium"}
