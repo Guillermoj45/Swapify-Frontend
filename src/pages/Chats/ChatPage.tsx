@@ -24,6 +24,7 @@ import { ProductService } from "../../Services/ProductService"
 import cloudinaryImage from "../../Services/CloudinaryService"
 import { ProfileService, type ProfileDTO } from "../../Services/ProfileService"
 import { Settings as SettingsService } from "../../Services/SettingsService"
+import { useLocation } from "react-router-dom"
 
 // Interfaces para los tipos de datos
 interface Message {
@@ -52,10 +53,21 @@ interface Chat {
     unreadCount: number
     isOnline: boolean
     lastSeen?: Date
+    isTemporaryChat?: boolean // Nueva propiedad para chats temporales
+}
+
+// Nueva interfaz para datos de chat temporal
+interface TemporaryChatData {
+    productId: string
+    profileProductId: string
+    productName?: string
+    productAvatar?: string
+    sellerNickname?: string
 }
 
 const ChatPage: React.FC = () => {
     useAuthRedirect()
+    const location = useLocation()
 
     // Estado de conexión
     const [isConnected, setIsConnected] = useState(false)
@@ -67,6 +79,10 @@ const ChatPage: React.FC = () => {
 
     // Estado para los chats
     const [chats, setChats] = useState<Chat[]>([])
+
+    // Estado para chat temporal
+    const [temporaryChatData, setTemporaryChatData] = useState<TemporaryChatData | null>(null)
+    const [isTemporaryChat, setIsTemporaryChat] = useState(false)
 
     // Estado para la búsqueda de chats
     const [searchTerm, setSearchTerm] = useState("")
@@ -111,6 +127,100 @@ const ChatPage: React.FC = () => {
 
     const [loadingProductNames, setLoadingProductNames] = useState<Set<string>>(new Set())
     const [loadingMessages, setLoadingMessages] = useState(false)
+
+    // NUEVA FUNCIÓN: Parsear parámetros de URL para chat temporal
+    const parseUrlParams = useCallback(() => {
+        const urlParams = new URLSearchParams(location.search)
+        const productId = urlParams.get("productId")
+        const profileProductId = urlParams.get("profileProductId")
+        const initChat = urlParams.get("initChat")
+
+        console.log("Parámetros de URL detectados:", {
+            productId,
+            profileProductId,
+            initChat,
+            fullSearch: location.search,
+        })
+
+        if (productId && profileProductId && initChat === "true") {
+            return {
+                productId,
+                profileProductId,
+            }
+        }
+
+        return null
+    }, [location.search])
+
+    // NUEVA FUNCIÓN: Crear chat temporal
+    const createTemporaryChat = useCallback(
+        async (productId: string, profileProductId: string) => {
+            try {
+                console.log("🆕 Creando chat temporal para producto:", { productId, profileProductId })
+
+                // Cargar información del producto
+                const product = await ProductService.getProductById(productId, profileProductId)
+
+                console.log("📦 Producto cargado para chat temporal:", product)
+
+                // Crear datos del chat temporal
+                const tempChatData: TemporaryChatData = {
+                    productId,
+                    profileProductId,
+                    productName: product.name,
+                    productAvatar: product.imagenes?.[0] || product.name.charAt(0).toUpperCase(),
+                    sellerNickname: product.profile.nickname,
+                }
+
+                setTemporaryChatData(tempChatData)
+
+                // Crear chat temporal en la lista
+                const temporaryChat: Chat = {
+                    id: `temp-${productId}-${profileProductId}`,
+                    idProduct: productId,
+                    idProfileProduct: profileProductId,
+                    idProfile: currentUserProfile?.id || "",
+                    name: product.name,
+                    avatar: product.imagenes?.[0] || product.name.charAt(0).toUpperCase(),
+                    lastMessage: "Conversación iniciada",
+                    timestamp: new Date(),
+                    unreadCount: 0,
+                    isOnline: true,
+                    isTemporaryChat: true,
+                }
+
+                // Agregar el chat temporal al inicio de la lista
+                setChats((prevChats) => [temporaryChat, ...prevChats])
+
+                // Seleccionar automáticamente el chat temporal
+                setActiveChat(temporaryChat)
+                setIsTemporaryChat(true)
+
+                // Crear mensaje de bienvenida
+                const welcomeMessage: Message = {
+                    id: "welcome-temp",
+                    content: `¡Hola! Estás a punto de iniciar una conversación sobre "${product.name}" con ${product.profile.nickname}. Escribe tu mensaje para comenzar.`,
+                    sender: "ai",
+                    timestamp: new Date(),
+                    read: true,
+                    delivered: true,
+                    status: "read",
+                }
+
+                setMessages([welcomeMessage])
+
+                if (isMobile) {
+                    setShowChatPanel(true)
+                }
+
+                console.log("✅ Chat temporal creado exitosamente")
+            } catch (error) {
+                console.error("❌ Error al crear chat temporal:", error)
+                setError("Error al iniciar la conversación. Inténtalo de nuevo.")
+            }
+        },
+        [currentUserProfile, isMobile],
+    )
 
     // FUNCIÓN CORREGIDA: Lógica centralizada para determinar si un mensaje es del usuario actual
     const isMessageFromCurrentUser = useCallback(
@@ -227,6 +337,12 @@ const ChatPage: React.FC = () => {
 
     const loadChatMessages = useCallback(
         async (chat: Chat) => {
+            // Si es un chat temporal, no cargar mensajes del servidor
+            if (chat.isTemporaryChat) {
+                console.log("📝 Chat temporal detectado, no cargando mensajes del servidor")
+                return
+            }
+
             if (!chat.idProduct || !chat.idProfileProduct || !chat.idProfile) {
                 console.warn("No se pueden cargar mensajes sin IDs válidos:", chat)
                 return
@@ -286,54 +402,58 @@ const ChatPage: React.FC = () => {
     )
 
     // Función para convertir ChatDTO a Chat - simplificada
-    const convertChatDTOToChat = useCallback((chatDTO: ChatDTO): Chat => {
-        console.log("Convirtiendo ChatDTO:", chatDTO)
+    const convertChatDTOToChat = useCallback(
+        (chatDTO: ChatDTO): Chat => {
+            console.log("Convirtiendo ChatDTO:", chatDTO)
 
-        // Extraer datos de la estructura real del backend
-        const productId = chatDTO.product?.id || ""
-        const profileProductId = chatDTO.product?.profile?.id || ""
-        const profileId = chatDTO.profileNoProduct?.id || ""
+            // Extraer datos de la estructura real del backend
+            const productId = chatDTO.product?.id || ""
+            const profileProductId = chatDTO.product?.profile?.id || ""
+            const profileId = chatDTO.profileNoProduct?.id || ""
 
-        // Determinar el nombre del chat basándose en quién es el usuario ACTUAL
-        let chatName: string
-        let chatAvatar: string
+            // Determinar el nombre del chat basándose en quién es el usuario ACTUAL
+            let chatName: string
+            let chatAvatar: string
 
-        // Verificar si el usuario actual es el dueño del producto
-        const isCurrentUserProductOwner = currentUserProfile?.id === profileProductId
+            // Verificar si el usuario actual es el dueño del producto
+            const isCurrentUserProductOwner = currentUserProfile?.id === profileProductId
 
-        if (isCurrentUserProductOwner) {
-            // Si el usuario actual ES el dueño del producto, mostrar el nombre del otro usuario
-            chatName = chatDTO.profileNoProduct?.nickname || "Usuario desconocido"
-            chatAvatar = chatDTO.profileNoProduct?.avatar || chatName.charAt(0).toUpperCase()
-        } else {
-            // Si el usuario actual NO es el dueño del producto, mostrar el nombre del producto
-            chatName = chatDTO.product?.name || "Producto desconocido"
-            // Para el avatar, usar la imagen del producto (primera imagen o placeholder)
-            chatAvatar = chatDTO.product?.imagenes?.[0] || chatDTO.product?.name?.charAt(0).toUpperCase() || "P"
-        }
+            if (isCurrentUserProductOwner) {
+                // Si el usuario actual ES el dueño del producto, mostrar el nombre del otro usuario
+                chatName = chatDTO.profileNoProduct?.nickname || "Usuario desconocido"
+                chatAvatar = chatDTO.profileNoProduct?.avatar || chatName.charAt(0).toUpperCase()
+            } else {
+                // Si el usuario actual NO es el dueño del producto, mostrar el nombre del producto
+                chatName = chatDTO.product?.name || "Producto desconocido"
+                // Para el avatar, usar la imagen del producto (primera imagen o placeholder)
+                chatAvatar = chatDTO.product?.imagenes?.[0] || chatDTO.product?.name?.charAt(0).toUpperCase() || "P"
+            }
 
-        // Crear un ID único para el chat combinando los IDs relevantes
-        const chatId = `${productId}-${profileProductId}-${profileId}`
+            // Crear un ID único para el chat combinando los IDs relevantes
+            const chatId = `${productId}-${profileProductId}-${profileId}`
 
-        const chat: Chat = {
-            id: chatId,
-            idProduct: productId,
-            idProfileProduct: profileProductId,
-            idProfile: profileId,
-            name: chatName,
-            avatar: chatAvatar,
-            lastMessage: chatDTO.message || "No hay mensajes",
-            timestamp: chatDTO.createdAt ? new Date(chatDTO.createdAt) : new Date(),
-            unreadCount: 0,
-            isOnline: true,
-        }
+            const chat: Chat = {
+                id: chatId,
+                idProduct: productId,
+                idProfileProduct: profileProductId,
+                idProfile: profileId,
+                name: chatName,
+                avatar: chatAvatar,
+                lastMessage: chatDTO.message || "No hay mensajes",
+                timestamp: chatDTO.createdAt ? new Date(chatDTO.createdAt) : new Date(),
+                unreadCount: 0,
+                isOnline: true,
+                isTemporaryChat: false,
+            }
 
-        console.log("Chat convertido:", chat)
-        console.log("Usuario actual es dueño del producto:", isCurrentUserProductOwner)
-        console.log("Nombre del chat asignado:", chatName)
+            console.log("Chat convertido:", chat)
+            console.log("Usuario actual es dueño del producto:", isCurrentUserProductOwner)
+            console.log("Nombre del chat asignado:", chatName)
 
-        return chat
-    }, [currentUserProfile])
+            return chat
+        },
+        [currentUserProfile],
+    )
 
     // Actualizar el último mensaje de un chat
     const updateLastMessage = useCallback(
@@ -564,7 +684,18 @@ const ChatPage: React.FC = () => {
 
             // Convertir todos los chats de forma síncrona primero
             const convertedChats = chatDTOs.map((chatDTO) => convertChatDTOToChat(chatDTO))
-            setChats(convertedChats)
+
+            // Si hay un chat temporal, mantenerlo al inicio
+            if (temporaryChatData) {
+                const existingTemporaryChat = chats.find((chat) => chat.isTemporaryChat)
+                if (existingTemporaryChat) {
+                    setChats([existingTemporaryChat, ...convertedChats])
+                } else {
+                    setChats(convertedChats)
+                }
+            } else {
+                setChats(convertedChats)
+            }
 
             console.log("Chats convertidos y cargados:", convertedChats)
 
@@ -603,7 +734,7 @@ const ChatPage: React.FC = () => {
         } finally {
             setLoading(false)
         }
-    }, [convertChatDTOToChat, loadProductNameForChat])
+    }, [convertChatDTOToChat, loadProductNameForChat, temporaryChatData, chats])
 
     // Función para filtrar chats basado en el término de búsqueda
     const filteredChats = useMemo(() => {
@@ -673,7 +804,7 @@ const ChatPage: React.FC = () => {
         }
     }, [isConnecting, isConnected])
 
-    // Enviar mensaje
+    // FUNCIÓN MODIFICADA: Enviar mensaje (ahora maneja chats temporales)
     const sendMessage = useCallback(async () => {
         if (inputMessage.trim() === "" || !activeChat || !isConnected) {
             console.warn("No se puede enviar mensaje:", {
@@ -708,13 +839,44 @@ const ChatPage: React.FC = () => {
 
             console.log("📤 Enviando mensaje:", messageContent)
 
-            // Enviar mensaje al servidor
-            await chatService.sendMessage(
-                activeChat.idProduct,
-                activeChat.idProfileProduct,
-                activeChat.idProfile,
-                messageContent,
-            )
+            // Si es un chat temporal, convertirlo a chat real primero
+            if (activeChat.isTemporaryChat && temporaryChatData) {
+                console.log("🔄 Convirtiendo chat temporal a chat real...")
+
+                // Enviar el primer mensaje (esto creará el chat en el backend)
+                await chatService.sendMessage(
+                    temporaryChatData.productId,
+                    temporaryChatData.profileProductId,
+                    currentUserProfile?.id || "",
+                    messageContent,
+                )
+
+                // Actualizar el chat para que ya no sea temporal
+                const updatedChat: Chat = {
+                    ...activeChat,
+                    isTemporaryChat: false,
+                    idProfile: currentUserProfile?.id || "",
+                }
+
+                setActiveChat(updatedChat)
+                setIsTemporaryChat(false)
+
+                // Actualizar en la lista de chats
+                setChats((prevChats) => prevChats.map((chat) => (chat.id === activeChat.id ? updatedChat : chat)))
+
+                // Limpiar datos temporales
+                setTemporaryChatData(null)
+
+                console.log("✅ Chat temporal convertido a chat real")
+            } else {
+                // Chat normal - enviar mensaje
+                await chatService.sendMessage(
+                    activeChat.idProduct,
+                    activeChat.idProfileProduct,
+                    activeChat.idProfile,
+                    messageContent,
+                )
+            }
 
             // Actualizar el mensaje temporal a enviado
             setMessages((prevMessages) =>
@@ -732,7 +894,7 @@ const ChatPage: React.FC = () => {
             setInputMessage(messageContent)
             setMessages((prev) => prev.filter((msg) => msg.id !== tempId))
         }
-    }, [inputMessage, activeChat, isConnected, updateLastMessage])
+    }, [inputMessage, activeChat, isConnected, updateLastMessage, temporaryChatData, currentUserProfile])
 
     // Manejar cambio de chat
     const handleChatSelect = useCallback(
@@ -745,6 +907,7 @@ const ChatPage: React.FC = () => {
             })
 
             setActiveChat(chat)
+            setIsTemporaryChat(chat.isTemporaryChat || false)
 
             // Marcar como leído
             setChats((prevChats) => prevChats.map((c) => (c.id === chat.id ? { ...c, unreadCount: 0 } : c)))
@@ -765,6 +928,7 @@ const ChatPage: React.FC = () => {
     const handleBackToList = useCallback(() => {
         setShowChatPanel(false)
         setActiveChat(null)
+        setIsTemporaryChat(false)
     }, [])
 
     // Función para recargar chats
@@ -863,6 +1027,15 @@ const ChatPage: React.FC = () => {
 
         loadCurrentUserProfile()
     }, [])
+
+    // NUEVO useEffect: Detectar parámetros de URL para chat temporal
+    useEffect(() => {
+        const urlParams = parseUrlParams()
+        if (urlParams && currentUserProfile) {
+            console.log("🆕 Detectados parámetros para chat temporal:", urlParams)
+            createTemporaryChat(urlParams.productId, urlParams.profileProductId)
+        }
+    }, [parseUrlParams, createTemporaryChat, currentUserProfile])
 
     // También agrega este useEffect adicional para escuchar cambios en sessionStorage
     useEffect(() => {
@@ -972,7 +1145,7 @@ const ChatPage: React.FC = () => {
 
     // Suscribirse a la sala de chat cuando cambia el chat activo
     useEffect(() => {
-        if (isConnected && activeChat && currentUserProfile && !loadingProfile) {
+        if (isConnected && activeChat && currentUserProfile && !loadingProfile && !activeChat.isTemporaryChat) {
             console.log("🔔 Configurando suscripción para chat:", activeChat.name)
 
             // Cancelar suscripción anterior
@@ -1167,7 +1340,7 @@ const ChatPage: React.FC = () => {
                         filteredChats.map((chat) => (
                             <div
                                 key={chat.id}
-                                className={`chat-item ${activeChat?.id === chat.id ? "active" : ""}`}
+                                className={`chat-item ${activeChat?.id === chat.id ? "active" : ""} ${chat.isTemporaryChat ? "temporary-chat" : ""}`}
                                 onClick={() => handleChatSelect(chat)}
                             >
                                 <div className={`chat-avatar ${chat.isOnline ? "online" : ""}`}>
@@ -1175,7 +1348,7 @@ const ChatPage: React.FC = () => {
                                         {loadingProductNames.has(chat.id) ? (
                                             <IonSpinner name="crescent" />
                                         ) : (
-                                            <img src={cloudinaryImage(chat.avatar) || "/placeholder.svg"} alt={"chat.avatar1178"}/>
+                                            <img src={cloudinaryImage(chat.avatar) || "/placeholder.svg"} alt={"chat.avatar1178"} />
                                         )}
                                     </div>
                                 </div>
@@ -1187,6 +1360,7 @@ const ChatPage: React.FC = () => {
                                     <div className="chat-preview">
                                         <p>{chat.lastMessage}</p>
                                         {chat.unreadCount > 0 && <span className="unread-badge">{chat.unreadCount}</span>}
+                                        {chat.isTemporaryChat && <span className="temp-badge">Nuevo</span>}
                                     </div>
                                 </div>
                             </div>
@@ -1213,13 +1387,14 @@ const ChatPage: React.FC = () => {
                                 </button>
                                 <div className={`chat-avatar ${activeChat.isOnline ? "online" : ""}`}>
                                     <div className="user-avatar-chat">
-                                        <img src={cloudinaryImage(activeChat.avatar)} alt={"activeChat.avatar1216"} />
+                                        <img src={cloudinaryImage(activeChat.avatar) || "/placeholder.svg"} alt={"activeChat.avatar1216"} />
                                     </div>
                                 </div>
                                 <div className="chat-info">
                                     <h3>{activeChat.name}</h3>
                                     <span className="status-text">
                     {isConnected ? (activeChat.isOnline ? "En línea" : "Último acceso hace 3h") : "Desconectado"}
+                                        {activeChat.isTemporaryChat && " • Conversación nueva"}
                   </span>
                                 </div>
                             </div>
@@ -1295,11 +1470,17 @@ const ChatPage: React.FC = () => {
                                                                 <div className="ai-avatar">AI</div>
                                                             ) : message.sender === "user" ? (
                                                                 <div className="user-avatar">
-                                                                    <img src={currentUserProfile?.avatar || "/placeholder.svg"} alt={"currentUserProfile?.avatar1298"} />
+                                                                    <img
+                                                                        src={currentUserProfile?.avatar || "/placeholder.svg"}
+                                                                        alt={"currentUserProfile?.avatar1298"}
+                                                                    />
                                                                 </div>
                                                             ) : (
                                                                 <div className="user-avatar-chat">
-                                                                    <img src={cloudinaryImage(activeChat.avatar) || "/placeholder.svg"} alt={"activeChat.avatar1302"} />
+                                                                    <img
+                                                                        src={cloudinaryImage(activeChat.avatar) || "/placeholder.svg"}
+                                                                        alt={"activeChat.avatar1302"}
+                                                                    />
                                                                 </div>
                                                             )}
                                                         </div>

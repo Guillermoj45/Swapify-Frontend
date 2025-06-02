@@ -262,10 +262,33 @@ const ProductDetailPage: React.FC = () => {
         }
     }
 
-    // Manejar acción de contacto con el vendedor, incluyendo el token si existe
+    // FUNCIÓN MODIFICADA: Manejar acción de contacto con el vendedor
     const handleContactSeller = () => {
-        const chatUrl = `/Chat?profileId=${product?.profile.id}&productId=${id}&question=true`
-        window.location.href = chatUrl
+        if (!product) {
+            console.error("No hay producto disponible para iniciar chat")
+            return
+        }
+
+        // Verificar que el usuario no esté intentando chatear consigo mismo
+        const currentUserId = sessionStorage.getItem("userId")
+        if (currentUserId === product.profile.id) {
+            setToastMessage("No puedes iniciar un chat contigo mismo")
+            setToastColor("warning")
+            setShowToast(true)
+            return
+        }
+
+        // Construir la URL para el chat con parámetros para iniciar conversación
+        const chatUrl = `/chat?productId=${id}&profileProductId=${product.profile.id}&initChat=true`
+
+        console.log("Redirigiendo a chat con parámetros:", {
+            productId: id,
+            profileProductId: product.profile.id,
+            productName: product.name,
+        })
+
+        // Redirigir usando history.push para mantener el estado de la aplicación
+        window.location.href =  chatUrl
     }
 
     // Manejar acción de ver perfil del vendedor, incluyendo el token si existe
