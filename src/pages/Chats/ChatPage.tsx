@@ -54,9 +54,6 @@ interface Chat {
     lastSeen?: Date
 }
 
-// Eliminar la llamada al perfil en el nivel superior
-// const profile = await ProfileService.getProfileInfo()
-
 const ChatPage: React.FC = () => {
     useAuthRedirect()
 
@@ -67,8 +64,6 @@ const ChatPage: React.FC = () => {
 
     const [currentUserProfile, setCurrentUserProfile] = useState<ProfileDTO | null>(null)
     const [loadingProfile, setLoadingProfile] = useState(true)
-
-    const [, setMessageStatuses] = useState<Map<string, string>>(new Map())
 
     // Estado para los chats
     const [chats, setChats] = useState<Chat[]>([])
@@ -116,6 +111,24 @@ const ChatPage: React.FC = () => {
 
     const [loadingProductNames, setLoadingProductNames] = useState<Set<string>>(new Set())
     const [loadingMessages, setLoadingMessages] = useState(false)
+
+    // FUNCIÓN CORREGIDA: Lógica centralizada para determinar si un mensaje es del usuario actual
+    const isMessageFromCurrentUser = useCallback(
+        (profileProductSender: boolean): boolean => {
+            if (!currentUserProfile || !activeChat) {
+                return false
+            }
+
+            // Verificar si el usuario actual es el dueño del producto
+            const isCurrentUserProductOwner = activeChat.idProfileProduct === currentUserProfile.id
+
+            // Lógica corregida:
+            // - Si el usuario actual es dueño del producto: profileProductSender = true significa que es su mensaje
+            // - Si el usuario actual NO es dueño del producto: profileProductSender = false significa que es su mensaje
+            return isCurrentUserProductOwner ? profileProductSender : !profileProductSender
+        },
+        [activeChat, currentUserProfile],
+    )
 
     // Función para cargar el nombre del producto de un chat específico
     const loadProductNameForChat = useCallback(async (chatId: string, productId: string, profileProductId: string) => {
@@ -165,6 +178,7 @@ const ChatPage: React.FC = () => {
         }
     }, [])
 
+    // FUNCIÓN CORREGIDA: Convertir MessageDTO a Message usando la lógica centralizada
     const convertMessageDTOToMessage = useCallback(
         (messageDTO: MessageDTO): Message => {
             if (!currentUserProfile || !activeChat) {
@@ -183,13 +197,17 @@ const ChatPage: React.FC = () => {
                 }
             }
 
-            // Verificar si el usuario actual es el dueño del producto
-            const isCurrentUserProductOwner = activeChat.idProfileProduct === currentUserProfile.id
+            // Usar la lógica centralizada para determinar si es del usuario actual
+            const isFromCurrentUser = isMessageFromCurrentUser(messageDTO.profileProductSender)
 
-            // Determinar si el mensaje es del usuario actual
-            const isFromCurrentUser = isCurrentUserProductOwner
-                ? messageDTO.profileProductSender
-                : !messageDTO.profileProductSender
+            console.log("🔍 Convirtiendo MessageDTO:", {
+                messageId: messageDTO.id,
+                senderNickname: messageDTO.senderNickname,
+                profileProductSender: messageDTO.profileProductSender,
+                isFromCurrentUser,
+                currentUserNickname: currentUserProfile.nickname,
+                isCurrentUserProductOwner: activeChat.idProfileProduct === currentUserProfile.id,
+            })
 
             return {
                 id: messageDTO.id,
@@ -204,7 +222,7 @@ const ChatPage: React.FC = () => {
                 isTemporary: false,
             }
         },
-        [activeChat, currentUserProfile],
+        [activeChat, currentUserProfile, isMessageFromCurrentUser],
     )
 
     const loadChatMessages = useCallback(
@@ -232,6 +250,8 @@ const ChatPage: React.FC = () => {
                     sender: "ai",
                     timestamp: new Date(),
                     read: true,
+                    delivered: true,
+                    status: "read",
                 }
 
                 // Si no hay mensajes históricos, solo mostrar el mensaje de bienvenida
@@ -254,6 +274,8 @@ const ChatPage: React.FC = () => {
                     sender: "ai",
                     timestamp: new Date(),
                     read: true,
+                    delivered: true,
+                    status: "read",
                 }
                 setMessages([welcomeMessage])
             } finally {
@@ -325,21 +347,98 @@ const ChatPage: React.FC = () => {
         [activeChat?.id],
     )
 
-    // Función para manejar mensajes recibidos
+    // FUNCIÓN CORREGIDA: Manejar mensajes recibidos por WebSocket
     const handleMessageReceived = useCallback(
         (messageData: MensajeRecibeDTO) => {
             try {
-                console.log("Mensaje recibido por WebSocket:", messageData)
+                console.log("📨 Mensaje recibido por WebSocket:", messageData)
 
-                if (!messageData.content) {
-                    console.warn("Mensaje recibido sin contenido:", messageData)
+                if (!messageData.content || !currentUserProfile || !activeChat) {
+                    console.warn("Mensaje recibido sin contenido o falta información del usuario/chat:", {
+                        hasContent: !!messageData.content,
+                        hasCurrentUserProfile: !!currentUserProfile,
+                        hasActiveChat: !!activeChat,
+                    })
                     return
                 }
+
+                // VERIFICACIÓN CRÍTICA: ¿Tiene el campo profileProductSender?
+                if (messageData.profileProductSender === undefined) {
+                    console.error("❌ PROBLEMA: El mensaje de WebSocket NO tiene el campo 'profileProductSender'")
+                    console.error("📋 Campos disponibles:", Object.keys(messageData))
+                    console.error("🚨 El backend debe incluir 'profileProductSender' en los mensajes de WebSocket")
+
+                    // Fallback temporal usando nickname
+                    const isFromCurrentUser =
+                        messageData.senderNickname === currentUserProfile.nickname ||
+                        messageData.userName === currentUserProfile.nickname
+
+                    if (isFromCurrentUser) {
+                        console.log("⚠️ Mensaje ignorado: es del usuario actual (usando fallback de nickname)")
+                        return
+                    }
+                } else {
+                    // Usar la lógica centralizada para determinar si es del usuario actual
+                    const isFromCurrentUser = isMessageFromCurrentUser(messageData.profileProductSender)
+
+                    console.log("🔍 Análisis del remitente del mensaje WebSocket:", {
+                        senderNickname: messageData.senderNickname,
+                        currentUserNickname: currentUserProfile.nickname,
+                        profileProductSender: messageData.profileProductSender,
+                        isCurrentUserProductOwner: activeChat.idProfileProduct === currentUserProfile.id,
+                        isFromCurrentUser,
+                    })
+
+                    // Si el mensaje es del usuario actual, no lo agregamos porque ya tenemos el mensaje temporal
+                    if (isFromCurrentUser) {
+                        console.log("⚠️ Mensaje ignorado: es del usuario actual")
+                        return
+                    }
+                }
+
+                // Crear el nuevo mensaje desde el DTO recibido (solo para otros usuarios)
+                const newMessage: Message = {
+                    id: messageData.id || `received-${Date.now()}-${Math.random()}`,
+                    content: messageData.content,
+                    sender: "other", // Ahora sabemos que es de otro usuario
+                    timestamp: messageData.createdAt ? new Date(messageData.createdAt) : new Date(),
+                    read: false,
+                    delivered: true,
+                    status: "delivered",
+                    senderName: messageData.senderNickname || messageData.userName || "Usuario",
+                    senderId: messageData.senderNickname || messageData.userName,
+                    isTemporary: false,
+                }
+
+                console.log("✅ Nuevo mensaje de otro usuario procesado:", newMessage)
+
+                // Agregar el mensaje al chat activo
+                setMessages((prevMessages) => {
+                    // Evitar duplicados
+                    const exists = prevMessages.some((msg) => msg.id === newMessage.id)
+                    if (exists) {
+                        console.log("Mensaje ya existe, no se agrega duplicado")
+                        return prevMessages
+                    }
+
+                    console.log("✅ Agregando mensaje de otro usuario al chat activo")
+                    return [...prevMessages, newMessage]
+                })
+
+                // Marcar el mensaje como leído automáticamente después de un momento
+                setTimeout(() => {
+                    setMessages((prevMessages) =>
+                        prevMessages.map((msg) => (msg.id === newMessage.id ? { ...msg, read: true, status: "read" } : msg)),
+                    )
+                }, 1000)
+
+                // Actualizar el último mensaje en la lista de chats
+                updateLastMessage(activeChat.id, messageData.content, new Date(messageData.createdAt || Date.now()))
             } catch (error) {
-                console.error("Error al procesar el mensaje recibido:", error)
+                console.error("❌ Error al procesar el mensaje recibido:", error)
             }
         },
-        [activeChat, updateLastMessage],
+        [activeChat, updateLastMessage, currentUserProfile, isMessageFromCurrentUser],
     )
 
     // Función para manejar la búsqueda desde el header
@@ -525,17 +624,17 @@ const ChatPage: React.FC = () => {
             setIsConnecting(true)
             setError(null)
 
-            console.log("Iniciando conexión WebSocket...")
+            console.log("🔌 Iniciando conexión WebSocket...")
 
             await chatService.connect(
                 () => {
-                    console.log("WebSocket conectado exitosamente")
+                    console.log("✅ WebSocket conectado exitosamente")
                     setIsConnected(true)
                     setIsConnecting(false)
                     setError(null)
                 },
                 (error) => {
-                    console.error("Error de conexión WebSocket:", error)
+                    console.error("❌ Error de conexión WebSocket:", error)
                     setIsConnected(false)
                     setIsConnecting(false)
 
@@ -543,11 +642,19 @@ const ChatPage: React.FC = () => {
                         setError("Error de autenticación en el chat. Inicia sesión nuevamente.")
                     } else {
                         setError("Error de conexión al chat. Reintentando...")
+
+                        // Reintentar conexión automáticamente después de 3 segundos
+                        setTimeout(() => {
+                            if (!isConnected) {
+                                console.log("🔄 Reintentando conexión automáticamente...")
+                                connectToWebSocket()
+                            }
+                        }, 3000)
                     }
                 },
             )
         } catch (error: any) {
-            console.error("Error al conectar WebSocket:", error)
+            console.error("❌ Error al conectar WebSocket:", error)
             setIsConnected(false)
             setIsConnecting(false)
 
@@ -559,7 +666,7 @@ const ChatPage: React.FC = () => {
         }
     }, [isConnecting, isConnected])
 
-    // Función para enviar mensaje
+    // Enviar mensaje
     const sendMessage = useCallback(async () => {
         if (inputMessage.trim() === "" || !activeChat || !isConnected) {
             console.warn("No se puede enviar mensaje:", {
@@ -571,37 +678,59 @@ const ChatPage: React.FC = () => {
         }
 
         const messageContent = inputMessage.trim()
+        const tempId = `temp-${Date.now()}-${Math.random()}`
 
         try {
             setInputMessage("")
 
+            // Crear mensaje temporal para mostrar inmediatamente
             const newMessage: Message = {
-                id: `temp-${Date.now()}-${Math.random()}`,
+                id: tempId,
                 content: messageContent,
                 sender: "user",
                 timestamp: new Date(),
-                read: true,
+                read: false,
+                delivered: false,
+                status: "sending",
+                isTemporary: true,
             }
 
+            // Agregar mensaje temporal a la UI
             setMessages((prev) => [...prev, newMessage])
             updateLastMessage(activeChat.id, messageContent, new Date())
 
-            console.log("Enviando mensaje:", messageContent)
-            chatService.sendMessage(activeChat.idProduct, activeChat.idProfileProduct, activeChat.idProfile, messageContent)
+            console.log("📤 Enviando mensaje:", messageContent)
 
-            console.log("Mensaje enviado exitosamente")
+            // Enviar mensaje al servidor
+            await chatService.sendMessage(
+                activeChat.idProduct,
+                activeChat.idProfileProduct,
+                activeChat.idProfile,
+                messageContent,
+            )
+
+            // Actualizar el mensaje temporal a enviado
+            setMessages((prevMessages) =>
+                prevMessages.map((msg) =>
+                    msg.id === tempId ? { ...msg, status: "sent", delivered: true, isTemporary: false } : msg,
+                ),
+            )
+
+            console.log("✅ Mensaje enviado exitosamente")
         } catch (error) {
-            console.error("Error al enviar mensaje:", error)
+            console.error("❌ Error al enviar mensaje:", error)
             setError("Error al enviar el mensaje. Inténtalo de nuevo.")
+
+            // Restaurar el input y remover mensaje temporal en caso de error
             setInputMessage(messageContent)
-            setMessages((prev) => prev.filter((msg) => !msg.id.startsWith("temp-")))
+            setMessages((prev) => prev.filter((msg) => msg.id !== tempId))
         }
     }, [inputMessage, activeChat, isConnected, updateLastMessage])
 
     // Manejar cambio de chat
     const handleChatSelect = useCallback(
         async (chat: Chat) => {
-            console.log("Seleccionando chat:", chat) // Para debug
+            console.log("🎯 Seleccionando chat:", chat.name)
             console.log("IDs del chat:", {
                 idProduct: chat.idProduct,
                 idProfileProduct: chat.idProfileProduct,
@@ -638,7 +767,7 @@ const ChatPage: React.FC = () => {
 
     // Función para reintentar conexión
     const handleRetryConnection = useCallback(async () => {
-        console.log("Reintentando conexión completa...")
+        console.log("🔄 Reintentando conexión completa...")
         setError(null)
 
         try {
@@ -650,7 +779,7 @@ const ChatPage: React.FC = () => {
             await loadChats()
             await connectToWebSocket()
         } catch (error) {
-            console.error("Error al reintentar conexión:", error)
+            console.error("❌ Error al reintentar conexión:", error)
         }
     }, [loadChats, connectToWebSocket])
 
@@ -704,7 +833,7 @@ const ChatPage: React.FC = () => {
                     try {
                         const profile = await ProfileService.getProfileInfo()
                         setCurrentUserProfile(profile)
-                        console.log("Perfil del usuario actual cargado:", profile.nickname)
+                        console.log("✅ Perfil del usuario actual cargado:", profile.nickname)
                     } catch (error) {
                         console.error("Error al cargar el perfil del usuario:", error)
                         // No establecer error aquí para permitir la redirección de useAuthRedirect
@@ -775,7 +904,7 @@ const ChatPage: React.FC = () => {
     // Efecto para inicializar la conexión y cargar chats
     useEffect(() => {
         const initializeChat = async () => {
-            console.log("Inicializando chat...")
+            console.log("🚀 Inicializando chat...")
 
             const token = localStorage.getItem("token") || sessionStorage.getItem("token")
             if (!token) {
@@ -788,7 +917,7 @@ const ChatPage: React.FC = () => {
                 await loadChats()
                 await connectToWebSocket()
             } catch (error) {
-                console.error("Error en inicialización:", error)
+                console.error("❌ Error en inicialización:", error)
             }
         }
 
@@ -801,7 +930,7 @@ const ChatPage: React.FC = () => {
         }
 
         return () => {
-            console.log("Limpiando conexiones de chat...")
+            console.log("🧹 Limpiando conexiones de chat...")
             if (activeSubscription) {
                 chatService.unsubscribeFromChat(activeSubscription)
             }
@@ -846,10 +975,11 @@ const ChatPage: React.FC = () => {
     // Suscribirse a la sala de chat cuando cambia el chat activo
     useEffect(() => {
         if (isConnected && activeChat && currentUserProfile && !loadingProfile) {
-            console.log("Configurando suscripción para chat:", activeChat.name)
+            console.log("🔔 Configurando suscripción para chat:", activeChat.name)
 
+            // Cancelar suscripción anterior
             if (activeSubscription) {
-                console.log("Cancelando suscripción anterior:", activeSubscription)
+                console.log("🗑️ Cancelando suscripción anterior:", activeSubscription)
                 chatService.unsubscribeFromChat(activeSubscription)
                 setActiveSubscription(null)
             }
@@ -868,10 +998,18 @@ const ChatPage: React.FC = () => {
                 // Cargar mensajes históricos
                 loadChatMessages(activeChat)
 
-                console.log(`Suscrito exitosamente al chat: ${activeChat.name}`)
+                console.log(`✅ Suscrito exitosamente al chat: ${activeChat.name}`)
             } catch (error) {
-                console.error("Error al suscribirse al chat:", error)
+                console.error("❌ Error al suscribirse al chat:", error)
                 setError("Error al conectar con el chat. Inténtalo de nuevo.")
+            }
+        }
+
+        // Cleanup function
+        return () => {
+            if (activeSubscription) {
+                console.log("🧹 Limpiando suscripción en cleanup:", activeSubscription)
+                chatService.unsubscribeFromChat(activeSubscription)
             }
         }
     }, [
@@ -879,7 +1017,6 @@ const ChatPage: React.FC = () => {
         activeChat,
         handleMessageReceived,
         handleSubscriptionError,
-        activeSubscription,
         loadChatMessages,
         currentUserProfile,
         loadingProfile,
@@ -1035,7 +1172,6 @@ const ChatPage: React.FC = () => {
                                 className={`chat-item ${activeChat?.id === chat.id ? "active" : ""}`}
                                 onClick={() => handleChatSelect(chat)}
                             >
-                                {/* resto del contenido del chat item permanece igual */}
                                 <div className={`chat-avatar ${chat.isOnline ? "online" : ""}`}>
                                     <div className="user-avatar-chat">
                                         {loadingProductNames.has(chat.id) ? (
