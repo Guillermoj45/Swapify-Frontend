@@ -294,18 +294,22 @@ const ChatPage: React.FC = () => {
         const profileProductId = chatDTO.product?.profile?.id || ""
         const profileId = chatDTO.profileNoProduct?.id || ""
 
-        // Determinar quién es el "otro usuario" y el nombre del chat
+        // Determinar el nombre del chat basándose en quién es el usuario ACTUAL
         let chatName: string
         let chatAvatar: string
 
-        if (chatDTO.profileProductSender) {
-            // Si el sender es el dueño del producto, el chat se llama como el usuario sin producto
+        // Verificar si el usuario actual es el dueño del producto
+        const isCurrentUserProductOwner = currentUserProfile?.id === profileProductId
+
+        if (isCurrentUserProductOwner) {
+            // Si el usuario actual ES el dueño del producto, mostrar el nombre del otro usuario
             chatName = chatDTO.profileNoProduct?.nickname || "Usuario desconocido"
             chatAvatar = chatDTO.profileNoProduct?.avatar || chatName.charAt(0).toUpperCase()
         } else {
-            // Si el sender no es el dueño del producto, el chat se llama como el producto
+            // Si el usuario actual NO es el dueño del producto, mostrar el nombre del producto
             chatName = chatDTO.product?.name || "Producto desconocido"
-            chatAvatar = chatName.charAt(0).toUpperCase()
+            // Para el avatar, usar la imagen del producto (primera imagen o placeholder)
+            chatAvatar = chatDTO.product?.imagenes?.[0] || chatDTO.product?.name?.charAt(0).toUpperCase() || "P"
         }
 
         // Crear un ID único para el chat combinando los IDs relevantes
@@ -325,8 +329,11 @@ const ChatPage: React.FC = () => {
         }
 
         console.log("Chat convertido:", chat)
+        console.log("Usuario actual es dueño del producto:", isCurrentUserProductOwner)
+        console.log("Nombre del chat asignado:", chatName)
+
         return chat
-    }, [])
+    }, [currentUserProfile])
 
     // Actualizar el último mensaje de un chat
     const updateLastMessage = useCallback(
@@ -913,6 +920,11 @@ const ChatPage: React.FC = () => {
                 return
             }
 
+            // Esperar a que el perfil esté cargado antes de cargar chats
+            if (!currentUserProfile || loadingProfile) {
+                return
+            }
+
             try {
                 await loadChats()
                 await connectToWebSocket()
@@ -921,22 +933,8 @@ const ChatPage: React.FC = () => {
             }
         }
 
-        // Solo inicializar si hay token
-        const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-        if (token) {
-            initializeChat()
-        } else {
-            setLoading(false)
-        }
-
-        return () => {
-            console.log("🧹 Limpiando conexiones de chat...")
-            if (activeSubscription) {
-                chatService.unsubscribeFromChat(activeSubscription)
-            }
-            chatService.disconnect()
-        }
-    }, [])
+        initializeChat()
+    }, [currentUserProfile, loadingProfile])
 
     // Efecto para detectar el tamaño de la pantalla
     useEffect(() => {
@@ -1115,7 +1113,7 @@ const ChatPage: React.FC = () => {
                             </IonButtons>
                         )}
                         <div className="user-avatar">
-                            <img src={currentUserProfile?.avatar || "/placeholder.svg"} alt={"Avatar"} />
+                            <img src={currentUserProfile?.avatar || "/placeholder.svg"} alt={"currentUserProfile?.avatar1116"} />
                         </div>
                         <h3>{currentUserProfile?.nickname || "Usuario"}</h3>
                     </div>
@@ -1177,7 +1175,7 @@ const ChatPage: React.FC = () => {
                                         {loadingProductNames.has(chat.id) ? (
                                             <IonSpinner name="crescent" />
                                         ) : (
-                                            <img src={cloudinaryImage(chat.avatar) || "/placeholder.svg"} />
+                                            <img src={cloudinaryImage(chat.avatar) || "/placeholder.svg"} alt={"chat.avatar1178"}/>
                                         )}
                                     </div>
                                 </div>
@@ -1215,7 +1213,7 @@ const ChatPage: React.FC = () => {
                                 </button>
                                 <div className={`chat-avatar ${activeChat.isOnline ? "online" : ""}`}>
                                     <div className="user-avatar-chat">
-                                        <img src={cloudinaryImage(activeChat.avatar) || "/placeholder.svg"} alt={"Avatar"} />
+                                        <img src={cloudinaryImage(activeChat.avatar)} alt={"activeChat.avatar1216"} />
                                     </div>
                                 </div>
                                 <div className="chat-info">
@@ -1297,11 +1295,11 @@ const ChatPage: React.FC = () => {
                                                                 <div className="ai-avatar">AI</div>
                                                             ) : message.sender === "user" ? (
                                                                 <div className="user-avatar">
-                                                                    <img src={currentUserProfile?.avatar || "/placeholder.svg"} alt={"Avatar"} />
+                                                                    <img src={currentUserProfile?.avatar || "/placeholder.svg"} alt={"currentUserProfile?.avatar1298"} />
                                                                 </div>
                                                             ) : (
                                                                 <div className="user-avatar-chat">
-                                                                    <img src={cloudinaryImage(activeChat.avatar) || "/placeholder.svg"} alt={"Avatar"} />
+                                                                    <img src={cloudinaryImage(activeChat.avatar) || "/placeholder.svg"} alt={"activeChat.avatar1302"} />
                                                                 </div>
                                                             )}
                                                         </div>
