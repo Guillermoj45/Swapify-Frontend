@@ -294,5 +294,51 @@ export class ProductService {
         }
         return shuffled;
     }
+
+    /**
+     * Get user's products (simple version)
+     * @param active Optional filter to get only active/inactive products (true/false), or all if not specified
+     * @returns Promise<Product[]> array of user's products
+     */
+    static async getUserProducts(active?: boolean): Promise<Product[]> {
+        try {
+            const sessionToken = sessionStorage.getItem('token');
+            if (!sessionToken) {
+                throw new Error('No hay token de autenticación disponible');
+            }
+
+            // Build query parameters
+            let queryParams = '';
+            if (active !== undefined) {
+                queryParams = `?active=${active}`;
+            }
+
+            const response = await fetch(`${this.baseUrl}/product/user-products${queryParams}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionToken}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Error ${response.status}: ${errorText}`);
+            }
+
+            const data = await response.json();
+
+            // Process images with Cloudinary
+            const products = Array.isArray(data) ? data : [];
+            return products.map((product: Product) => ({
+                ...product,
+                imagenes: product.imagenes?.map(image => cloudinaryImage(image)) || []
+            }));
+
+        } catch (error) {
+            console.error('Error fetching user products:', error);
+            throw error;
+        }
+    }
 }
 

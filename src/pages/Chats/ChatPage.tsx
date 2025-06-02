@@ -26,6 +26,11 @@ import { ProfileService, type ProfileDTO } from "../../Services/ProfileService"
 import { Settings as SettingsService } from "../../Services/SettingsService"
 import { useLocation } from "react-router-dom"
 
+// Add this import at the top with the other imports
+import { ProductSelectionModal } from "./modal/productSelectionModal"
+import { ProductMessage } from "./modal/productMessage"
+import type { Product } from "../../Services/ProductService"
+
 // Interfaces para los tipos de datos
 interface Message {
     id: string
@@ -72,8 +77,6 @@ const ChatPage: React.FC = () => {
     // Estado de conexión
     const [isConnected, setIsConnected] = useState(false)
     const [isConnecting, setIsConnecting] = useState(false)
-    const currentUserId = sessionStorage.getItem("userId") || "user"
-
     const [currentUserProfile, setCurrentUserProfile] = useState<ProfileDTO | null>(null)
     const [loadingProfile, setLoadingProfile] = useState(true)
 
@@ -127,6 +130,10 @@ const ChatPage: React.FC = () => {
 
     const [loadingProductNames, setLoadingProductNames] = useState<Set<string>>(new Set())
     const [loadingMessages, setLoadingMessages] = useState(false)
+
+    // Add this state after the other state declarations (around line 100)
+    const [showProductModal, setShowProductModal] = useState(false)
+    const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
 
     // NUEVA FUNCIÓN: Parsear parámetros de URL para chat temporal
     const parseUrlParams = useCallback(() => {
@@ -1262,6 +1269,95 @@ const ChatPage: React.FC = () => {
         )
     }
 
+    // Add this function after the other handler functions (around line 700)
+    const handleProductsSelected = (products: Product[]) => {
+        setSelectedProducts(products)
+
+        // For each selected product, create a message
+        products.forEach((product) => {
+            // Create a special product message
+            const productMessageContent = JSON.stringify({
+                type: "product",
+                productId: product.id,
+                productName: product.name,
+                productPoints: product.points,
+                productImage: product.imagenes && product.imagenes.length > 0 ? product.imagenes[0] : null,
+            })
+
+            // Send the product message
+            if (activeChat) {
+                const tempId = `temp-product-${Date.now()}-${Math.random()}`
+
+                // Create temporary message
+                const newMessage: Message = {
+                    id: tempId,
+                    content: productMessageContent,
+                    sender: "user",
+                    timestamp: new Date(),
+                    read: false,
+                    delivered: false,
+                    status: "sending",
+                    isTemporary: true,
+                }
+
+                // Add to messages
+                setMessages((prev) => [...prev, newMessage])
+                updateLastMessage(activeChat.id, `Producto: ${product.name}`, new Date())
+
+                // Send via chat service
+                if (!activeChat.isTemporaryChat) {
+                    chatService
+                        .sendMessage(activeChat.idProduct, activeChat.idProfileProduct, activeChat.idProfile, productMessageContent)
+                        .then(() => {
+                            // Update message status
+                            setMessages((prevMessages) =>
+                                prevMessages.map((msg) =>
+                                    msg.id === tempId ? { ...msg, status: "sent", delivered: true, isTemporary: false } : msg,
+                                ),
+                            )
+                        })
+                        .catch((error) => {
+                            console.error("Error sending product message:", error)
+                            // Handle error
+                        })
+                }
+            }
+        })
+    }
+
+    // Modify the renderMessageContent function to handle product messages
+    // Add this function after handleProductsSelected
+    const renderMessageContent = (message: Message) => {
+        try {
+            // Check if the message content is a JSON string that might contain a product
+            if (message.content.startsWith('{"type":"product"')) {
+                const productData = JSON.parse(message.content)
+                if (productData.type === "product") {
+                    // Create a simplified product object from the message data
+                    const product: Product = {
+                        id: productData.productId,
+                        name: productData.productName,
+                        description: "Producto compartido en el chat",
+                        points: productData.productPoints,
+                        createdAt: "",
+                        updatedAt: "",
+                        imagenes: productData.productImage ? [productData.productImage] : [],
+                        profile: { id: "", nickname: "", avatar: "", banAt: false, premium: "", newUser: false },
+                        categories: [],
+                    }
+
+                    return <ProductMessage product={product} />
+                }
+            }
+
+            // Regular text message
+            return message.content
+        } catch (e) {
+            // If parsing fails, just return the content as is
+            return message.content
+        }
+    }
+
     return (
         <div className={`chat-view ${darkMode ? "dark-theme" : "light-theme"}`}>
             {/* Banner de error */}
@@ -1496,7 +1592,7 @@ const ChatPage: React.FC = () => {
                                                                         />
                                                                     </div>
                                                                 )}
-                                                                <div className="message-text">{message.content}</div>
+                                                                <div className="message-text">{renderMessageContent(message)}</div>
                                                                 <div className="message-time">
                                                                     {formatMessageTime(message.timestamp)}
                                                                     {message.sender === "user" && (
@@ -1534,7 +1630,7 @@ const ChatPage: React.FC = () => {
                         {/* Footer del chat (input de mensaje) */}
                         <div className={`chat-footer ${isKeyboardVisible ? "keyboard-visible" : ""}`}>
                             <div className="input-container">
-                                <button className="action-button">
+                                <button className="action-button" onClick={() => setShowProductModal(true)}>
                                     <IonIcon icon={addOutline} />
                                 </button>
                                 <button className="action-button">
@@ -1579,6 +1675,11 @@ const ChatPage: React.FC = () => {
                     </div>
                 )}
             </div>
+            <ProductSelectionModal
+                isOpen={showProductModal}
+                onClose={() => setShowProductModal(false)}
+                onProductsSelected={handleProductsSelected}
+            />
         </div>
     )
 }
