@@ -1006,7 +1006,7 @@ const ChatPage: React.FC = () => {
                 }
 
                 // Cargar perfil del usuario solo si hay token
-                const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+                const token = sessionStorage.getItem("token")
                 if (token) {
                     try {
                         const profile = await ProfileService.getProfileInfo()
@@ -1269,7 +1269,6 @@ const ChatPage: React.FC = () => {
         )
     }
 
-    // Add this function after the other handler functions (around line 700)
     const handleProductsSelected = (products: Product[]) => {
         setSelectedProducts(products)
 
@@ -1563,7 +1562,7 @@ const ChatPage: React.FC = () => {
                                                     >
                                                         <div className="message-avatar">
                                                             {message.sender === "ai" ? (
-                                                                <div className="ai-avatar">AI</div>
+                                                                <div>AI</div>
                                                             ) : message.sender === "user" ? (
                                                                 <div className="user-avatar">
                                                                     <img
@@ -1612,7 +1611,7 @@ const ChatPage: React.FC = () => {
                                     {isTyping && (
                                         <div className="message-container ai-message">
                                             <div className="message-avatar">
-                                                <div className="ai-avatar">AI</div>
+                                                <div>AI</div>
                                             </div>
                                             <div className="message-content">
                                                 <div className="message-bubble typing-indicator">

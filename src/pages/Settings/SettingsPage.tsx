@@ -32,7 +32,6 @@ import {
     shieldCheckmarkOutline,
     logOutOutline,
     trashOutline,
-    camera,
     closeOutline,
     eyeOutline,
     createOutline,
@@ -40,7 +39,7 @@ import {
     notificationsOutline,
     menuOutline,
 } from "ionicons/icons"
-import "./Settings2.css"
+import "./Settings.css"
 import { Settings as SettingsService } from "../../Services/SettingsService"
 import cloudinaryImage from "../../Services/CloudinaryService"
 import type { ProfileSettings } from "../../Models/ProfileSettings"

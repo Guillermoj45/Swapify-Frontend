@@ -36,6 +36,7 @@ import {
 } from "ionicons/icons"
 
 import ProfileService, { type ProfileDTO, type ProductDTO } from "../../Services/ProfileService"
+import {Product, ProductService} from "../../Services/ProductService"
 import "./ProfilePage.css"
 import useAuthRedirect from "../../Services/useAuthRedirect"
 
@@ -47,7 +48,7 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true)
     const [loadingSaved, setLoadingSaved] = useState(false)
     const [profileData, setProfileData] = useState<ProfileDTO | null>(null)
-    const [userProducts, setUserProducts] = useState<ProductDTO[]>([])
+    const [userProducts, setUserProducts] = useState<Product[]>([]) // Changed type to Product[]
     const [savedProducts, setSavedProducts] = useState<ProductDTO[]>([])
     const [showAllProducts, setShowAllProducts] = useState(false)
     const [showAllSavedProducts, setShowAllSavedProducts] = useState(false)
@@ -163,7 +164,8 @@ export default function ProfilePage() {
                     setProfileData(profileInfo)
                     setBannerImage(profileInfo.banner)
 
-                    const products = await ProfileService.getUserProducts()
+                    // Use ProductService instead of ProfileService for user products
+                    const products = await ProductService.getUserProducts(true) // Only get active products
                     setUserProducts(products)
 
                     setUserInfo((prev) => ({

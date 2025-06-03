@@ -1,6 +1,5 @@
 "use client"
 
-// ==================== IMPORTS ====================
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import {
@@ -60,6 +59,7 @@ import Navegacion from "../../components/Navegation"
 // Styles
 import "./IA.css"
 import "./chat-alert.css"
+import ProfileService, {type ProfileDTO} from "../../Services/ProfileService";
 
 // ==================== INTERFACES & TYPES ====================
 interface Message {
@@ -184,6 +184,8 @@ const AIChatPage: React.FC = () => {
 
     // ==================== HOOKS ====================
     const [presentToast] = useIonToast()
+
+    const [currentUserProfile, setCurrentUserProfile] = useState<ProfileDTO | null>(null)
 
     // ==================== UTILITY FUNCTIONS ====================
     const formatTime = (date: Date): string => {
@@ -1042,6 +1044,26 @@ const AIChatPage: React.FC = () => {
     useEffect(() => {
         console.log("🚀 Componente montado, iniciando carga de conversaciones...")
         loadConversationsFromBackend()
+
+        // Función asíncrona interna para manejar la carga del perfil
+        const loadUserProfile = async () => {
+            const token = sessionStorage.getItem("token")
+            if (!token) {
+                return
+            }
+
+            try {
+                const profile = await ProfileService.getProfileInfo()
+                setCurrentUserProfile(profile)
+                console.log("✅ Perfil del usuario actual cargado:", profile.nickname)
+            } catch (error) {
+                console.error("Error al cargar el perfil del usuario:", error)
+                // No establecer error aquí para permitir la redirección de useAuthRedirect
+            }
+        }
+
+        // Llamar a la función asíncrona
+        loadUserProfile()
     }, [])
 
     useEffect(() => {
@@ -1449,7 +1471,16 @@ const AIChatPage: React.FC = () => {
                                         <div className="ai-avatar">AI</div>
                                     ) : (
                                         <IonAvatar>
-                                            <div className="user-avatar">TÚ</div>
+                                            <div className="user-avatar">
+                                                <img
+                                                    src={currentUserProfile?.avatar || '/default-avatar.png'}
+                                                    alt={currentUserProfile?.nickname || 'Usuario'}
+                                                    onError={(e) => {
+                                                        // Imagen de respaldo si falla la carga
+                                                        e.currentTarget.src = '/default-avatar.png'
+                                                    }}
+                                                />
+                                            </div>
                                         </IonAvatar>
                                     )}
                                 </div>
