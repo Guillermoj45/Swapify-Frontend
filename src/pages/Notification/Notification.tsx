@@ -178,7 +178,7 @@ const Notifications: React.FC = () => {
                         ))
                     )}
                 </IonList>
-
+                <br/><br/><br/><br/>
                 {notifications.length > 0 && (
                     <IonButton
                         className="delete-all-fab"
@@ -191,9 +191,10 @@ const Notifications: React.FC = () => {
                             '--border-radius': '50px',
                             '--padding-start': '20px',
                             '--padding-end': '20px',
+                            marginBottom: '50px'
                         }}
                     >
-                        <IonIcon icon={trashOutline} slot="start" />
+                        <IonIcon icon={trashOutline} slot="start"/>
                         Eliminar Todo
                     </IonButton>
                 )}
