@@ -26,9 +26,11 @@ import { ProfileService, type ProfileDTO } from "../../Services/ProfileService"
 import { Settings as SettingsService } from "../../Services/SettingsService"
 import { useLocation } from "react-router-dom"
 
-// Add this import at the top with the other imports
+// Import trade system components
 import { ProductSelectionModal } from "./modal/productSelectionModal"
 import { ProductMessage } from "./modal/productMessage"
+import { TradeSummaryModal } from "./modal/TradeSummaryModal"
+import { useTradeSystem } from "../../hooks/UseTradeSystemProps"
 import type { Product } from "../../Services/ProductService"
 
 // Interfaces para los tipos de datos
@@ -58,10 +60,9 @@ interface Chat {
     unreadCount: number
     isOnline: boolean
     lastSeen?: Date
-    isTemporaryChat?: boolean // Nueva propiedad para chats temporales
+    isTemporaryChat?: boolean
 }
 
-// Nueva interfaz para datos de chat temporal
 interface TemporaryChatData {
     productId: string
     profileProductId: string
@@ -131,9 +132,55 @@ const ChatPage: React.FC = () => {
     const [loadingProductNames, setLoadingProductNames] = useState<Set<string>>(new Set())
     const [loadingMessages, setLoadingMessages] = useState(false)
 
-    // Add this state after the other state declarations (around line 100)
+    // Estado para modal de productos
     const [showProductModal, setShowProductModal] = useState(false)
-    const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
+
+    // Determinar si el usuario actual es el dueño del producto
+    const isCurrentUserProductOwner = useMemo(() => {
+        return activeChat?.idProfileProduct === currentUserProfile?.id
+    }, [activeChat?.idProfileProduct, currentUserProfile?.id])
+
+    // INTEGRACIÓN DEL SISTEMA DE INTERCAMBIO
+    const {
+        tradeState,
+        handleProductsSelected: handleTradeProductsSelected,
+        processTradeMessage,
+        confirmTrade,
+        closeTradeSummary,
+        cancelTrade,
+    } = useTradeSystem({
+        chatId: activeChat?.id || "",
+        currentUserId: currentUserProfile?.id || "",
+        isCurrentUserProductOwner,
+        productDelChat: activeChat?.idProduct || "", // ID del producto principal del chat
+        onTradeConfirmed: async (tradeOffer) => {
+            console.log("🎉 Intercambio confirmado:", tradeOffer)
+
+            try {
+                // Enviar mensaje de confirmación al chat
+                const confirmationMessage = JSON.stringify({
+                    type: "trade_confirmed",
+                    tradeId: tradeOffer.id,
+                    message: "¡Intercambio confirmado! El dueño del producto ha aceptado la propuesta.",
+                })
+
+                // Enviar mensaje de confirmación
+                if (activeChat && !activeChat.isTemporaryChat) {
+                    await chatService.sendMessage(
+                        activeChat.idProduct,
+                        activeChat.idProfileProduct,
+                        activeChat.idProfile,
+                        confirmationMessage,
+                    )
+
+                    console.log("✅ Confirmación de intercambio enviada al chat")
+                }
+            } catch (error) {
+                console.error("❌ Error al enviar confirmación:", error)
+                setError("Error al enviar la confirmación del intercambio.")
+            }
+        },
+    })
 
     // NUEVA FUNCIÓN: Parsear parámetros de URL para chat temporal
     const parseUrlParams = useCallback(() => {
@@ -165,12 +212,10 @@ const ChatPage: React.FC = () => {
             try {
                 console.log("🆕 Creando chat temporal para producto:", { productId, profileProductId })
 
-                // Cargar información del producto
                 const product = await ProductService.getProductById(productId, profileProductId)
 
                 console.log("📦 Producto cargado para chat temporal:", product)
 
-                // Crear datos del chat temporal
                 const tempChatData: TemporaryChatData = {
                     productId,
                     profileProductId,
@@ -181,7 +226,6 @@ const ChatPage: React.FC = () => {
 
                 setTemporaryChatData(tempChatData)
 
-                // Crear chat temporal en la lista
                 const temporaryChat: Chat = {
                     id: `temp-${productId}-${profileProductId}`,
                     idProduct: productId,
@@ -196,14 +240,10 @@ const ChatPage: React.FC = () => {
                     isTemporaryChat: true,
                 }
 
-                // Agregar el chat temporal al inicio de la lista
                 setChats((prevChats) => [temporaryChat, ...prevChats])
-
-                // Seleccionar automáticamente el chat temporal
                 setActiveChat(temporaryChat)
                 setIsTemporaryChat(true)
 
-                // Crear mensaje de bienvenida
                 const welcomeMessage: Message = {
                     id: "welcome-temp",
                     content: `¡Hola! Estás a punto de iniciar una conversación sobre "${product.name}" con ${product.profile.nickname}. Escribe tu mensaje para comenzar.`,
@@ -236,12 +276,7 @@ const ChatPage: React.FC = () => {
                 return false
             }
 
-            // Verificar si el usuario actual es el dueño del producto
             const isCurrentUserProductOwner = activeChat.idProfileProduct === currentUserProfile.id
-
-            // Lógica corregida:
-            // - Si el usuario actual es dueño del producto: profileProductSender = true significa que es su mensaje
-            // - Si el usuario actual NO es dueño del producto: profileProductSender = false significa que es su mensaje
             return isCurrentUserProductOwner ? profileProductSender : !profileProductSender
         },
         [activeChat, currentUserProfile],
@@ -265,7 +300,6 @@ const ChatPage: React.FC = () => {
             const productName = product.name || "Producto sin nombre"
             const productAvatar = productName.charAt(0).toUpperCase()
 
-            // Actualizar el chat específico con el nombre del producto
             setChats((prevChats) =>
                 prevChats.map((chat) =>
                     chat.id === chatId
@@ -282,7 +316,6 @@ const ChatPage: React.FC = () => {
         } catch (error) {
             console.error(`Error al cargar nombre del producto para chat ${chatId}:`, error)
 
-            // Actualizar con un mensaje de error
             setChats((prevChats) =>
                 prevChats.map((chat) => (chat.id === chatId ? { ...chat, name: "Producto no disponible", avatar: "X" } : chat)),
             )
@@ -299,7 +332,6 @@ const ChatPage: React.FC = () => {
     const convertMessageDTOToMessage = useCallback(
         (messageDTO: MessageDTO): Message => {
             if (!currentUserProfile || !activeChat) {
-                // Fallback si no tenemos la información necesaria
                 return {
                     id: messageDTO.id,
                     content: messageDTO.content,
@@ -314,7 +346,6 @@ const ChatPage: React.FC = () => {
                 }
             }
 
-            // Usar la lógica centralizada para determinar si es del usuario actual
             const isFromCurrentUser = isMessageFromCurrentUser(messageDTO.profileProductSender)
 
             console.log("🔍 Convirtiendo MessageDTO:", {
@@ -344,7 +375,6 @@ const ChatPage: React.FC = () => {
 
     const loadChatMessages = useCallback(
         async (chat: Chat) => {
-            // Si es un chat temporal, no cargar mensajes del servidor
             if (chat.isTemporaryChat) {
                 console.log("📝 Chat temporal detectado, no cargando mensajes del servidor")
                 return
@@ -363,10 +393,8 @@ const ChatPage: React.FC = () => {
 
                 console.log("Mensajes cargados:", messageDTOs)
 
-                // Convertir MessageDTOs a Messages
                 const historicalMessages = messageDTOs.map(convertMessageDTOToMessage)
 
-                // Agregar mensaje de bienvenida si no hay mensajes históricos
                 const welcomeMessage: Message = {
                     id: "welcome",
                     content: `Chat con ${chat.name}`,
@@ -377,11 +405,9 @@ const ChatPage: React.FC = () => {
                     status: "read",
                 }
 
-                // Si no hay mensajes históricos, solo mostrar el mensaje de bienvenida
                 if (historicalMessages.length === 0) {
                     setMessages([welcomeMessage])
                 } else {
-                    // Mostrar mensajes históricos sin el mensaje de bienvenida
                     setMessages(historicalMessages)
                 }
 
@@ -390,7 +416,6 @@ const ChatPage: React.FC = () => {
                 console.error("Error al cargar mensajes históricos:", error)
                 setError("Error al cargar los mensajes. Inténtalo de nuevo.")
 
-                // En caso de error, mostrar solo el mensaje de bienvenida
                 const welcomeMessage: Message = {
                     id: "welcome",
                     content: `Chat con ${chat.name}`,
@@ -413,30 +438,23 @@ const ChatPage: React.FC = () => {
         (chatDTO: ChatDTO): Chat => {
             console.log("Convirtiendo ChatDTO:", chatDTO)
 
-            // Extraer datos de la estructura real del backend
             const productId = chatDTO.product?.id || ""
             const profileProductId = chatDTO.product?.profile?.id || ""
             const profileId = chatDTO.profileNoProduct?.id || ""
 
-            // Determinar el nombre del chat basándose en quién es el usuario ACTUAL
             let chatName: string
             let chatAvatar: string
 
-            // Verificar si el usuario actual es el dueño del producto
             const isCurrentUserProductOwner = currentUserProfile?.id === profileProductId
 
             if (isCurrentUserProductOwner) {
-                // Si el usuario actual ES el dueño del producto, mostrar el nombre del otro usuario
                 chatName = chatDTO.profileNoProduct?.nickname || "Usuario desconocido"
                 chatAvatar = chatDTO.profileNoProduct?.avatar || chatName.charAt(0).toUpperCase()
             } else {
-                // Si el usuario actual NO es el dueño del producto, mostrar el nombre del producto
                 chatName = chatDTO.product?.name || "Producto desconocido"
-                // Para el avatar, usar la imagen del producto (primera imagen o placeholder)
                 chatAvatar = chatDTO.product?.imagenes?.[0] || chatDTO.product?.name?.charAt(0).toUpperCase() || "P"
             }
 
-            // Crear un ID único para el chat combinando los IDs relevantes
             const chatId = `${productId}-${profileProductId}-${profileId}`
 
             const chat: Chat = {
@@ -481,7 +499,7 @@ const ChatPage: React.FC = () => {
         [activeChat?.id],
     )
 
-    // FUNCIÓN CORREGIDA: Manejar mensajes recibidos por WebSocket
+    // FUNCIÓN MODIFICADA: Manejar mensajes recibidos por WebSocket con soporte para intercambios
     const handleMessageReceived = useCallback(
         (messageData: MensajeRecibeDTO) => {
             try {
@@ -496,13 +514,21 @@ const ChatPage: React.FC = () => {
                     return
                 }
 
-                // VERIFICACIÓN CRÍTICA: ¿Tiene el campo profileProductSender?
+                // PRIMERO: Verificar si es un mensaje de intercambio
+                const isTradeMessage = processTradeMessage(messageData.content)
+
+                if (isTradeMessage) {
+                    console.log("✅ Mensaje de intercambio procesado")
+                    updateLastMessage(activeChat.id, "Propuesta de intercambio", new Date(messageData.createdAt || Date.now()))
+                    return
+                }
+
+                // SEGUNDO: Procesar como mensaje normal
                 if (messageData.profileProductSender === undefined) {
                     console.error("❌ PROBLEMA: El mensaje de WebSocket NO tiene el campo 'profileProductSender'")
                     console.error("📋 Campos disponibles:", Object.keys(messageData))
                     console.error("🚨 El backend debe incluir 'profileProductSender' en los mensajes de WebSocket")
 
-                    // Fallback temporal usando nickname
                     const isFromCurrentUser =
                         messageData.senderNickname === currentUserProfile.nickname ||
                         messageData.userName === currentUserProfile.nickname
@@ -512,7 +538,6 @@ const ChatPage: React.FC = () => {
                         return
                     }
                 } else {
-                    // Usar la lógica centralizada para determinar si es del usuario actual
                     const isFromCurrentUser = isMessageFromCurrentUser(messageData.profileProductSender)
 
                     console.log("🔍 Análisis del remitente del mensaje WebSocket:", {
@@ -523,7 +548,6 @@ const ChatPage: React.FC = () => {
                         isFromCurrentUser,
                     })
 
-                    // Si el mensaje es del usuario actual, no lo agregamos porque ya tenemos el mensaje temporal
                     if (isFromCurrentUser) {
                         console.log("⚠️ Mensaje ignorado: es del usuario actual")
                         return
@@ -534,7 +558,7 @@ const ChatPage: React.FC = () => {
                 const newMessage: Message = {
                     id: messageData.id || `received-${Date.now()}-${Math.random()}`,
                     content: messageData.content,
-                    sender: "other", // Ahora sabemos que es de otro usuario
+                    sender: "other",
                     timestamp: messageData.createdAt ? new Date(messageData.createdAt) : new Date(),
                     read: false,
                     delivered: true,
@@ -546,9 +570,7 @@ const ChatPage: React.FC = () => {
 
                 console.log("✅ Nuevo mensaje de otro usuario procesado:", newMessage)
 
-                // Agregar el mensaje al chat activo
                 setMessages((prevMessages) => {
-                    // Evitar duplicados
                     const exists = prevMessages.some((msg) => msg.id === newMessage.id)
                     if (exists) {
                         console.log("Mensaje ya existe, no se agrega duplicado")
@@ -559,20 +581,73 @@ const ChatPage: React.FC = () => {
                     return [...prevMessages, newMessage]
                 })
 
-                // Marcar el mensaje como leído automáticamente después de un momento
                 setTimeout(() => {
                     setMessages((prevMessages) =>
                         prevMessages.map((msg) => (msg.id === newMessage.id ? { ...msg, read: true, status: "read" } : msg)),
                     )
                 }, 1000)
 
-                // Actualizar el último mensaje en la lista de chats
                 updateLastMessage(activeChat.id, messageData.content, new Date(messageData.createdAt || Date.now()))
             } catch (error) {
                 console.error("❌ Error al procesar el mensaje recibido:", error)
             }
         },
-        [activeChat, updateLastMessage, currentUserProfile, isMessageFromCurrentUser],
+        [activeChat, updateLastMessage, currentUserProfile, isMessageFromCurrentUser, processTradeMessage],
+    )
+
+    // FUNCIÓN MODIFICADA: Manejar selección de productos con sistema de intercambio
+    const handleProductsSelected = useCallback(
+        (products: Product[]) => {
+            console.log("🛍️ Productos seleccionados:", products)
+
+            // Usar el sistema de intercambio para manejar la selección
+            const tradeMessage = handleTradeProductsSelected(products)
+
+            if (tradeMessage && activeChat) {
+                const tempId = `temp-trade-${Date.now()}-${Math.random()}`
+
+                // Crear mensaje temporal para mostrar la selección
+                const newMessage: Message = {
+                    id: tempId,
+                    content: `Has seleccionado ${products.length} producto(s) para intercambio`,
+                    sender: "user",
+                    timestamp: new Date(),
+                    read: false,
+                    delivered: false,
+                    status: "sending",
+                    isTemporary: true,
+                }
+
+                setMessages((prev) => [...prev, newMessage])
+                updateLastMessage(activeChat.id, `Productos seleccionados: ${products.length}`, new Date())
+
+                // Enviar mensaje de intercambio
+                if (!activeChat.isTemporaryChat) {
+                    chatService
+                        .sendMessage(
+                            activeChat.idProduct,
+                            activeChat.idProfileProduct,
+                            activeChat.idProfile,
+                            JSON.stringify(tradeMessage),
+                        )
+                        .then(() => {
+                            setMessages((prevMessages) =>
+                                prevMessages.map((msg) =>
+                                    msg.id === tempId ? { ...msg, status: "sent", delivered: true, isTemporary: false } : msg,
+                                ),
+                            )
+                            console.log("✅ Mensaje de intercambio enviado")
+                        })
+                        .catch((error) => {
+                            console.error("❌ Error al enviar mensaje de intercambio:", error)
+                            setError("Error al enviar la propuesta de intercambio")
+                        })
+                }
+            }
+
+            setShowProductModal(false)
+        },
+        [handleTradeProductsSelected, activeChat, updateLastMessage],
     )
 
     // Función para manejar la búsqueda desde el header
@@ -609,7 +684,6 @@ const ChatPage: React.FC = () => {
         } else if (messageDate.getTime() === yesterday.getTime()) {
             return "Ayer"
         } else {
-            // Para fechas más antiguas, mostrar día de la semana y fecha
             const options: Intl.DateTimeFormatOptions = {
                 weekday: "long",
                 year: "numeric",
@@ -629,11 +703,9 @@ const ChatPage: React.FC = () => {
                 const messageDate = new Date(message.timestamp)
                 const messageDateString = messageDate.toDateString()
 
-                // Buscar si ya existe un grupo para esta fecha
                 let existingGroup = groups.find((group) => group.date.toDateString() === messageDateString)
 
                 if (!existingGroup) {
-                    // Crear nuevo grupo para esta fecha
                     const dateLabel = formatDateLabel(messageDate)
                     existingGroup = {
                         date: messageDate,
@@ -646,7 +718,6 @@ const ChatPage: React.FC = () => {
                 existingGroup.messages.push(message)
             })
 
-            // Ordenar grupos por fecha (más antiguos primero)
             groups.sort((a, b) => a.date.getTime() - b.date.getTime())
 
             return groups
@@ -689,10 +760,8 @@ const ChatPage: React.FC = () => {
             const chatDTOs = await chatService.getChats()
             console.log("Chats recibidos del backend:", chatDTOs)
 
-            // Convertir todos los chats de forma síncrona primero
             const convertedChats = chatDTOs.map((chatDTO) => convertChatDTOToChat(chatDTO))
 
-            // Si hay un chat temporal, mantenerlo al inicio
             if (temporaryChatData) {
                 const existingTemporaryChat = chats.find((chat) => chat.isTemporaryChat)
                 if (existingTemporaryChat) {
@@ -706,14 +775,12 @@ const ChatPage: React.FC = () => {
 
             console.log("Chats convertidos y cargados:", convertedChats)
 
-            // Después, cargar los nombres de productos de forma asíncrona para los que lo necesiten
             const chatsNeedingProductNames = convertedChats.filter(
                 (chat) => chat.name === "Cargando..." && chat.idProduct && chat.idProfileProduct,
             )
 
             console.log("Chats que necesitan cargar nombres de productos:", chatsNeedingProductNames)
 
-            // Cargar nombres de productos de forma paralela
             const loadPromises = chatsNeedingProductNames.map((chat) =>
                 loadProductNameForChat(chat.id, chat.idProduct, chat.idProfileProduct),
             )
@@ -788,7 +855,6 @@ const ChatPage: React.FC = () => {
                     } else {
                         setError("Error de conexión al chat. Reintentando...")
 
-                        // Reintentar conexión automáticamente después de 3 segundos
                         setTimeout(() => {
                             if (!isConnected) {
                                 console.log("🔄 Reintentando conexión automáticamente...")
@@ -828,7 +894,6 @@ const ChatPage: React.FC = () => {
         try {
             setInputMessage("")
 
-            // Crear mensaje temporal para mostrar inmediatamente
             const newMessage: Message = {
                 id: tempId,
                 content: messageContent,
@@ -840,17 +905,14 @@ const ChatPage: React.FC = () => {
                 isTemporary: true,
             }
 
-            // Agregar mensaje temporal a la UI
             setMessages((prev) => [...prev, newMessage])
             updateLastMessage(activeChat.id, messageContent, new Date())
 
             console.log("📤 Enviando mensaje:", messageContent)
 
-            // Si es un chat temporal, convertirlo a chat real primero
             if (activeChat.isTemporaryChat && temporaryChatData) {
                 console.log("🔄 Convirtiendo chat temporal a chat real...")
 
-                // Enviar el primer mensaje (esto creará el chat en el backend)
                 await chatService.sendMessage(
                     temporaryChatData.productId,
                     temporaryChatData.profileProductId,
@@ -858,7 +920,6 @@ const ChatPage: React.FC = () => {
                     messageContent,
                 )
 
-                // Actualizar el chat para que ya no sea temporal
                 const updatedChat: Chat = {
                     ...activeChat,
                     isTemporaryChat: false,
@@ -868,15 +929,12 @@ const ChatPage: React.FC = () => {
                 setActiveChat(updatedChat)
                 setIsTemporaryChat(false)
 
-                // Actualizar en la lista de chats
                 setChats((prevChats) => prevChats.map((chat) => (chat.id === activeChat.id ? updatedChat : chat)))
 
-                // Limpiar datos temporales
                 setTemporaryChatData(null)
 
                 console.log("✅ Chat temporal convertido a chat real")
             } else {
-                // Chat normal - enviar mensaje
                 await chatService.sendMessage(
                     activeChat.idProduct,
                     activeChat.idProfileProduct,
@@ -885,7 +943,6 @@ const ChatPage: React.FC = () => {
                 )
             }
 
-            // Actualizar el mensaje temporal a enviado
             setMessages((prevMessages) =>
                 prevMessages.map((msg) =>
                     msg.id === tempId ? { ...msg, status: "sent", delivered: true, isTemporary: false } : msg,
@@ -897,7 +954,6 @@ const ChatPage: React.FC = () => {
             console.error("❌ Error al enviar mensaje:", error)
             setError("Error al enviar el mensaje. Inténtalo de nuevo.")
 
-            // Restaurar el input y remover mensaje temporal en caso de error
             setInputMessage(messageContent)
             setMessages((prev) => prev.filter((msg) => msg.id !== tempId))
         }
@@ -916,10 +972,8 @@ const ChatPage: React.FC = () => {
             setActiveChat(chat)
             setIsTemporaryChat(chat.isTemporaryChat || false)
 
-            // Marcar como leído
             setChats((prevChats) => prevChats.map((c) => (c.id === chat.id ? { ...c, unreadCount: 0 } : c)))
 
-            // Si el chat todavía muestra "Cargando..." y tiene los IDs necesarios, intentar cargar el nombre
             if (chat.name === "Cargando..." && chat.idProduct && chat.idProfileProduct) {
                 loadProductNameForChat(chat.id, chat.idProduct, chat.idProfileProduct)
             }
@@ -980,16 +1034,56 @@ const ChatPage: React.FC = () => {
         }
     }, [])
 
+    // Función para renderizar contenido de mensajes (incluyendo productos)
+    const renderMessageContent = (message: Message) => {
+        try {
+            if (message.content.startsWith('{"type":"product"')) {
+                const productData = JSON.parse(message.content)
+                if (productData.type === "product") {
+                    const product: Product = {
+                        id: productData.productId,
+                        name: productData.productName,
+                        description: "Producto compartido en el chat",
+                        points: productData.productPoints,
+                        createdAt: "",
+                        updatedAt: "",
+                        imagenes: productData.productImage ? [productData.productImage] : [],
+                        profile: { id: "", nickname: "", avatar: "", banAt: false, premium: "", newUser: false },
+                        categories: [],
+                    }
+
+                    return <ProductMessage product={product} />
+                }
+            }
+
+            // Verificar si es un mensaje de confirmación de intercambio
+            if (message.content.startsWith('{"type":"trade_confirmed"')) {
+                const tradeData = JSON.parse(message.content)
+                return (
+                    <div className="trade-confirmation-message">
+                        <div className="trade-confirmation-icon">🎉</div>
+                        <div className="trade-confirmation-text">
+                            <strong>¡Intercambio Confirmado!</strong>
+                            <p>El dueño del producto ha aceptado la propuesta de intercambio.</p>
+                        </div>
+                    </div>
+                )
+            }
+
+            return message.content
+        } catch (e) {
+            return message.content
+        }
+    }
+
     // useEffect para cargar el perfil del usuario actual al montar el componente
     useEffect(() => {
         const loadCurrentUserProfile = async () => {
             try {
                 setLoadingProfile(true)
 
-                // Cargar modo oscuro primero
                 try {
                     const modo = await SettingsService.getModoOcuro()
-                    // Si modo es true = modo oscuro, si es false = modo claro
                     sessionStorage.setItem("modoOscuroClaro", modo.toString())
                     setDarkMode(modo)
                     console.log("Modo oscuro cargado del backend:", modo)
@@ -999,13 +1093,11 @@ const ChatPage: React.FC = () => {
                     if (modoOscuroStorage !== null) {
                         setDarkMode(modoOscuroStorage === "true")
                     } else {
-                        // Valor por defecto: modo claro
                         sessionStorage.setItem("modoOscuroClaro", "false")
                         setDarkMode(false)
                     }
                 }
 
-                // Cargar perfil del usuario solo si hay token
                 const token = sessionStorage.getItem("token")
                 if (token) {
                     try {
@@ -1014,12 +1106,10 @@ const ChatPage: React.FC = () => {
                         console.log("✅ Perfil del usuario actual cargado:", profile.nickname)
                     } catch (error) {
                         console.error("Error al cargar el perfil del usuario:", error)
-                        // No establecer error aquí para permitir la redirección de useAuthRedirect
                     }
                 }
             } catch (error) {
                 console.error("Error al cargar el perfil del usuario actual:", error)
-                // En caso de error con el perfil, aún establecer modo oscuro
                 const modoOscuroStorage = sessionStorage.getItem("modoOscuroClaro")
                 if (modoOscuroStorage !== null) {
                     setDarkMode(modoOscuroStorage === "true")
@@ -1046,7 +1136,6 @@ const ChatPage: React.FC = () => {
 
     // También agrega este useEffect adicional para escuchar cambios en sessionStorage
     useEffect(() => {
-        // Función para verificar y aplicar el modo desde sessionStorage
         const checkAndApplyMode = () => {
             const modoOscuroStorage = sessionStorage.getItem("modoOscuroClaro")
             if (modoOscuroStorage !== null) {
@@ -1058,10 +1147,8 @@ const ChatPage: React.FC = () => {
             }
         }
 
-        // Verificar al montar
         checkAndApplyMode()
 
-        // Escuchar cambios en el sessionStorage (para cambios desde otras pestañas)
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key === "modoOscuroClaro" && e.newValue !== null) {
                 const shouldBeDark = e.newValue === "true"
@@ -1070,12 +1157,10 @@ const ChatPage: React.FC = () => {
             }
         }
 
-        // Escuchar cambios en el sessionStorage desde la misma pestaña
         const handleSessionStorageChange = () => {
             checkAndApplyMode()
         }
 
-        // Intervalo para verificar cambios (fallback)
         const interval = setInterval(checkAndApplyMode, 1000)
 
         window.addEventListener("storage", handleStorageChange)
@@ -1100,7 +1185,6 @@ const ChatPage: React.FC = () => {
                 return
             }
 
-            // Esperar a que el perfil esté cargado antes de cargar chats
             if (!currentUserProfile || loadingProfile) {
                 return
             }
@@ -1155,7 +1239,6 @@ const ChatPage: React.FC = () => {
         if (isConnected && activeChat && currentUserProfile && !loadingProfile && !activeChat.isTemporaryChat) {
             console.log("🔔 Configurando suscripción para chat:", activeChat.name)
 
-            // Cancelar suscripción anterior
             if (activeSubscription) {
                 console.log("🗑️ Cancelando suscripción anterior:", activeSubscription)
                 chatService.unsubscribeFromChat(activeSubscription)
@@ -1173,7 +1256,6 @@ const ChatPage: React.FC = () => {
 
                 setActiveSubscription(subscriptionKey)
 
-                // Cargar mensajes históricos
                 loadChatMessages(activeChat)
 
                 console.log(`✅ Suscrito exitosamente al chat: ${activeChat.name}`)
@@ -1183,7 +1265,6 @@ const ChatPage: React.FC = () => {
             }
         }
 
-        // Cleanup function
         return () => {
             if (activeSubscription) {
                 console.log("🧹 Limpiando suscripción en cleanup:", activeSubscription)
@@ -1267,94 +1348,6 @@ const ChatPage: React.FC = () => {
                 </IonContent>
             </IonPage>
         )
-    }
-
-    const handleProductsSelected = (products: Product[]) => {
-        setSelectedProducts(products)
-
-        // For each selected product, create a message
-        products.forEach((product) => {
-            // Create a special product message
-            const productMessageContent = JSON.stringify({
-                type: "product",
-                productId: product.id,
-                productName: product.name,
-                productPoints: product.points,
-                productImage: product.imagenes && product.imagenes.length > 0 ? product.imagenes[0] : null,
-            })
-
-            // Send the product message
-            if (activeChat) {
-                const tempId = `temp-product-${Date.now()}-${Math.random()}`
-
-                // Create temporary message
-                const newMessage: Message = {
-                    id: tempId,
-                    content: productMessageContent,
-                    sender: "user",
-                    timestamp: new Date(),
-                    read: false,
-                    delivered: false,
-                    status: "sending",
-                    isTemporary: true,
-                }
-
-                // Add to messages
-                setMessages((prev) => [...prev, newMessage])
-                updateLastMessage(activeChat.id, `Producto: ${product.name}`, new Date())
-
-                // Send via chat service
-                if (!activeChat.isTemporaryChat) {
-                    chatService
-                        .sendMessage(activeChat.idProduct, activeChat.idProfileProduct, activeChat.idProfile, productMessageContent)
-                        .then(() => {
-                            // Update message status
-                            setMessages((prevMessages) =>
-                                prevMessages.map((msg) =>
-                                    msg.id === tempId ? { ...msg, status: "sent", delivered: true, isTemporary: false } : msg,
-                                ),
-                            )
-                        })
-                        .catch((error) => {
-                            console.error("Error sending product message:", error)
-                            // Handle error
-                        })
-                }
-            }
-        })
-    }
-
-    // Modify the renderMessageContent function to handle product messages
-    // Add this function after handleProductsSelected
-    const renderMessageContent = (message: Message) => {
-        try {
-            // Check if the message content is a JSON string that might contain a product
-            if (message.content.startsWith('{"type":"product"')) {
-                const productData = JSON.parse(message.content)
-                if (productData.type === "product") {
-                    // Create a simplified product object from the message data
-                    const product: Product = {
-                        id: productData.productId,
-                        name: productData.productName,
-                        description: "Producto compartido en el chat",
-                        points: productData.productPoints,
-                        createdAt: "",
-                        updatedAt: "",
-                        imagenes: productData.productImage ? [productData.productImage] : [],
-                        profile: { id: "", nickname: "", avatar: "", banAt: false, premium: "", newUser: false },
-                        categories: [],
-                    }
-
-                    return <ProductMessage product={product} />
-                }
-            }
-
-            // Regular text message
-            return message.content
-        } catch (e) {
-            // If parsing fails, just return the content as is
-            return message.content
-        }
     }
 
     return (
@@ -1674,10 +1667,25 @@ const ChatPage: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Modal de selección de productos */}
             <ProductSelectionModal
                 isOpen={showProductModal}
                 onClose={() => setShowProductModal(false)}
                 onProductsSelected={handleProductsSelected}
+            />
+
+            {/* Modal de resumen de intercambio */}
+            <TradeSummaryModal
+                isOpen={tradeState.isTradeModalOpen}
+                onClose={closeTradeSummary}
+                onConfirmTrade={confirmTrade}
+                traderProductIds={tradeState.currentOffer?.traderProducts || []}
+                nonTraderProductIds={tradeState.currentOffer?.nonTraderProducts || []}
+                traderNickname={isCurrentUserProductOwner ? currentUserProfile?.nickname || "Tú" : "Vendedor"}
+                nonTraderNickname={isCurrentUserProductOwner ? "Comprador" : currentUserProfile?.nickname || "Tú"}
+                currentUserIsTrader={isCurrentUserProductOwner}
+                productDelChatName={activeChat?.name}
             />
         </div>
     )
