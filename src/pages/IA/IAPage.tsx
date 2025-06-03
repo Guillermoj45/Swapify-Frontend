@@ -1559,7 +1559,7 @@ const AIChatPage: React.FC = () => {
                                     }
                                 }
                             }}
-                            placeholder="Escribe un mensaje..."
+                            placeholder="Escribe aqui..."
                             autoGrow={true}
                             rows={1}
                             maxlength={1000}

@@ -544,9 +544,7 @@ const Settings: React.FC = () => {
                         <div className="user-avatar" onClick={() => document.getElementById("fileInput")?.click()}>
                             <input type="file" id="fileInput" hidden accept="image/*" onChange={handleAvatarChange} />
                             <img src={getAvatarUrl(profile.avatar) || "/placeholder.svg"} alt="User profile" />
-                            <div className={`edit-badge ${profile.preferencias?.modo_oscuro ? "" : "light-mode-icon"}`}>
-                                <IonIcon icon={camera} />
-                            </div>
+
                         </div>
                         <div className="user-info">
                             <h2>{profile.nickname}</h2>

@@ -155,7 +155,7 @@ const SuscripcionPage: React.FC = () => {
                                 </IonList>
                             </IonCol>
 
-                            <IonCol size="12" sizeMd="5" className="ion-text-center">
+                            <IonCol size="12" sizeMd="5" className="ion-text-center hide-on-mobile">
                                 <div className="phone-container">
                                     <div className="phone-background"></div>
                                     <IonImg
