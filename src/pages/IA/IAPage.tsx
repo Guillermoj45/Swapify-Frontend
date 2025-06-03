@@ -1468,7 +1468,11 @@ const AIChatPage: React.FC = () => {
                             >
                                 <div className="message-avatar">
                                     {message.sender === "ai" ? (
-                                        <div className="ai-avatar">AI</div>
+                                        <IonAvatar>
+                                            <div className="ai-avatar">
+                                                <img src={"public/Logo22.png"} alt={"AI"}/>
+                                            </div>
+                                        </IonAvatar>
                                     ) : (
                                         <IonAvatar>
                                             <div className="user-avatar">
