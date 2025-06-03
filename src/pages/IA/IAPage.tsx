@@ -1197,7 +1197,9 @@ const AIChatPage: React.FC = () => {
                                 onClick={() => handleSwitchChat(chat.id)}
                             >
                                 <div className="chat-item-avatar">
-                                    <div className="ai-avatar">AI</div>
+                                    <div className="ai-avatar">
+                                        <img src={"public/Logo22.png"} alt={"IA"}/>
+                                    </div>
                                     {!chat.loadedFromBackend && <div className="local-chat-indicator" title="Conversación local"></div>}
                                 </div>
                                 <div className="chat-item-content">
