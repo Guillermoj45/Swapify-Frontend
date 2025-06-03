@@ -1236,11 +1236,6 @@ const AIChatPage: React.FC = () => {
                                         <IonIcon icon={trash} size="medium" />
                                     </IonButton>
                                 </div>
-                                {chat.unread && chat.unread > 0 && (
-                                    <IonBadge color="primary" className="unread-badge">
-                                        {chat.unread}
-                                    </IonBadge>
-                                )}
                             </div>
                         ))}
 
@@ -1631,7 +1626,7 @@ const AIChatPage: React.FC = () => {
                             </IonButton>
 
                             <IonButton
-                                className="send-button"
+                                className="send-button-IA"
                                 disabled={inputText.trim() === "" && selectedImages.length === 0}
                                 onClick={handleSendClick}
                             >
