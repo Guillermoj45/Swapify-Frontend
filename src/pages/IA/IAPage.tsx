@@ -73,7 +73,7 @@ interface Message {
 
 interface ChatSession {
     id: string
-    title: string
+    title?: string
     lastMessage: string
     timestamp: Date
     messages: Message[]
@@ -101,13 +101,6 @@ interface ProductSidePanelProps {
     handleProductAction: (action: "upload" | "cancel") => void
 }
 
-interface NewChatAlertProps {
-    showNewChatAlert: boolean
-    setShowNewChatAlert: (show: boolean) => void
-    newChatTitle: string
-    setNewChatTitle: (title: string) => void
-    handleCreateNewChat: () => void
-}
 
 // ==================== UTILITY COMPONENTS ====================
 const SideContent: React.FC<SideContentProps> = ({ children, className, collapsed }) => {
@@ -145,11 +138,7 @@ const AIChatPage: React.FC = () => {
     const [selectedImages, setSelectedImages] = useState<File[]>([])
     const [previewImages, setPreviewImages] = useState<string[]>([])
 
-    // UI state
-    const [showOptions, setShowOptions] = useState<{ open: boolean; id: number | string | null }>({
-        open: false,
-        id: null,
-    })
+
     const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768)
     const [darkMode, setDarkMode] = useState<boolean>(true)
 
@@ -157,8 +146,6 @@ const AIChatPage: React.FC = () => {
     const [showChatSidebar, setShowChatSidebar] = useState<boolean>(true)
     const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
     const [activeChatId, setActiveChatId] = useState<string>("default")
-    const [showNewChatAlert, setShowNewChatAlert] = useState<boolean>(false)
-    const [newChatTitle, setNewChatTitle] = useState<string>("")
     const [isLoadingConversations, setIsLoadingConversations] = useState<boolean>(false)
     const [conversationsPage, setConversationsPage] = useState<number>(0)
     const [hasMoreConversations, setHasMoreConversations] = useState<boolean>(true)
@@ -542,7 +529,7 @@ const AIChatPage: React.FC = () => {
 
         try {
             // Validar que hay un título o usar uno por defecto
-            const chatTitle = newChatTitle.trim() || "Nueva conversación"
+            const chatTitle =  undefined
 
             // Crear el nuevo chat
             const newChatId = `temp-${Date.now()}`
@@ -568,14 +555,11 @@ const AIChatPage: React.FC = () => {
             setMessages([initialMessage])
             setCurrentChatId(null)
             setProductId(null)
-            setNewChatTitle("") // Limpiar el título
 
             if (!isDesktop) {
                 setShowChatSidebar(false)
             }
 
-            // Cerrar el alert después de crear el chat
-            setShowNewChatAlert(false)
         } catch (error) {
             console.error("Error al crear nuevo chat:", error)
         } finally {
@@ -752,8 +736,22 @@ const AIChatPage: React.FC = () => {
             if (response) {
                 console.log("Response received:", response)
 
-                setCurrentChatId(response.id)
-                updateChatSessionAsBackendLoaded(activeChatId, response.id)
+                const chat = chatSessions.find((chat => chat.id === activeChatId))
+
+                if (!chat) {
+                    console.error("Chat not found for activeChatId:", activeChatId)
+                    return
+                }
+
+                chat.id = response.id
+                chat.title = response.nombre
+
+
+
+                console.log("Chat session updated with new ID and title:", chatSessions)
+
+
+                // updateChatSessionAsBackendLoaded(activeChatId, response.id)
 
                 if (response.product) {
                     setProductId(response.product.id)
@@ -801,11 +799,24 @@ const AIChatPage: React.FC = () => {
                 )
 
                 const currentChat = chatSessions.find((chat) => chat.id === activeChatId)
-                if (currentChat && !currentChat.loadedFromBackend) {
+                console.log("EL TITULO ES::::::", response.nombre)
+                if (currentChat) {
                     const finalTitle =
-                        tituloToSend || response.nombre || generateChatTitle(currentText !== "" ? currentText : displayText)
+                        response.nombre || generateChatTitle(currentText !== "" ? currentText : displayText)
                     updateChatTitle(activeChatId, finalTitle)
                 }
+               setChatSessions(prevSessions => {
+                    const updatedSessions = prevSessions.map(session =>
+                        session.id === activeChatId
+                            ? { ...session, id: response.id, title: response.nombre }
+                            : session
+                    );
+
+                    setActiveChatId(response.id);
+                    setCurrentChatId(response.id);
+
+                    return updatedSessions;
+                });
             }
         } catch (error) {
             console.error("Error sending message:", error)
@@ -843,13 +854,11 @@ const AIChatPage: React.FC = () => {
         if (files && files.length > 0) {
             const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
             const fileArray: File[] = []
-            let hasOverSizedFiles = false
 
             for (let i = 0; i < files.length; i++) {
                 const file = files[i]
 
                 if (file.size > MAX_FILE_SIZE) {
-                    hasOverSizedFiles = true
                     presentToast({
                         message: `El archivo ${file.name} excede el tamaño máximo de 5MB`,
                         duration: 3000,
@@ -1270,56 +1279,6 @@ const AIChatPage: React.FC = () => {
         </IonContent>
     )
 
-    const NewChatAlert = () => (
-        <IonPopover
-            isOpen={showNewChatAlert}
-            onDidDismiss={() => {
-                if (!isCreatingChat) {
-                    setShowNewChatAlert(false)
-                    setNewChatTitle("")
-                }
-            }}
-            className="new-chat-alert centered-popover"
-        >
-            <div className="alert-content">
-                <h3>Nueva conversación</h3>
-
-                <IonLabel position="floating" className="label-with-margin">
-                    Título
-                </IonLabel>
-                <IonInput
-                    value={newChatTitle}
-                    onIonChange={(e) => setNewChatTitle(e.detail.value || "")}
-                    placeholder="Ej: Consulta sobre IA"
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter" && !isCreatingChat) {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            handleCreateNewChat()
-                        }
-                    }}
-                />
-
-                <div className="alert-buttons">
-                    <IonButton
-                        onClick={() => {
-                            if (!isCreatingChat) {
-                                setShowNewChatAlert(false)
-                                setNewChatTitle("")
-                                setIsCreatingChat(false)
-                            }
-                        }}
-                        disabled={isCreatingChat}
-                    >
-                        Cancelar
-                    </IonButton>
-                    <IonButton onClick={handleCreateNewChat} strong={true} disabled={isCreatingChat}>
-                        {isCreatingChat ? "Creando..." : "Crear"}
-                    </IonButton>
-                </div>
-            </div>
-        </IonPopover>
-    )
 
     const ProductSidePanel: React.FC<ProductSidePanelProps> = ({
                                                                    showProductSidebar,
@@ -1414,7 +1373,7 @@ const AIChatPage: React.FC = () => {
                     </div>
 
                     <div className="new-chat-button-wrapper">
-                        <IonButton expand="block" className="new-chat-button" onClick={() => setShowNewChatAlert(true)}>
+                        <IonButton expand="block" className="new-chat-button" onClick={() => handleCreateNewChat()}>
                             <IonIcon icon={add} slot="start" />
                             Nueva conversación
                         </IonButton>
@@ -1642,7 +1601,6 @@ const AIChatPage: React.FC = () => {
                         </div>
                     )}
                 </IonFooter>
-                <NewChatAlert />
             </IonPage>
         </>
     )
