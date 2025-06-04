@@ -1,6 +1,6 @@
 import API from "./api"
 import SockJS from "sockjs-client"
-import { Stomp, type CompatClient } from "@stomp/stompjs"
+import {Stomp, type CompatClient, StompHeaders} from "@stomp/stompjs"
 
 // INTERFAZ CORREGIDA: Agregar los campos necesarios
 export interface MensajeRecibeDTO {
@@ -493,13 +493,14 @@ class ChatService {
         const destination = `/app/chat/${idProduct}/${idProfileProduct}/${idProfile}`
 
         try {
+            // En el método sendMessage, modificar la parte del publish:
             this.stompClient.publish({
                 destination: destination,
                 body: JSON.stringify(message),
                 headers: {
                     "content-type": "application/json",
-                    ...(this.getAuthToken() && { Authorization: this.getAuthToken() }),
-                },
+                    ...(this.getAuthToken() && { Authorization: this.getAuthToken() as string }),
+                } as StompHeaders
             })
             console.log("✅ Mensaje enviado exitosamente")
         } catch (error) {
