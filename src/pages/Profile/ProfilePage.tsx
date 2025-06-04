@@ -41,6 +41,8 @@ import ProfileService, { type ProfileDTO, type ProductDTO } from "../../Services
 import { type Product, ProductService } from "../../Services/ProductService"
 import "./ProfilePage.css"
 import useAuthRedirect from "../../Services/useAuthRedirect"
+import ReviewsService, { type ReviewDTO } from "../../Services/ReviewsService"
+import ReviewModal from "./modal/ReviewModal"
 
 export default function ProfilePage() {
     const history = useHistory()
@@ -78,6 +80,13 @@ export default function ProfilePage() {
     })
 
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const [reviews, setReviews] = useState<ReviewDTO[]>([])
+    const [loadingReviews, setLoadingReviews] = useState(false)
+    const [showReviewModal, setShowReviewModal] = useState(false)
+    const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null)
+    const [showDeleteReviewAlert, setShowDeleteReviewAlert] = useState(false)
+    const [reviewToDelete, setReviewToDelete] = useState<string | null>(null)
 
     // Memoized delete function to prevent multiple calls
     const borrarProducto = useCallback(
@@ -159,6 +168,67 @@ export default function ProfilePage() {
         }
     }, [])
 
+    // Load reviews for the current profile
+    const loadReviews = useCallback(async (profileId: string) => {
+        try {
+            setLoadingReviews(true)
+            const reviewsData = await ReviewsService.getReviewsByProfileId(profileId)
+            setReviews(reviewsData)
+            setUserInfo((prev) => ({
+                ...prev,
+                totalReviews: reviewsData.length,
+            }))
+        } catch (error) {
+            console.error("Error loading reviews:", error)
+            setReviews([])
+        } finally {
+            setLoadingReviews(false)
+        }
+    }, [])
+
+    // Handle review deletion
+    const handleDeleteReview = (reviewId: string, event: React.MouseEvent) => {
+        event.stopPropagation()
+        setReviewToDelete(reviewId)
+        setShowDeleteReviewAlert(true)
+    }
+
+    const confirmDeleteReview = async () => {
+        if (!reviewToDelete) return
+
+        try {
+            setDeletingReviewId(reviewToDelete)
+            await ReviewsService.deleteReview(reviewToDelete)
+
+            // Update local state
+            setReviews((prev) => prev.filter((review) => review.id !== reviewToDelete))
+            setUserInfo((prev) => ({
+                ...prev,
+                totalReviews: prev.totalReviews - 1,
+            }))
+
+            setToastMessage("Reseña eliminada correctamente")
+            setToastColor("success")
+            setShowToast(true)
+        } catch (error: any) {
+            setToastMessage(error.message || "Error al eliminar la reseña")
+            setToastColor("danger")
+            setShowToast(true)
+        } finally {
+            setDeletingReviewId(null)
+            setShowDeleteReviewAlert(false)
+            setReviewToDelete(null)
+        }
+    }
+
+    const handleReviewCreated = () => {
+        // Reload reviews after creating a new one
+        const profileId = new URLSearchParams(location.search).get("profileId") || profileData?.id
+        if (profileId) {
+            loadReviews(profileId)
+        }
+    }
+
     // Effects
     useEffect(() => {
         const handleFavoritesUpdate = (event: CustomEvent) => {
@@ -190,7 +260,6 @@ export default function ProfilePage() {
             window.removeEventListener("favoritesUpdated", handleFavoritesUpdate as EventListener)
         }
     }, [activeTab, location.search]) // Añadido location.search como dependencia
-
 
     useEffect(() => {
         if (activeTab === "deseados") {
@@ -238,6 +307,9 @@ export default function ProfilePage() {
                     setProfileData(profileInfo)
                     setBannerImage(profileInfo.banner)
 
+                    // Load reviews for the profile
+                    await loadReviews(profileId)
+
                     // Add this code to load the other user's products
                     try {
                         const otherUserProducts = await ProductService.getProductsByProfileId(profileId)
@@ -254,6 +326,9 @@ export default function ProfilePage() {
                     const profileInfo = await ProfileService.getProfileInfo()
                     setProfileData(profileInfo)
                     setBannerImage(profileInfo.banner)
+
+                    // Load reviews for own profile
+                    await loadReviews(profileInfo.id)
 
                     // Load user products
                     await loadUserProducts(true)
@@ -272,7 +347,7 @@ export default function ProfilePage() {
         }
 
         checkAuth()
-    }, [location.search, history, loadUserProducts])
+    }, [location.search, history, loadUserProducts, loadReviews])
 
     useEffect(() => {
         const isDark = sessionStorage.getItem("modoOscuroClaro") === "true"
@@ -499,40 +574,68 @@ export default function ProfilePage() {
                         <IonIcon icon={chatbubbleOutline} className="tab-icon" />
                         Reseñas
                     </h3>
-                    <IonBadge className="count-badge">{userInfo.totalReviews}</IonBadge>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <IonBadge className="count-badge">{userInfo.totalReviews}</IonBadge>
+                        {/* Show write review button only when viewing another user's profile */}
+                        {new URLSearchParams(location.search).get("profileId") && (
+                            <IonButton size="small" className="modern-write-review-btn" onClick={() => setShowReviewModal(true)}>
+                                <IonIcon icon={chatbubbleOutline} slot="start" />
+                                Escribir reseña
+                            </IonButton>
+                        )}
+                    </div>
                 </div>
-                <div className="reviews-container">
-                    <div className="review-card">
-                        <div className="review-header">
-                            <div className="reviewer-avatar">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Reviewer" />
-                            </div>
-                            <div className="reviewer-info">
-                                <h5>María García</h5>
-                                <div className="review-rating">{renderStars(5)}</div>
-                            </div>
-                            <span className="review-date">Hace 2 días</span>
-                        </div>
-                        <p className="review-text">
-                            Excelente vendedor, muy confiable y rápido en la entrega. El producto llegó en perfectas condiciones.
-                        </p>
-                    </div>
 
-                    <div className="review-card">
-                        <div className="review-header">
-                            <div className="reviewer-avatar">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Reviewer" />
-                            </div>
-                            <div className="reviewer-info">
-                                <h5>Carlos Ruiz</h5>
-                                <div className="review-rating">{renderStars(4)}</div>
-                            </div>
-                            <span className="review-date">Hace 1 semana</span>
+                <div className="reviews-container">
+                    {loadingReviews ? (
+                        <div className="loading-state">
+                            <div className="loading-spinner"></div>
+                            <p>Cargando reseñas...</p>
                         </div>
-                        <p className="review-text">
-                            Muy buena experiencia de compra. Comunicación fluida y producto tal como se describía.
-                        </p>
-                    </div>
+                    ) : reviews.length === 0 ? (
+                        <div className="empty-state">
+                            <IonIcon icon={chatbubbleOutline} className="empty-icon" />
+                            <h4>No hay reseñas aún</h4>
+                            <p>
+                                {new URLSearchParams(location.search).get("profileId")
+                                    ? "Sé el primero en escribir una reseña"
+                                    : "Aún no has recibido reseñas"}
+                            </p>
+                        </div>
+                    ) : (
+                        reviews.map((review) => (
+                            <div key={review.id} className={`review-card ${deletingReviewId === review.id ? "deleting" : ""}`}>
+                                <div className="review-header">
+                                    <div className="reviewer-avatar">
+                                        <img src={ReviewsService.processAvatar(review.writerAvatar || "")} alt="Reviewer" />
+                                    </div>
+                                    <div className="reviewer-info">
+                                        <h5>{review.writerNickname || "Usuario"}</h5>
+                                        <div className="review-rating">{renderStars(review.stars)}</div>
+                                    </div>
+                                    <div className="review-actions">
+                    <span className="review-date">
+                      {review.datetime ? ReviewsService.formatDate(review.datetime) : "Fecha desconocida"}
+                    </span>
+                                        {/* Show delete button if user is the author or profile owner */}
+                                        {review.idProfileWriter === profileData?.id && (
+                                            <div className="delete-tooltip">
+                                                <IonButton
+                                                    fill="clear"
+                                                    className={`modern-delete-review-btn ${deletingReviewId === review.id ? "deleting" : ""}`}
+                                                    onClick={(e) => handleDeleteReview(review.id!, e)}
+                                                    disabled={deletingReviewId === review.id}
+                                                >
+                                                    <IonIcon icon={trashOutline} />
+                                                </IonButton>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <p className="review-text">{review.description}</p>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
         )
@@ -691,6 +794,39 @@ export default function ProfilePage() {
                 </section>
                 <br />
                 <br />
+                {/* Review Modal */}
+                {profileData && (
+                    <ReviewModal
+                        isOpen={showReviewModal}
+                        onClose={() => setShowReviewModal(false)}
+                        profileId={new URLSearchParams(location.search).get("profileId") || ""}
+                        profileName={profileData.nickname || "Usuario"}
+                        onReviewCreated={handleReviewCreated}
+                    />
+                )}
+
+                {/* Delete Review Confirmation Alert */}
+                <IonAlert
+                    isOpen={showDeleteReviewAlert}
+                    onDidDismiss={() => {
+                        setShowDeleteReviewAlert(false)
+                        setReviewToDelete(null)
+                    }}
+                    header="Confirmar eliminación"
+                    message="¿Estás seguro de que quieres eliminar esta reseña? Esta acción no se puede deshacer."
+                    buttons={[
+                        {
+                            text: "Cancelar",
+                            role: "cancel",
+                            cssClass: "secondary",
+                        },
+                        {
+                            text: "Eliminar",
+                            cssClass: "danger",
+                            handler: confirmDeleteReview,
+                        },
+                    ]}
+                />
             </IonContent>
         </IonPage>
     )
