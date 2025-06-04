@@ -232,10 +232,18 @@ export default function ProfilePage() {
                     setProfileData(profileInfo)
                     setBannerImage(profileInfo.banner)
 
-                    setUserInfo((prev) => ({
-                        ...prev,
-                        name: profileInfo.nickname || "Vendedor",
-                    }))
+                    // Add this code to load the other user's products
+                    try {
+                        const otherUserProducts = await ProductService.getProductsByProfileId(profileId)
+                        setUserProducts(otherUserProducts)
+                        setUserInfo((prev) => ({
+                            ...prev,
+                            name: profileInfo.nickname || "Vendedor",
+                            itemsForSale: otherUserProducts.length,
+                        }))
+                    } catch (error) {
+                        console.error("Error loading other user's products:", error)
+                    }
                 } else {
                     const profileInfo = await ProfileService.getProfileInfo()
                     setProfileData(profileInfo)

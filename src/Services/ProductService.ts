@@ -389,4 +389,39 @@ export class ProductService {
             }
         }
     }
+
+    // Add this new method to ProductService class
+    static async getProductsByProfileId(profileId: string): Promise<Product[]> {
+        try {
+            const sessionToken = sessionStorage.getItem("token")
+            if (!sessionToken) {
+                throw new Error("No hay token de autenticación disponible")
+            }
+
+            const response = await fetch(`${this.baseUrl}/product/profile-products?profileId=${profileId}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${sessionToken}`,
+                    "Cache-Control": "no-cache",
+                },
+            })
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                throw new Error(`Error ${response.status}: ${errorText}`)
+            }
+
+            const data = await response.json()
+            const products = Array.isArray(data) ? data : []
+
+            return products.map((product: Product) => ({
+                ...product,
+                imagenes: product.imagenes?.map((image) => cloudinaryImage(image)) || [],
+            }))
+        } catch (error) {
+            console.error(`Error fetching products for profile ID ${profileId}:`, error)
+            throw error
+        }
+    }
 }
