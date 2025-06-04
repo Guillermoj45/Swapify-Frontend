@@ -164,7 +164,7 @@ export const useTradeSystem = ({
         [chatId, isCurrentUserProductOwner, currentUserId, productDelChat],
     )
 
-    // CORREGIDO: Confirmar intercambio con validaciones mejoradas
+    // CORREGIDO: Confirmar intercambio con validaciones mejoradas y cierre de modales
     const confirmTrade = useCallback(async () => {
         if (!tradeState.currentOffer || !isCurrentUserProductOwner) {
             console.warn("No se puede confirmar: no hay oferta o el usuario no es el dueño del producto")
@@ -196,6 +196,7 @@ export const useTradeSystem = ({
                 updatedAt: new Date(),
             }
 
+            // NUEVO: Cerrar modal inmediatamente
             setTradeState((prev) => ({
                 ...prev,
                 currentOffer: confirmedOffer,

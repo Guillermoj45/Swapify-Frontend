@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { IonIcon } from "@ionic/react"
-import { close, checkmarkCircle, swapHorizontal, trendingUp, trendingDown } from "ionicons/icons"
+import { close, checkmarkCircle, swapHorizontal, trendingUp, trendingDown, warningOutline } from "ionicons/icons"
 import type { Product } from "../../../Services/ProductService"
 import { ProductService } from "../../../Services/ProductService"
 import { ProductMessage } from "./productMessage"
@@ -115,8 +115,18 @@ export const TradeSummaryModal: React.FC<TradeSummaryModalProps> = ({
     const traderTotal = calculateTotalPoints(traderProducts)
     const nonTraderTotal = calculateTotalPoints(nonTraderProducts)
     const pointsDifference = traderTotal - nonTraderTotal
+    const absolutePointsDifference = Math.abs(pointsDifference)
+
+    // NUEVA FUNCIONALIDAD: Validación de diferencia de puntos
+    const isPointsDifferenceExcessive = absolutePointsDifference > 200
+    const canConfirmTrade = !loading && !error && !isPointsDifferenceExcessive
 
     const handleConfirmTrade = async () => {
+        if (!canConfirmTrade) {
+            console.warn("❌ No se puede confirmar el intercambio: diferencia de puntos excesiva")
+            return
+        }
+
         try {
             setConfirming(true)
             await onConfirmTrade()
@@ -196,12 +206,28 @@ export const TradeSummaryModal: React.FC<TradeSummaryModalProps> = ({
                                 </div>
 
                                 {pointsDifference !== 0 && (
-                                    <div className={`points-difference ${pointsDifference > 0 ? "positive" : "negative"}`}>
+                                    <div
+                                        className={`points-difference ${pointsDifference > 0 ? "positive" : "negative"} ${isPointsDifferenceExcessive ? "excessive" : ""}`}
+                                    >
                                         <IonIcon icon={pointsDifference > 0 ? trendingUp : trendingDown} />
                                         <span>
                       {pointsDifference > 0 ? "+" : ""}
                                             {pointsDifference} puntos de diferencia
                     </span>
+                                    </div>
+                                )}
+
+                                {/* NUEVA FUNCIONALIDAD: Alerta de diferencia excesiva */}
+                                {isPointsDifferenceExcessive && (
+                                    <div className="points-warning">
+                                        <IonIcon icon={warningOutline} />
+                                        <div className="warning-text">
+                                            <strong>Diferencia de puntos excesiva</strong>
+                                            <p>
+                                                La diferencia de {absolutePointsDifference} puntos supera el límite de 200 puntos permitido para
+                                                intercambios.
+                                            </p>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -260,6 +286,11 @@ export const TradeSummaryModal: React.FC<TradeSummaryModalProps> = ({
                                         <>
                                             <h5>¡Listo para confirmar!</h5>
                                             <p>Como dueño del producto del chat, puedes confirmar este intercambio.</p>
+                                            {isPointsDifferenceExcessive && (
+                                                <p className="warning-text">
+                                                    ⚠️ No se puede confirmar debido a la diferencia excesiva de puntos.
+                                                </p>
+                                            )}
                                         </>
                                     ) : (
                                         <>
@@ -279,10 +310,25 @@ export const TradeSummaryModal: React.FC<TradeSummaryModalProps> = ({
                         Cancelar
                     </button>
                     {currentUserIsTrader && (
-                        <button className="confirm-button" onClick={handleConfirmTrade} disabled={loading || !!error || confirming}>
+                        <button
+                            className={`confirm-button ${!canConfirmTrade ? "disabled" : ""}`}
+                            onClick={handleConfirmTrade}
+                            disabled={!canConfirmTrade || confirming}
+                            title={
+                                isPointsDifferenceExcessive
+                                    ? "No se puede confirmar: diferencia de puntos excesiva"
+                                    : "Confirmar intercambio"
+                            }
+                        >
                             <div className="button-content">
-                                <IonIcon icon={checkmarkCircle} />
-                                <span>{confirming ? "Confirmando..." : "Confirmar Intercambio"}</span>
+                                <IonIcon icon={isPointsDifferenceExcessive ? warningOutline : checkmarkCircle} />
+                                <span>
+                  {confirming
+                      ? "Confirmando..."
+                      : isPointsDifferenceExcessive
+                          ? "Diferencia excesiva"
+                          : "Confirmar Intercambio"}
+                </span>
                             </div>
                             {confirming && <div className="button-loading"></div>}
                         </button>
@@ -661,6 +707,7 @@ export const TradeSummaryModal: React.FC<TradeSummaryModalProps> = ({
           border-radius: 12px;
           font-size: 14px;
           font-weight: 600;
+          margin-bottom: 16px;
         }
 
         .points-difference.positive {
@@ -673,6 +720,54 @@ export const TradeSummaryModal: React.FC<TradeSummaryModalProps> = ({
           background: rgba(239, 68, 68, 0.1);
           color: #dc2626;
           border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* NUEVA FUNCIONALIDAD: Estilos para diferencia excesiva */
+        .points-difference.excessive {
+          background: rgba(239, 68, 68, 0.15);
+          color: #dc2626;
+          border: 2px solid rgba(239, 68, 68, 0.3);
+          animation: warningPulse 2s infinite;
+        }
+
+        @keyframes warningPulse {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+          }
+          50% {
+            box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+          }
+        }
+
+        /* NUEVA FUNCIONALIDAD: Alerta de diferencia excesiva */
+        .points-warning {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 16px;
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          border-radius: 12px;
+          color: #dc2626;
+          margin-top: 16px;
+        }
+
+        .points-warning ion-icon {
+          font-size: 24px;
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .warning-text strong {
+          display: block;
+          font-weight: 700;
+          margin-bottom: 4px;
+        }
+
+        .warning-text p {
+          margin: 0;
+          font-size: 14px;
+          line-height: 1.4;
         }
 
         /* Secciones de productos */
@@ -807,29 +902,10 @@ export const TradeSummaryModal: React.FC<TradeSummaryModalProps> = ({
           line-height: 1.5;
         }
 
-        /* Debug info */
-        .debug-info {
-          background: var(--searchbar-bg, #f0f2f8);
-          border-radius: 12px;
-          padding: 16px;
-          border: 1px solid var(--border-color, #e4e7f2);
-        }
-
-        .debug-info summary {
-          cursor: pointer;
+        .confirmation-text .warning-text {
+          color: #dc2626;
           font-weight: 600;
-          color: var(--text-secondary, #606478);
-          margin-bottom: 12px;
-        }
-
-        .debug-info pre {
-          background: var(--card-background, #ffffff);
-          padding: 12px;
-          border-radius: 8px;
-          overflow-x: auto;
-          font-size: 11px;
-          color: var(--text-color, #1a1c2a);
-          border: 1px solid var(--border-color, #e4e7f2);
+          margin-top: 8px;
         }
 
         /* Footer moderno */
@@ -879,10 +955,17 @@ export const TradeSummaryModal: React.FC<TradeSummaryModalProps> = ({
           box-shadow: 0 12px 24px rgba(74, 128, 228, 0.35);
         }
 
-        .confirm-button:disabled {
+        .confirm-button:disabled,
+        .confirm-button.disabled {
           opacity: 0.6;
           cursor: not-allowed;
           transform: none;
+          background: #9ca3af;
+          box-shadow: none;
+        }
+
+        .confirm-button.disabled {
+          background: linear-gradient(135deg, #ef4444, #dc2626);
         }
 
         .button-content {

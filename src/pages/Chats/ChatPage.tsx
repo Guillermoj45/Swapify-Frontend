@@ -46,6 +46,7 @@ interface Message {
     senderName?: string
     senderId?: string
     isTemporary?: boolean
+    isTradeMessage?: boolean
 }
 
 interface Chat {
@@ -105,7 +106,7 @@ const ChatPage: React.FC = () => {
     // Estado para el mensaje de entrada
     const [inputMessage, setInputMessage] = useState("")
 
-    // Estado para mostrar el indicador de escritura
+    // Estado para el indicador de escritura
     const [isTyping, setIsTyping] = useState(false)
 
     // Estado para el modo de tema claro/oscuro
@@ -140,7 +141,24 @@ const ChatPage: React.FC = () => {
         return activeChat?.idProfileProduct === currentUserProfile?.id
     }, [activeChat?.idProfileProduct, currentUserProfile?.id])
 
-    // INTEGRACIÓN DEL SISTEMA DE INTERCAMBIO
+    // FUNCIÓN NUEVA: Refrescar chats
+    const refreshChats = useCallback(async () => {
+        console.log("🔄 Refrescando chats después de intercambio...")
+        try {
+            await loadChats()
+            console.log("✅ Chats refrescados exitosamente")
+        } catch (error) {
+            console.error("❌ Error al refrescar chats:", error)
+        }
+    }, [])
+
+    // FUNCIÓN NUEVA: Cerrar todos los modales
+    const closeAllModals = useCallback(() => {
+        console.log("🔒 Cerrando todos los modales...")
+        setShowProductModal(false)
+    }, [])
+
+    // INTEGRACIÓN DEL SISTEMA DE INTERCAMBIO CON MEJORAS
     const {
         tradeState,
         handleProductsSelected: handleTradeProductsSelected,
@@ -152,16 +170,24 @@ const ChatPage: React.FC = () => {
         chatId: activeChat?.id || "",
         currentUserId: currentUserProfile?.id || "",
         isCurrentUserProductOwner,
-        productDelChat: activeChat?.idProduct || "", // ID del producto principal del chat
+        productDelChat: activeChat?.idProduct || "",
+        onModalsClose: closeAllModals,
+        onRefreshChats: refreshChats, // NUEVO: Pasar función de refresh
         onTradeConfirmed: async (tradeOffer) => {
             console.log("🎉 Intercambio confirmado:", tradeOffer)
 
             try {
-                // Enviar mensaje de confirmación al chat
+                // NUEVO: Cerrar todos los modales inmediatamente
+                closeAllModals()
+
+                // MEJORADO: Crear mensaje de confirmación más detallado
                 const confirmationMessage = JSON.stringify({
                     type: "trade_confirmed",
                     tradeId: tradeOffer.id,
                     message: "¡Intercambio confirmado! El dueño del producto ha aceptado la propuesta.",
+                    timestamp: new Date().toISOString(),
+                    traderProducts: tradeOffer.traderProducts,
+                    nonTraderProducts: tradeOffer.nonTraderProducts,
                 })
 
                 // Enviar mensaje de confirmación
@@ -175,12 +201,39 @@ const ChatPage: React.FC = () => {
 
                     console.log("✅ Confirmación de intercambio enviada al chat")
                 }
+
+                // NUEVO: Refrescar chats inmediatamente y luego después de un delay
+                await refreshChats()
+
+                // Segundo refresh para asegurar que ambos usuarios vean los cambios
+                setTimeout(async () => {
+                    await refreshChats()
+                    console.log("🔄 Segunda recarga de chats completada")
+                }, 3000)
             } catch (error) {
                 console.error("❌ Error al enviar confirmación:", error)
                 setError("Error al enviar la confirmación del intercambio.")
             }
         },
     })
+
+    // FUNCIÓN NUEVA: Filtrar mensajes de intercambio JSON
+    const shouldDisplayMessage = useCallback((message: Message): boolean => {
+        try {
+            if (message.content.startsWith('{"type":"trade_selection"')) {
+                console.log("🚫 Filtrando mensaje JSON de intercambio:", message.id)
+                return false
+            }
+
+            if (message.content.startsWith('{"type":"trade_confirmed"')) {
+                return true
+            }
+
+            return true
+        } catch (error) {
+            return true
+        }
+    }, [])
 
     // NUEVA FUNCIÓN: Parsear parámetros de URL para chat temporal
     const parseUrlParams = useCallback(() => {
@@ -343,6 +396,7 @@ const ChatPage: React.FC = () => {
                     senderName: messageDTO.senderNickname,
                     senderId: messageDTO.senderNickname,
                     isTemporary: false,
+                    isTradeMessage: messageDTO.content.startsWith('{"type":"trade_'),
                 }
             }
 
@@ -368,6 +422,7 @@ const ChatPage: React.FC = () => {
                 senderName: messageDTO.senderNickname,
                 senderId: messageDTO.senderNickname,
                 isTemporary: false,
+                isTradeMessage: messageDTO.content.startsWith('{"type":"trade_'),
             }
         },
         [activeChat, currentUserProfile, isMessageFromCurrentUser],
@@ -393,7 +448,7 @@ const ChatPage: React.FC = () => {
 
                 console.log("Mensajes cargados:", messageDTOs)
 
-                const historicalMessages = messageDTOs.map(convertMessageDTOToMessage)
+                const historicalMessages = messageDTOs.map(convertMessageDTOToMessage).filter(shouldDisplayMessage)
 
                 const welcomeMessage: Message = {
                     id: "welcome",
@@ -430,7 +485,7 @@ const ChatPage: React.FC = () => {
                 setLoadingMessages(false)
             }
         },
-        [convertMessageDTOToMessage],
+        [convertMessageDTOToMessage, shouldDisplayMessage],
     )
 
     // Función para convertir ChatDTO a Chat - simplificada
@@ -499,7 +554,7 @@ const ChatPage: React.FC = () => {
         [activeChat?.id],
     )
 
-    // FUNCIÓN MODIFICADA: Manejar mensajes recibidos por WebSocket con soporte para intercambios
+    // FUNCIÓN MODIFICADA: Manejar mensajes recibidos por WebSocket con filtrado mejorado
     const handleMessageReceived = useCallback(
         (messageData: MensajeRecibeDTO) => {
             try {
@@ -514,12 +569,33 @@ const ChatPage: React.FC = () => {
                     return
                 }
 
+                // NUEVO: Verificar si es un mensaje de confirmación de intercambio
+                if (messageData.content.startsWith('{"type":"trade_confirmed"')) {
+                    console.log("🎉 Mensaje de confirmación de intercambio recibido")
+
+                    // Cerrar todos los modales
+                    closeAllModals()
+
+                    // Recargar chats para ambos usuarios
+                    setTimeout(async () => {
+                        await refreshChats()
+                        console.log("🔄 Chats recargados tras confirmación de intercambio")
+                    }, 1000)
+
+                    updateLastMessage(activeChat.id, "¡Intercambio confirmado!", new Date(messageData.createdAt || Date.now()))
+                    return
+                }
+
                 // PRIMERO: Verificar si es un mensaje de intercambio
                 const isTradeMessage = processTradeMessage(messageData.content)
 
                 if (isTradeMessage) {
                     console.log("✅ Mensaje de intercambio procesado")
-                    updateLastMessage(activeChat.id, "Propuesta de intercambio", new Date(messageData.createdAt || Date.now()))
+
+                    // NUEVO: No actualizar el último mensaje si es un JSON de selección
+                    if (!messageData.content.startsWith('{"type":"trade_selection"')) {
+                        updateLastMessage(activeChat.id, "Propuesta de intercambio", new Date(messageData.createdAt || Date.now()))
+                    }
                     return
                 }
 
@@ -566,6 +642,13 @@ const ChatPage: React.FC = () => {
                     senderName: messageData.senderNickname || messageData.userName || "Usuario",
                     senderId: messageData.senderNickname || messageData.userName,
                     isTemporary: false,
+                    isTradeMessage: messageData.content.startsWith('{"type":"trade_'),
+                }
+
+                // NUEVO: Verificar si el mensaje debe mostrarse
+                if (!shouldDisplayMessage(newMessage)) {
+                    console.log("🚫 Mensaje filtrado, no se mostrará en la UI")
+                    return
                 }
 
                 console.log("✅ Nuevo mensaje de otro usuario procesado:", newMessage)
@@ -592,7 +675,16 @@ const ChatPage: React.FC = () => {
                 console.error("❌ Error al procesar el mensaje recibido:", error)
             }
         },
-        [activeChat, updateLastMessage, currentUserProfile, isMessageFromCurrentUser, processTradeMessage],
+        [
+            activeChat,
+            updateLastMessage,
+            currentUserProfile,
+            isMessageFromCurrentUser,
+            processTradeMessage,
+            shouldDisplayMessage,
+            closeAllModals,
+            refreshChats,
+        ],
     )
 
     // FUNCIÓN MODIFICADA: Manejar selección de productos con sistema de intercambio
@@ -606,8 +698,8 @@ const ChatPage: React.FC = () => {
             if (tradeMessage && activeChat) {
                 const tempId = `temp-trade-${Date.now()}-${Math.random()}`
 
-                // Crear mensaje temporal para mostrar la selección
-                const newMessage: Message = {
+                // NUEVO: Crear mensaje temporal visible para el usuario
+                const userVisibleMessage: Message = {
                     id: tempId,
                     content: `Has seleccionado ${products.length} producto(s) para intercambio`,
                     sender: "user",
@@ -618,10 +710,10 @@ const ChatPage: React.FC = () => {
                     isTemporary: true,
                 }
 
-                setMessages((prev) => [...prev, newMessage])
+                setMessages((prev) => [...prev, userVisibleMessage])
                 updateLastMessage(activeChat.id, `Productos seleccionados: ${products.length}`, new Date())
 
-                // Enviar mensaje de intercambio
+                // Enviar mensaje de intercambio (JSON) al backend
                 if (!activeChat.isTemporaryChat) {
                     chatService
                         .sendMessage(
@@ -699,7 +791,10 @@ const ChatPage: React.FC = () => {
         (messages: Message[]) => {
             const groups: { date: Date; dateLabel: string; messages: Message[] }[] = []
 
-            messages.forEach((message) => {
+            // NUEVO: Filtrar mensajes antes de agrupar
+            const visibleMessages = messages.filter(shouldDisplayMessage)
+
+            visibleMessages.forEach((message) => {
                 const messageDate = new Date(message.timestamp)
                 const messageDateString = messageDate.toDateString()
 
@@ -722,16 +817,18 @@ const ChatPage: React.FC = () => {
 
             return groups
         },
-        [formatDateLabel],
+        [formatDateLabel, shouldDisplayMessage],
     )
 
     // Modificar el useMemo de filteredMessages para incluir agrupación por fecha
     const { filteredMessages, messageGroups } = useMemo(() => {
-        let filtered = messages
+        // NUEVO: Filtrar mensajes JSON primero
+        const visibleMessages = messages.filter(shouldDisplayMessage)
+        let filtered = visibleMessages
 
         if (messageSearchTerm.trim()) {
             const term = messageSearchTerm.toLowerCase().trim()
-            filtered = messages.filter((message) => message.content.toLowerCase().includes(term))
+            filtered = visibleMessages.filter((message) => message.content.toLowerCase().includes(term))
         }
 
         const groups = groupMessagesByDate(filtered)
@@ -740,7 +837,7 @@ const ChatPage: React.FC = () => {
             filteredMessages: filtered,
             messageGroups: groups,
         }
-    }, [messages, messageSearchTerm, groupMessagesByDate])
+    }, [messages, messageSearchTerm, groupMessagesByDate, shouldDisplayMessage])
 
     // Función para cargar los chats desde el backend
     const loadChats = useCallback(async () => {
