@@ -163,8 +163,10 @@ export default function ProfilePage() {
     useEffect(() => {
         const handleFavoritesUpdate = (event: CustomEvent) => {
             const { action, productId } = event.detail
+            const profileId = new URLSearchParams(location.search).get("profileId")
 
-            if (activeTab === "deseados") {
+            // Solo actualizamos productos deseados si estamos en la tab deseados y NO hay profileId
+            if (activeTab === "deseados" && !profileId) {
                 const refreshSavedProducts = async () => {
                     try {
                         setLoadingSaved(true)
@@ -177,6 +179,9 @@ export default function ProfilePage() {
                     }
                 }
                 refreshSavedProducts()
+            } else {
+                // Si hay profileId, limpiamos la lista de deseados
+                setSavedProducts([])
             }
         }
 
@@ -184,7 +189,8 @@ export default function ProfilePage() {
         return () => {
             window.removeEventListener("favoritesUpdated", handleFavoritesUpdate as EventListener)
         }
-    }, [activeTab])
+    }, [activeTab, location.search]) // Añadido location.search como dependencia
+
 
     useEffect(() => {
         if (activeTab === "deseados") {
