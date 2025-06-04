@@ -200,7 +200,8 @@ export const IAChat = async (
     message: string,
     chatID?: string,
     productId?: string,
-    titulo?: string
+    titulo?: string,
+    guillermo?: boolean
 ): Promise<IAChatResponse> => {
     const formData = new FormData();
 
@@ -211,27 +212,20 @@ export const IAChat = async (
     if (files && files.length > 0) {
         // IMPORTANTE: El backend espera una lista con el nombre "file", no "files" o "images"
         for (const file of files) {
-            // Si el tipo MIME no está definido explícitamente, intentamos asignarlo
             let fileToUpload = file;
 
             console.log('Archivo a subir:', file.type);
-            // Intentar inferir el tipo MIME de la extensión
             const fileExtension = file.name.split('.').pop()?.toLowerCase();
             if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
-                console.log('Tipo jpg no reconocido, intentando convertir a PNG');
-                // Crear un nuevo File con el tipo MIME correcto
                 fileToUpload = new File([file], file.name, { type: 'image/jpeg' });
             } else if (fileExtension === 'png') {
-                console.log('Tipo png no reconocido, intentando convertir a PNG');
                 fileToUpload = new File([file], file.name, { type: 'image/png' });
             } else {
-                console.log('Tipo MIME no reconocido, intentando convertir a PNG');
                 try {
-                    // Convertir a PNG si no es jpg/jpeg/png
                     fileToUpload = await convertImageToPNG(file);
                 } catch (error) {
                     console.error('Error al convertir la imagen:', error);
-                    continue; // Saltamos este archivo y continuamos con el siguiente
+                    continue;
                 }
             }
 
@@ -243,9 +237,9 @@ export const IAChat = async (
     if (chatID) formData.append('chatID', chatID);
     if (productId) formData.append('productId', productId);
     if (titulo) formData.append('titulo', titulo);
+    if (guillermo !== undefined) formData.append('guillermo', guillermo.toString());
 
     try {
-        // Importante: Para FormData, debemos dejar que Axios establezca el Content-Type automáticamente
         const response = await API.post('/ia/producto', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
@@ -255,15 +249,9 @@ export const IAChat = async (
         return response.data;
     } catch (error: any) {
         console.error('Error en petición IAChat:', error);
-        console.error('Detalles adicionales:', error.response?.data || 'No hay datos adicionales');
-        console.error('Estatus:', error.response?.status);
-        console.error('Headers de respuesta:', error.response?.headers);
-
-        // Si hay un error de tiempo de espera o conexión
         if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-            console.error('Tiempo de espera agotado. Podría ser debido al tamaño de los archivos');
+            console.error('Tiempo de espera agotado.');
         }
-
         throw error;
     }
 };

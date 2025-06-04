@@ -14,5 +14,8 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
-  }
+  },
+  define: {
+    global: 'window', // 👈 esto soluciona el error global not defined
+  },
 })

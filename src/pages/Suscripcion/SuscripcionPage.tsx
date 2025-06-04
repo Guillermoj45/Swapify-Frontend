@@ -94,7 +94,7 @@ const SuscripcionPage: React.FC = () => {
     }, []);
 
     // Al inicio, obtener el estado inicial del modo oscuro
-    const [isDarkMode, setDarkMode] = useState(() => {
+    const [isDarkMode] = useState(() => {
         const storedMode = sessionStorage.getItem('modoOscuroClaro');
         return storedMode === 'true';
     });
@@ -155,7 +155,7 @@ const SuscripcionPage: React.FC = () => {
                                 </IonList>
                             </IonCol>
 
-                            <IonCol size="12" sizeMd="5" className="ion-text-center">
+                            <IonCol size="12" sizeMd="5" className="ion-text-center hide-on-mobile">
                                 <div className="phone-container">
                                     <div className="phone-background"></div>
                                     <IonImg
@@ -211,12 +211,6 @@ const SuscripcionPage: React.FC = () => {
                                             </div>
                                             +20 puntos al precio evaluado
                                         </li>
-                                        <li>
-                                            <div className="check-container free-check">
-                                                <IonIcon icon={checkmarkCircle} className="check-icon" />
-                                            </div>
-                                            Acceso a todos los productos sin restricción
-                                        </li>
                                     </ul>
 
                                     <IonButton
@@ -262,12 +256,6 @@ const SuscripcionPage: React.FC = () => {
                                                 <IonIcon icon={closeCircle} className="limited-icon" />
                                             </div>
                                             Sin bonus al precio evaluado
-                                        </li>
-                                        <li>
-                                            <div className="check-container limited-check">
-                                                <IonIcon icon={closeCircle} className="limited-icon" />
-                                            </div>
-                                            Acceso limitado a productos
                                         </li>
                                     </ul>
 

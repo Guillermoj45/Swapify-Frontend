@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+"use client"
+
+import type React from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useHistory } from "react-router-dom"
 import {
     IonContent,
     IonHeader,
@@ -16,547 +19,502 @@ import {
     IonListHeader,
     IonAlert,
     IonToast,
-    IonActionSheet,
     IonCard,
     IonCardHeader,
     IonCardContent,
     IonInput,
     IonMenuButton,
-    InputCustomEvent
-} from '@ionic/react';
+    type InputCustomEvent,
+} from "@ionic/react"
 import {
     informationCircleOutline,
     personOutline,
     shieldCheckmarkOutline,
     logOutOutline,
     trashOutline,
-    camera,
     closeOutline,
     eyeOutline,
     createOutline,
     colorPaletteOutline,
     notificationsOutline,
     menuOutline,
-} from 'ionicons/icons';
-import './Settings2.css';
-import { Settings as SettingsService } from '../../Services/SettingsService';
-import cloudinaryImage from "../../Services/CloudinaryService";
-import { ProfileSettings } from '../../Models/ProfileSettings';
-import Navegacion from "../../components/Navegation";
-import useAuthRedirect from "../../Services/useAuthRedirect";
+} from "ionicons/icons"
+import "./Settings.css"
+import { Settings as SettingsService } from "../../Services/SettingsService"
+import cloudinaryImage from "../../Services/CloudinaryService"
+import type { ProfileSettings } from "../../Models/ProfileSettings"
+import Navegacion from "../../components/Navegation"
+import useAuthRedirect from "../../Services/useAuthRedirect"
 
-// Definimos una interfaz para nuestro estado de perfil
-interface ProfileState {
-    nickname: string;
-    email: string;
-    avatar: string;
-    premium: string;
-    preferencias: {
-        notifications: boolean;
-        darkMode: boolean;
-    };
+// Types
+interface ProfileWithFile extends Omit<ProfileSettings, "avatar"> {
+    ubicacion?: string
+    avatar?: string | File
 }
 
 interface PasswordState {
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
+    currentPassword: string
+    newPassword: string
+    confirmPassword: string
 }
 
-// Definimos el tipo para nuestras secciones activas
-type ActiveSection = 'profile' | 'security' | 'privacy' | null;
+type ActiveSection = "profile" | "security" | null
 
-// Definimos la interfaz para las opciones de cuenta
 interface AccountOption {
-    label: string;
-    icon: string;
-    action: string;
-}
-
-// Interfaz para las props de las secciones de perfil y seguridad
-interface SectionProps {
-    onClose: () => void;
-}
-
-interface ProfileWithFile extends Omit<ProfileSettings, 'avatar'> {
-    avatar?: string | File;
+    label: string
+    icon: string
+    action: string
 }
 
 const Settings: React.FC = () => {
-
     useAuthRedirect()
+    const history = useHistory()
 
-    const history = useHistory();
+    // UI States
+    const [activeSection, setActiveSection] = useState<ActiveSection>(null)
+    const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768)
+    const [isLoading, setIsLoading] = useState<boolean>(false)
 
-    // UI states
-    const [activeSection, setActiveSection] = useState<ActiveSection>(null);
-    const [showToast, setShowToast] = useState<boolean>(false);
-    const [toastMessage, setToastMessage] = useState<string>('');
+    // Alert States
+    const [showLogoutAlert, setShowLogoutAlert] = useState<boolean>(false)
+    const [showDeleteAccountAlert, setShowDeleteAccountAlert] = useState<boolean>(false)
+    const [showAboutAlert, setShowAboutAlert] = useState<boolean>(false)
 
-    // Estado para detectar si es escritorio
-    const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768);
+    // Toast States
+    const [showToast, setShowToast] = useState<boolean>(false)
+    const [toastMessage, setToastMessage] = useState<string>("")
 
-    // Alert states
-    const [showLogoutAlert, setShowLogoutAlert] = useState<boolean>(false);
-    const [showDeleteAccountAlert, setShowDeleteAccountAlert] = useState<boolean>(false);
-    const [showAboutAlert, setShowAboutAlert] = useState<boolean>(false);
-
-    // Action sheet state
-    const [showActionSheet, setShowActionSheet] = useState<boolean>(false);
-    const [actionSheetTitle] = useState<string>('');
-
-    // Profile state
+    // Profile State
     const [profile, setProfile] = useState<ProfileWithFile>({
-        nickname: '',
-        email: '',
-        avatar: '',
-        premium: '',
+        nickname: "",
+        email: "",
+        avatar: "",
+        premium: "",
+        ubicacion: "",
         preferencias: {
             notificaciones: true,
             modo_oscuro: false,
         },
-    });
+    })
 
-    useEffect(() => {
-        const initializeTheme = async () => {
-            if (!sessionStorage.getItem('token')) {
-                history.push('/login');
-                return;
-            }
+    // Password State
+    const [passwordData, setPasswordData] = useState<PasswordState>({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+    })
 
-            try {
-                // 1. Primero obtenemos y aplicamos el tema del sessionStorage
-                const savedDarkMode = sessionStorage.getItem('modoOscuroClaro');
-                const initialDarkMode = savedDarkMode === 'true';
+    // Password Visibility State
+    const [showPasswords, setShowPasswords] = useState({
+        current: false,
+        new: false,
+        confirm: false,
+    })
 
-                // 2. Aplicamos el tema inmediatamente
-                const body = document.body;
-                const root = document.documentElement;
+    // Theme Management
+    const applyTheme = useCallback((isDark: boolean): void => {
+        const body = document.body
+        const root = document.documentElement
 
-                body.classList.remove('dark-theme', 'light-theme');
-                body.classList.add(initialDarkMode ? 'dark-theme' : 'light-theme');
-                root.setAttribute('data-theme', initialDarkMode ? 'dark' : 'light');
+        body.classList.remove("dark-theme", "light-theme")
+        body.classList.add(isDark ? "dark-theme" : "light-theme")
+        root.setAttribute("data-theme", isDark ? "dark" : "light")
+        sessionStorage.setItem("modoOscuroClaro", isDark.toString())
+    }, [])
 
-                // 3. Actualizamos el estado del switch
-                setProfile(prev => ({
-                    ...prev,
-                    preferencias: {
-                        ...prev.preferencias,
-                        modo_oscuro: initialDarkMode
-                    }
-                }));
-
-                // 4. Luego cargamos el resto de configuraciones
-                const profileSettings = await SettingsService.getProfileSettings();
-                const avatarUrl = profileSettings.avatar
-                    ? cloudinaryImage(profileSettings.avatar)
-                    : '';
-
-                setProfile(prev => ({
-                    ...prev,
-                    nickname: profileSettings.nickname || '',
-                    email: profileSettings.email || '',
-                    avatar: avatarUrl,
-                    premium: profileSettings.premium || '',
-                    preferencias: {
-                        notificaciones: profileSettings.preferencias?.notificaciones ?? true,
-                        modo_oscuro: initialDarkMode, // Mantenemos el valor del sessionStorage
-                    },
-                }));
-
-            } catch (error) {
-                console.error('Error loading settings:', error);
-                displayToast('Error al cargar configuraciones');
-
-                // En caso de error, aseguramos el tema claro por defecto
-                document.body.classList.remove('dark-theme');
-                document.body.classList.add('light-theme');
-                document.documentElement.setAttribute('data-theme', 'light');
-            }
-        };
-
-        initializeTheme();
-    }, []);
-
-    // Detectar cambios en el tamaño de la pantalla
-    useEffect(() => {
-        const handleResize = () => {
-            setIsDesktop(window.innerWidth >= 768);
-        };
-
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    // Navigation options
-    const accountOptions: AccountOption[] = [
-        {
-            label: 'Perfil',
-            icon: personOutline,
-            action: 'openProfile'
-        },
-        {
-            label: 'Seguridad',
-            icon: shieldCheckmarkOutline,
-            action: 'openSecurity'
-        },
-    ];
-
-    const openAccountOption = (action: string): void => {
-        console.log(`Opening ${action}`);
-
-        switch (action) {
-            case 'openProfile':
-                setActiveSection('profile');
-                break;
-            case 'openSecurity':
-                setActiveSection('security');
-                break;
-            case 'openPrivacy':
-                setActiveSection('privacy');
-                break;
-            default:
-                setActiveSection(null);
+    // Settings Management
+    const loadSettings = useCallback(async (): Promise<void> => {
+        if (!sessionStorage.getItem("token")) {
+            history.push("/login")
+            return
         }
-    };
 
-    const closeActiveSection = (): void => {
-        setActiveSection(null);
-    };
-
-    const displayToast = (message: string): void => {
-        setToastMessage(message);
-        setShowToast(true);
-    };
-
-    const logout = (): void => {
-        sessionStorage.removeItem('token');
-        history.push('/login');
-    };
-
-    const getAvatarUrl = (avatar: string | File | undefined): string => {
-        if (!avatar) return '';
-        if (avatar instanceof File) {
-            return URL.createObjectURL(avatar);
-        }
-        return avatar as string;
-    };
-
-    const loadSettings = async (): Promise<void> => {
+        setIsLoading(true)
         try {
-            const profileSettings = await SettingsService.getProfileSettings();
-
-            const avatarUrl = profileSettings.avatar
-                ? cloudinaryImage(profileSettings.avatar)
-                : '';
+            const profileSettings = await SettingsService.getProfileSettings()
+            const avatarUrl = profileSettings.avatar ? cloudinaryImage(profileSettings.avatar) : ""
 
             setProfile({
-                nickname: profileSettings.nickname || '',
-                email: profileSettings.email || '',
+                nickname: profileSettings.nickname || "",
+                email: profileSettings.email || "",
                 avatar: avatarUrl,
-                premium: profileSettings.premium || '',
+                premium: profileSettings.premium || "",
+                ubicacion: profileSettings.ubicacion || "",
                 preferencias: {
                     notificaciones: profileSettings.preferencias?.notificaciones ?? true,
                     modo_oscuro: profileSettings.preferencias?.modo_oscuro ?? false,
                 },
-            });
-
-            // Aplicar el modo oscuro inicial
-            applyTheme(profileSettings.preferencias?.modo_oscuro ?? false);
+            })
         } catch (error) {
-            console.error('Error loading settings:', error);
-            displayToast('Error al cargar configuraciones');
+            console.error("Error loading settings:", error)
+            displayToast("Error al cargar configuraciones")
+        } finally {
+            setIsLoading(false)
         }
-    };
+    }, [history])
 
-    // Función para aplicar el tema de forma consistente
-    const applyTheme = (isDark: boolean): void => {
-        const body = document.body;
-        const root = document.documentElement;
+    // Initialize Component
+    useEffect(() => {
+        const initialize = async () => {
+            try {
+                const savedDarkMode = sessionStorage.getItem("modoOscuroClaro")
+                const initialDarkMode = savedDarkMode === "true"
+                applyTheme(initialDarkMode)
 
-        body.classList.remove('dark-theme', 'light-theme');
+                setProfile((prev) => ({
+                    ...prev,
+                    preferencias: {
+                        ...prev.preferencias,
+                        modo_oscuro: initialDarkMode,
+                    },
+                }))
 
-        if (isDark) {
-            body.classList.add('dark-theme');
-            body.classList.remove('light-theme');
-            root.setAttribute('data-theme', 'dark');
-        } else {
-            body.classList.add('light-theme');
-            body.classList.remove('dark-theme');
-            root.setAttribute('data-theme', 'light');
-        }
-
-        // Forzar re-renderización al cambiar el tema
-        setProfile(prevProfile => ({
-            ...prevProfile,
-            preferencias: {
-                ...prevProfile.preferencias,
-                modo_oscuro: isDark
+                await loadSettings()
+            } catch (error) {
+                console.error("Error initializing:", error)
+                displayToast("Error al cargar configuraciones")
+                applyTheme(false)
             }
-        }));
+        }
 
-        // Guardar preferencia en sessionStorage
-        sessionStorage.setItem('modoOscuroClaro', isDark.toString());
-    };
+        initialize()
+    }, [applyTheme, loadSettings])
 
-    const handlePreferenceChange = async (e: CustomEvent, key: 'modo_oscuro' | 'notificaciones') => {
-        const newValue = e.detail.checked;
+    // Handle Window Resize
+    useEffect(() => {
+        const handleResize = () => setIsDesktop(window.innerWidth >= 768)
+        window.addEventListener("resize", handleResize)
+        return () => window.removeEventListener("resize", handleResize)
+    }, [])
+
+    // Utility Functions
+    const displayToast = (message: string): void => {
+        setToastMessage(message)
+        setShowToast(true)
+    }
+
+    const getAvatarUrl = (avatar: string | File | undefined): string => {
+        if (!avatar) return "/placeholder.svg?height=100&width=100"
+        if (avatar instanceof File) return URL.createObjectURL(avatar)
+        return avatar as string
+    }
+
+    // Navigation
+    const accountOptions: AccountOption[] = [
+        { label: "Perfil", icon: personOutline, action: "profile" },
+        { label: "Seguridad", icon: shieldCheckmarkOutline, action: "security" },
+    ]
+
+    const handleSectionOpen = (action: string): void => {
+        setActiveSection(action as ActiveSection)
+    }
+
+    const handleSectionClose = (): void => {
+        setActiveSection(null)
+        setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" })
+        setShowPasswords({ current: false, new: false, confirm: false })
+    }
+
+    const logout = (): void => {
+        sessionStorage.removeItem("token")
+        history.push("/login")
+    }
+
+    // Profile Handlers
+    const handleInputChange = (e: InputCustomEvent, field: string): void => {
+        const value = e.detail.value || ""
+        setProfile((prev) => ({ ...prev, [field]: value }))
+    }
+
+    const handleProfileSave = async (): Promise<void> => {
+        setIsLoading(true)
+        try {
+            const profileData = { ...profile, ubicacion: profile.ubicacion || "" }
+            await SettingsService.updateProfileSettings(profileData)
+            await loadSettings()
+            handleSectionClose()
+            displayToast("Perfil actualizado correctamente")
+        } catch (error) {
+            console.error("Error updating profile:", error)
+            displayToast("Error al actualizar el perfil")
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setProfile((prev) => ({ ...prev, avatar: file }))
 
         try {
-            // Actualizamos el estado local primero
-            setProfile(prevProfile => ({
-                ...prevProfile,
-                preferencias: {
-                    ...prevProfile.preferencias,
-                    [key]: newValue
-                }
-            }));
-
-            // Si es el modo oscuro, aplicamos el tema usando nuestra función
-            if (key === 'modo_oscuro') {
-                applyTheme(newValue);
-            }
-
-            // Enviamos el cambio al backend
-            await SettingsService.updatePreference({
-                key: key,
-                value: newValue
-            });
-
+            const profileData = { ...profile, avatar: file, ubicacion: profile.ubicacion || "" }
+            await SettingsService.updateProfileSettings(profileData)
+            await loadSettings()
+            displayToast("Imagen actualizada correctamente")
         } catch (error) {
-            console.error('Error actualizando preferencia:', error);
-            displayToast('Error al actualizar la preferencia');
+            console.error("Error updating avatar:", error)
+            displayToast("Error al actualizar la imagen")
+        }
+    }
 
-            // Revertimos el cambio en caso de error
-            setProfile(prevProfile => ({
-                ...prevProfile,
-                preferencias: {
-                    ...prevProfile.preferencias,
-                    [key]: !newValue
-                }
-            }));
+    // Security Handlers
+    const validatePasswords = (): boolean => {
+        if (!passwordData.currentPassword || !passwordData.newPassword) {
+            displayToast("Todos los campos son obligatorios")
+            return false
+        }
 
-            // Revertimos también el tema
-            if (key === 'modo_oscuro') {
-                applyTheme(!newValue);
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            displayToast("Las contraseñas nuevas no coinciden")
+            return false
+        }
+
+        if (passwordData.newPassword.length < 6) {
+            displayToast("La nueva contraseña debe tener al menos 6 caracteres")
+            return false
+        }
+
+        return true
+    }
+
+    const handlePasswordChange = async (): Promise<void> => {
+        if (!validatePasswords()) return
+
+        setIsLoading(true)
+        try {
+            await SettingsService.updatePassword({
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword,
+            })
+            displayToast("Contraseña actualizada correctamente")
+            handleSectionClose()
+        } catch (error) {
+            console.error("Error updating password:", error)
+            displayToast("Error al actualizar la contraseña")
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const togglePasswordVisibility = (field: "current" | "new" | "confirm"): void => {
+        setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }))
+    }
+
+    // Preference Handlers
+    const handlePreferenceChange = async (e: CustomEvent, key: "modo_oscuro" | "notificaciones"): Promise<void> => {
+        const newValue = e.detail.checked
+        const previousValue = profile.preferencias?.[key]
+
+        // Optimistic update
+        setProfile((prev) => ({
+            ...prev,
+            preferencias: { ...prev.preferencias, [key]: newValue },
+        }))
+
+        if (key === "modo_oscuro") {
+            applyTheme(newValue)
+        }
+
+        try {
+            await SettingsService.updatePreference({ key, value: newValue })
+        } catch (error) {
+            console.error("Error updating preference:", error)
+            displayToast("Error al actualizar la preferencia")
+
+            // Revert changes
+            setProfile((prev) => ({
+                ...prev,
+                preferencias: { ...prev.preferencias, [key]: previousValue },
+            }))
+
+            if (key === "modo_oscuro") {
+                applyTheme(previousValue ?? false)
             }
         }
-    };
+    }
 
+    // Account Management
+    const handleDeleteAccount = async (): Promise<void> => {
+        setIsLoading(true)
+        try {
+            await SettingsService.deleteAccount()
+            displayToast("Cuenta eliminada")
+        } catch (error) {
+            console.error("Error deleting account:", error)
+            displayToast("Error al eliminar la cuenta")
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
+    // Profile Section Component
+    const ProfileSection: React.FC = () => (
+        <IonCard className="profile-section-card">
+            <IonCardHeader>
+                <IonToolbar>
+                    <IonTitle>Editar Perfil</IonTitle>
+                    <IonButtons slot="end">
+                        <IonButton onClick={handleSectionClose} disabled={isLoading}>
+                            <IonIcon icon={closeOutline} />
+                        </IonButton>
+                    </IonButtons>
+                </IonToolbar>
+            </IonCardHeader>
+            <IonCardContent className="profile-form-content">
+                <IonList className="profile-form-list">
+                    <IonItem className="ion-margin-bottom editable-field">
+                        <IonLabel style={{ marginBottom: "15px" }} position="floating">
+                            Nickname
+                        </IonLabel>
+                        <IonInput
+                            value={profile.nickname}
+                            onIonChange={(e) => handleInputChange(e, "nickname")}
+                            disabled={isLoading}
+                        />
+                    </IonItem>
 
-    const ProfileSection: React.FC<SectionProps> = ({ onClose }) => {
-        const handleInputChange = (e: InputCustomEvent, field: keyof ProfileState): void => {
-            const value = e.detail.value || '';
-            setProfile(prevProfile => ({
-                ...prevProfile,
-                [field]: value
-            }));
-        };
+                    <IonItem className="ion-margin-bottom editable-field">
+                        <IonLabel style={{ marginBottom: "15px" }} position="floating">
+                            Ubicación
+                        </IonLabel>
+                        <IonInput
+                            value={profile.ubicacion}
+                            onIonChange={(e) => handleInputChange(e, "ubicacion")}
+                            disabled={isLoading}
+                        />
+                    </IonItem>
 
-        const handleSave = async (): Promise<void> => {
-            try {
-                await SettingsService.updateProfileSettings(profile);
-                await loadSettings();
-                onClose();
-                displayToast('Perfil actualizado correctamente');
-            } catch (error) {
-                console.error('Error al guardar:', error);
-                displayToast('Error al actualizar el perfil');
-            }
-        };
+                    <IonItem className="ion-margin-bottom readonly-field">
+                        <IonLabel style={{ marginBottom: "15px" }} position="floating">
+                            Email
+                        </IonLabel>
+                        <IonInput value={profile.email} readonly type="email" />
+                    </IonItem>
 
-        return (
-            <IonCard className="profile-section-card">
-                <IonCardHeader>
-                    <IonToolbar>
-                        <IonTitle>Editar Perfil</IonTitle>
-                        <IonButtons slot="end">
-                            <IonButton onClick={onClose}>
-                                <IonIcon icon={closeOutline} />
-                            </IonButton>
-                        </IonButtons>
-                    </IonToolbar>
-                </IonCardHeader>
-                <IonCardContent className="profile-form-content">
-                    <IonList className="profile-form-list">
-                        <IonItem className="ion-margin-bottom editable-field">
-                            <IonLabel position="floating">Nickname</IonLabel>
-                            <IonInput
-                                value={profile.nickname}
-                                onIonChange={(e) => handleInputChange(e, 'nickname')}
-                            />
-                        </IonItem>
+                    <IonItem className="ion-margin-bottom readonly-field">
+                        <IonLabel style={{ marginBottom: "15px" }} position="floating">
+                            Premium
+                        </IonLabel>
+                        <IonInput value={profile.premium} readonly />
+                    </IonItem>
 
-                        <IonItem className="ion-margin-bottom readonly-field">
-                            <IonLabel position="floating">Email</IonLabel>
-                            <IonInput
-                                value={profile.email}
-                                readonly
-                                type="email"
-                            />
-                        </IonItem>
+                    <div className="ion-padding-top">
+                        <IonButton
+                            expand="block"
+                            color="primary"
+                            className="ion-margin-top"
+                            onClick={handleProfileSave}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? "Guardando..." : "Guardar cambios"}
+                        </IonButton>
+                    </div>
+                </IonList>
+            </IonCardContent>
+        </IonCard>
+    )
 
-                        <IonItem className="ion-margin-bottom readonly-field">
-                            <IonLabel position="floating">Premium</IonLabel>
-                            <IonInput
-                                value={profile.premium}
-                                readonly
-                            />
-                        </IonItem>
+    // Security Section Component
+    const SecuritySection: React.FC = () => (
+        <IonCard className="profile-section-card">
+            <IonCardHeader>
+                <IonToolbar>
+                    <IonTitle>Editar Contraseñas</IonTitle>
+                    <IonButtons slot="end">
+                        <IonButton onClick={handleSectionClose} disabled={isLoading}>
+                            <IonIcon icon={closeOutline} />
+                        </IonButton>
+                    </IonButtons>
+                </IonToolbar>
+            </IonCardHeader>
+            <IonCardContent className="profile-form-content">
+                <IonList className="profile-form-list">
+                    <IonItem className="ion-margin-bottom">
+                        <IonLabel position="floating">Contraseña Actual</IonLabel>
+                        <IonInput
+                            type={showPasswords.current ? "text" : "password"}
+                            value={passwordData.currentPassword}
+                            onIonChange={(e) =>
+                                setPasswordData((prev) => ({
+                                    ...prev,
+                                    currentPassword: e.detail.value || "",
+                                }))
+                            }
+                            disabled={isLoading}
+                        />
+                        <IonButton slot="end" fill="clear" onClick={() => togglePasswordVisibility("current")} disabled={isLoading}>
+                            <IonIcon icon={showPasswords.current ? eyeOutline : createOutline} />
+                        </IonButton>
+                    </IonItem>
 
-                        <div className="ion-padding-top">
-                            <IonButton
-                                expand="block"
-                                color="primary"
-                                className="ion-margin-top"
-                                onClick={handleSave}
-                            >
-                                Guardar cambios
-                            </IonButton>
-                        </div>
-                    </IonList>
-                </IonCardContent>
-            </IonCard>
-        );
-    };
+                    <IonItem className="ion-margin-bottom">
+                        <IonLabel position="floating">Nueva Contraseña</IonLabel>
+                        <IonInput
+                            type={showPasswords.new ? "text" : "password"}
+                            value={passwordData.newPassword}
+                            onIonChange={(e) =>
+                                setPasswordData((prev) => ({
+                                    ...prev,
+                                    newPassword: e.detail.value || "",
+                                }))
+                            }
+                            disabled={isLoading}
+                        />
+                        <IonButton slot="end" fill="clear" onClick={() => togglePasswordVisibility("new")} disabled={isLoading}>
+                            <IonIcon icon={showPasswords.new ? eyeOutline : createOutline} />
+                        </IonButton>
+                    </IonItem>
 
-    const SecuritySection: React.FC<SectionProps> = ({ onClose }) => {
-        const [showCurrentPassword, setShowCurrentPassword] = useState<boolean>(false);
-        const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
-        const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
-        const [passwordData, setPasswordData] = useState<PasswordState>({
-            currentPassword: '',
-            newPassword: '',
-            confirmPassword: ''
-        });
+                    <IonItem className="ion-margin-bottom">
+                        <IonLabel position="floating">Confirmar Contraseña</IonLabel>
+                        <IonInput
+                            type={showPasswords.confirm ? "text" : "password"}
+                            value={passwordData.confirmPassword}
+                            onIonChange={(e) =>
+                                setPasswordData((prev) => ({
+                                    ...prev,
+                                    confirmPassword: e.detail.value || "",
+                                }))
+                            }
+                            disabled={isLoading}
+                        />
+                        <IonButton slot="end" fill="clear" onClick={() => togglePasswordVisibility("confirm")} disabled={isLoading}>
+                            <IonIcon icon={showPasswords.confirm ? eyeOutline : createOutline} />
+                        </IonButton>
+                    </IonItem>
 
-        const handlePasswordChange = async (): Promise<void> => {
-            try {
-                if (passwordData.newPassword !== passwordData.confirmPassword) {
-                    displayToast('Las contraseñas nuevas no coinciden');
-                    return;
-                }
-
-                if (!passwordData.currentPassword || !passwordData.newPassword) {
-                    displayToast('Todos los campos son obligatorios');
-                    return;
-                }
-
-                await SettingsService.updatePassword({
-                    currentPassword: passwordData.currentPassword,
-                    newPassword: passwordData.newPassword
-                });
-
-                displayToast('Contraseña actualizada correctamente');
-                onClose();
-            } catch (error) {
-                console.error('Error al cambiar la contraseña:', error);
-                displayToast('Error al actualizar la contraseña');
-            }
-        };
-
-        return (
-            <IonCard className="profile-section-card">
-                <IonCardHeader>
-                    <IonToolbar>
-                        <IonTitle>Editar Contraseñas</IonTitle>
-                        <IonButtons slot="end">
-                            <IonButton onClick={onClose}>
-                                <IonIcon icon={closeOutline} />
-                            </IonButton>
-                        </IonButtons>
-                    </IonToolbar>
-                </IonCardHeader>
-                <IonCardContent className="profile-form-content">
-                    <IonList className="profile-form-list">
-                        <IonItem className="ion-margin-bottom">
-                            <IonLabel position="floating">Contraseña Actual</IonLabel>
-                            <IonInput
-                                type={showCurrentPassword ? "text" : "password"}
-                                value={passwordData.currentPassword}
-                                onIonChange={e => setPasswordData({
-                                    ...passwordData,
-                                    currentPassword: e.detail.value || ''
-                                })}
-                            />
-                            <IonButton
-                                slot="end"
-                                fill="clear"
-                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                            >
-                                <IonIcon icon={showCurrentPassword ? eyeOutline : createOutline} />
-                            </IonButton>
-                        </IonItem>
-
-                        <IonItem className="ion-margin-bottom">
-                            <IonLabel position="floating">Nueva Contraseña</IonLabel>
-                            <IonInput
-                                type={showNewPassword ? "text" : "password"}
-                                value={passwordData.newPassword}
-                                onIonChange={e => setPasswordData({
-                                    ...passwordData,
-                                    newPassword: e.detail.value || ''
-                                })}
-                            />
-                            <IonButton
-                                slot="end"
-                                fill="clear"
-                                onClick={() => setShowNewPassword(!showNewPassword)}
-                            >
-                                <IonIcon icon={showNewPassword ? eyeOutline : createOutline} />
-                            </IonButton>
-                        </IonItem>
-
-                        <IonItem className="ion-margin-bottom">
-                            <IonLabel position="floating">Confirmar Contraseña</IonLabel>
-                            <IonInput
-                                type={showConfirmPassword ? "text" : "password"}
-                                value={passwordData.confirmPassword}
-                                onIonChange={e => setPasswordData({
-                                    ...passwordData,
-                                    confirmPassword: e.detail.value || ''
-                                })}
-                            />
-                            <IonButton
-                                slot="end"
-                                fill="clear"
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            >
-                                <IonIcon icon={showConfirmPassword ? eyeOutline : createOutline} />
-                            </IonButton>
-                        </IonItem>
-
-                        <div className="ion-padding-top">
-                            <IonButton
-                                expand="block"
-                                color="primary"
-                                className="ion-margin-top"
-                                onClick={handlePasswordChange}
-                            >
-                                Guardar cambios
-                            </IonButton>
-                        </div>
-                    </IonList>
-                </IonCardContent>
-            </IonCard>
-        );
-    };
+                    <div className="ion-padding-top">
+                        <IonButton
+                            expand="block"
+                            color="primary"
+                            className="ion-margin-top"
+                            onClick={handlePasswordChange}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? "Guardando..." : "Guardar cambios"}
+                        </IonButton>
+                    </div>
+                </IonList>
+            </IonCardContent>
+        </IonCard>
+    )
 
     return (
         <>
             <Navegacion isDesktop={isDesktop} />
 
-            <IonPage id="main-content" className={profile.preferencias?.modo_oscuro ? 'dark-theme' : 'light-theme'}>
+            <IonPage id="main-content" className={profile.preferencias?.modo_oscuro ? "dark-theme" : "light-theme"}>
                 <IonHeader className="ion-no-border">
-                    <IonToolbar className="main-toolbar" style={{ '--background': '4a80e4' }}>
+                    <IonToolbar className="main-toolbar" style={{ "--background": "4a80e4" }}>
                         <IonButtons slot="start">
                             <IonMenuButton>
                                 <IonIcon
                                     icon={menuOutline}
                                     style={{
-                                        color: profile.preferencias?.modo_oscuro ? 'white' : 'black',
-                                        fontSize: '24px'
+                                        color: profile.preferencias?.modo_oscuro ? "white" : "black",
+                                        fontSize: "24px",
                                     }}
                                 />
                             </IonMenuButton>
@@ -573,52 +531,22 @@ const Settings: React.FC = () => {
                 </IonHeader>
 
                 <IonContent className="settings-content">
+                    {/* User Profile Header */}
                     <div className="user-profile-section">
-                        <div className="user-avatar" onClick={() => document.getElementById('fileInput')?.click()}>
-                            <input
-                                type="file"
-                                id="fileInput"
-                                hidden
-                                accept="image/*"
-                                onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                        setProfile(prev => ({
-                                            ...prev,
-                                            avatar: file
-                                        }));
+                        <div className="user-avatar" onClick={() => document.getElementById("fileInput")?.click()}>
+                            <input type="file" id="fileInput" hidden accept="image/*" onChange={handleAvatarChange} />
+                            <img src={getAvatarUrl(profile.avatar) || "/placeholder.svg"} alt="User profile" />
 
-                                        try {
-                                            await SettingsService.updateProfileSettings({
-                                                ...profile,
-                                                avatar: file
-                                            });
-                                            await loadSettings();
-                                            displayToast('Imagen actualizada correctamente');
-                                        } catch (error) {
-                                            console.error('Error al actualizar la imagen:', error);
-                                            displayToast('Error al actualizar la imagen');
-                                        }
-                                    }
-                                }}
-                            />
-
-                            <img src={getAvatarUrl(profile.avatar)} alt="User profile" />
-
-                            <div className={`edit-badge ${profile.preferencias?.modo_oscuro ? '' : 'light-mode-icon'}`}>
-                                <IonIcon icon={camera} />
-                            </div>
                         </div>
-
                         <div className="user-info">
                             <h2>{profile.nickname}</h2>
-                            <p style={{color: "black"}}>{profile.email}</p>
+                            <p style={{ color: "black" }}>{profile.email}</p>
                         </div>
                     </div>
 
-                    {/* Secciones activas */}
-                    {activeSection === 'profile' && <ProfileSection onClose={closeActiveSection} />}
-                    {activeSection === 'security' && <SecuritySection onClose={closeActiveSection} />}
+                    {/* Active Sections */}
+                    {activeSection === "profile" && <ProfileSection />}
+                    {activeSection === "security" && <SecuritySection />}
 
                     {/* Account Settings */}
                     <IonListHeader className="section-header">
@@ -626,7 +554,7 @@ const Settings: React.FC = () => {
                     </IonListHeader>
                     <IonList className="settings-list" lines="full">
                         {accountOptions.map((option, index) => (
-                            <IonItem key={index} button detail onClick={() => openAccountOption(option.action)}>
+                            <IonItem key={index} button detail onClick={() => handleSectionOpen(option.action)} disabled={isLoading}>
                                 <IonIcon icon={option.icon} slot="start" className="settings-icon" />
                                 <IonLabel>{option.label}</IonLabel>
                             </IonItem>
@@ -643,7 +571,8 @@ const Settings: React.FC = () => {
                             <IonLabel>Notificaciones</IonLabel>
                             <IonToggle
                                 checked={profile.preferencias?.notificaciones}
-                                onIonChange={(e) => handlePreferenceChange(e, 'notificaciones')}
+                                onIonChange={(e) => handlePreferenceChange(e, "notificaciones")}
+                                disabled={isLoading}
                             />
                         </IonItem>
 
@@ -652,7 +581,8 @@ const Settings: React.FC = () => {
                             <IonLabel>Modo oscuro</IonLabel>
                             <IonToggle
                                 checked={profile.preferencias?.modo_oscuro}
-                                onIonChange={(e) => handlePreferenceChange(e, 'modo_oscuro')}
+                                onIonChange={(e) => handlePreferenceChange(e, "modo_oscuro")}
+                                disabled={isLoading}
                             />
                         </IonItem>
                     </IonList>
@@ -668,6 +598,7 @@ const Settings: React.FC = () => {
                                 color="light"
                                 className="logout-button"
                                 onClick={() => setShowLogoutAlert(true)}
+                                disabled={isLoading}
                             >
                                 <IonIcon icon={logOutOutline} slot="start" />
                                 Cerrar sesión
@@ -678,6 +609,7 @@ const Settings: React.FC = () => {
                                 color="danger"
                                 className="delete-account-button"
                                 onClick={() => setShowDeleteAccountAlert(true)}
+                                disabled={isLoading}
                             >
                                 <IonIcon icon={trashOutline} slot="start" />
                                 Eliminar cuenta
@@ -696,14 +628,8 @@ const Settings: React.FC = () => {
                         header="Cerrar sesión"
                         message="¿Estás seguro de que deseas cerrar la sesión?"
                         buttons={[
-                            {
-                                text: 'Cancelar',
-                                role: 'cancel'
-                            },
-                            {
-                                text: 'Sí, cerrar sesión',
-                                handler: logout
-                            }
+                            { text: "Cancelar", role: "cancel" },
+                            { text: "Sí, cerrar sesión", handler: logout },
                         ]}
                     />
 
@@ -713,19 +639,12 @@ const Settings: React.FC = () => {
                         header="¡Advertencia!"
                         message="¿Realmente deseas eliminar tu cuenta? Esta acción no se puede deshacer."
                         buttons={[
+                            { text: "Cancelar", role: "cancel" },
                             {
-                                text: 'Cancelar',
-                                role: 'cancel'
+                                text: "Eliminar cuenta",
+                                cssClass: "danger-button",
+                                handler: handleDeleteAccount,
                             },
-                            {
-                                text: 'Eliminar cuenta',
-                                cssClass: 'danger-button',
-                                handler: () => {
-                                    SettingsService.deleteAccount();
-                                    displayToast('Cuenta eliminada');
-                                    history.push('/login');
-                                }
-                            }
                         ]}
                     />
 
@@ -735,7 +654,7 @@ const Settings: React.FC = () => {
                         header="Swapify App"
                         subHeader="Hecho con React e Ionic"
                         message="Desarrollado por Guille, Rafa y Javi 2025©."
-                        buttons={['OK']}
+                        buttons={["OK"]}
                     />
 
                     <IonToast
@@ -745,44 +664,12 @@ const Settings: React.FC = () => {
                         duration={2000}
                         position="bottom"
                         color="dark"
-                        buttons={[
-                            {
-                                icon: closeOutline,
-                                role: 'cancel'
-                            }
-                        ]}
-                    />
-
-                    <IonActionSheet
-                        isOpen={showActionSheet}
-                        onDidDismiss={() => setShowActionSheet(false)}
-                        header={`Opciones de ${actionSheetTitle}`}
-                        buttons={[
-                            {
-                                text: `Ver ${actionSheetTitle}`,
-                                icon: eyeOutline,
-                                handler: () => {
-                                    console.log(`View ${actionSheetTitle}`);
-                                }
-                            },
-                            {
-                                text: `Editar ${actionSheetTitle}`,
-                                icon: createOutline,
-                                handler: () => {
-                                    console.log(`Edit ${actionSheetTitle}`);
-                                }
-                            },
-                            {
-                                text: 'Cancelar',
-                                icon: closeOutline,
-                                role: 'cancel'
-                            }
-                        ]}
+                        buttons={[{ icon: closeOutline, role: "cancel" }]}
                     />
                 </IonContent>
             </IonPage>
         </>
-    );
-};
+    )
+}
 
-export default Settings;
+export default Settings

@@ -80,7 +80,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                             <div className="menu-header">
                                 <div className="menu-title">
                                     <span className="menu-logo">Swapify</span>
-                                    <IonLabel>Menu</IonLabel>
+                                    <img src={"public/Swapify.png"} alt="Swapify" style={{ width: '40px', height: '40px' }}/>
                                 </div>
                             </div>
                         </IonToolbar>
@@ -216,6 +216,14 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                         >
                             <IonIcon icon={mailOutline} />
                             <IonLabel>Chats</IonLabel>
+                        </IonTabButton>
+                        <IonTabButton
+                            tab="notification"
+                            onClick={() => navigateTo('/notification')}
+                            className={`custom-tab-button ${isActive('/chat') ? 'selected' : ''}`}
+                        >
+                            <IonIcon icon={notificationsCircleOutline} />
+                            <IonLabel>notifs</IonLabel>
                         </IonTabButton>
                         <IonTabButton
                             tab="premium"

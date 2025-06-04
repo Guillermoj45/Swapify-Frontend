@@ -131,11 +131,18 @@
     margin-top: 4px;
 }
 
+.ai-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
 .ai-avatar,
 .user-avatar {
     width: 38px;
     height: 38px;
-    background: var(--gradient-primary);
+    background: white;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -261,7 +268,7 @@
     transition: var(--transition-standard);
 }
 
-.send-button {
+.send-button-IA {
     --background: var(--gradient-primary);
     --border-radius: 50%;
     --padding-start: 0;
@@ -269,16 +276,33 @@
     width: 44px;
     height: 44px;
     margin-left: 4px;
-    box-shadow: var(--button-shadow);
-    transition: var(--transition-bounce);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(74, 128, 228, 0.2);
 }
 
-.send-button:hover:not([disabled]) {
+/* Efecto de ondas al hacer hover */
+.send-button-IA::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: all 0.6s ease-out;
+    pointer-events: none;
+}
+
+.send-button-IA:hover:not([disabled]) {
     --background: linear-gradient(135deg, var(--hover-color), var(--accent-color));
     transform: scale(1.05);
 }
 
-.send-button[disabled] {
+.send-button-IA[disabled] {
     --background: var(--card-background);
     opacity: 0.5;
     box-shadow: none;
@@ -526,6 +550,7 @@
 .chat-list {
     padding: 12px 0;
     overflow-y: auto;
+    position: relative;
 }
 
 .chat-item {
@@ -543,7 +568,7 @@
 }
 
 .chat-item.active {
-    background-color: rgba(74, 128, 228, 0.1);
+    background-color: var(--searchbar-bg);
     border-left: 3px solid var(--accent-color);
 }
 
@@ -990,11 +1015,11 @@
 }
 
 /*** EFECTOS ESPECIALES PARA MODO OSCURO ***/
-.dark-theme .send-button {
+.dark-theme .send-button-IA {
     box-shadow: 0 0 15px rgba(74, 128, 228, 0.5);
 }
 
-.dark-theme .send-button:hover:not([disabled]) {
+.dark-theme .send-button-IA:hover:not([disabled]) {
     box-shadow: 0 0 20px rgba(74, 128, 228, 0.7);
 }
 
@@ -1012,7 +1037,7 @@
 }
 
 /*** EFECTOS ESPECIALES PARA MODO CLARO ***/
-.light-theme .send-button:hover:not([disabled]) {
+.light-theme .send-button-IA:hover:not([disabled]) {
     box-shadow: 0 6px 20px rgba(74, 128, 228, 0.4);
 }
 
@@ -1087,11 +1112,6 @@
     position: relative;
 }
 
-/* Estados de carga mejorados */
-.chat-list {
-    position: relative;
-}
-
 /* Refresher personalizado */
 ion-refresher-content {
     --background: var(--ion-background-color);
@@ -1113,11 +1133,19 @@ ion-refresher-content {
 }
 
 .chat-item:hover {
-    background-color: var(--ion-color-light);
+    background-color: var(--searchbar-bg);
 }
 
 .dark-theme .chat-item:hover {
     background-color: var(--ion-color-dark-tint);
+}
+
+.light-theme .chat-list {
+    background-color: var(--background-color);
+}
+
+.light-theme .custom-side-content {
+    background-color: var(--card-background);
 }
 
 /* Indicador visual de conversación activa mejorado */

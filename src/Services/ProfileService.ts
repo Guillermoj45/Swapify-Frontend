@@ -117,6 +117,8 @@ class CacheManager {
 
 export const ProfileService = {
     getProfileInfo: async (): Promise<ProfileDTO> => {
+        console.log('🔍 getProfileInfo llamado desde:\n', new Error().stack);
+
         const cacheKey = 'profile-info';
         const cached = CacheManager.get(cacheKey);
         if (cached) return cached;
