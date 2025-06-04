@@ -439,7 +439,11 @@ export default function ProfilePage() {
                         ) : items.length === 0 ? (
                             <div className="empty-state">
                                 <IonIcon icon={heartOutline} className="empty-icon" />
-                                <h4>No tienes productos guardados</h4>
+                                <h4>
+                                    {!new URLSearchParams(location.search).get("profileId")
+                                        ? "No tienes productos guardados"
+                                        : "En este apartado dentro te tu perfil podrás ver los productos que has guardado de otros usuarios"}
+                                </h4>
                                 <p>Guarda productos que te interesen</p>
                             </div>
                         ) : (
