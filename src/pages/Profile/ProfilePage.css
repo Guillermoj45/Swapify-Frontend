@@ -766,3 +766,14 @@ body {
     }
 }
 
+.delete-icon {
+    color: var(--ion-color-danger);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 8px;
+}
+
+.delete-icon:hover {
+    opacity: 0.8;
+}
+

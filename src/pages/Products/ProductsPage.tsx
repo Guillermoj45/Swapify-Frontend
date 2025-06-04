@@ -36,10 +36,9 @@ import {
     closeOutline,
 } from "ionicons/icons"
 import "./ProductsPage.css"
-import { useHistory, useLocation } from "react-router-dom"
+import { useHistory} from "react-router-dom"
 import { ProductService, type RecommendDTO, type Product } from "../../Services/ProductService"
 import type { SaveProductDTO } from "../../Services/ProfileService"
-//import SwitchDark from "../../components/UIVerseSwitch/SwitchDark";
 import { Settings as SettingsService } from "../../Services/SettingsService"
 import { driver } from "driver.js"
 import "driver.js/dist/driver.css"
@@ -47,9 +46,7 @@ import useAuthRedirect from "../../Services/useAuthRedirect"
 import { menuController } from "@ionic/core"
 import { ProfileService } from "../../Services/ProfileService"
 
-interface CustomLocationState {
-    token?: string
-}
+
 
 // Define types for slider items
 interface SliderItem {
@@ -260,7 +257,6 @@ const ProductsPage = () => {
     }
 
     const history = useHistory()
-    const location = useLocation<CustomLocationState>()
 
     const [searchText, setSearchText] = useState("")
     const [searchResults, setSearchResults] = useState<Product[]>([])
@@ -638,7 +634,7 @@ const ProductsPage = () => {
                 }
 
                 if (sessionStorage.getItem("token")) {
-                    const [profileData, tutorialHecho] = await Promise.all([
+                    const [profileData] = await Promise.all([
                         ProfileService.getProfileInfo(),
                         ProfileService.getTutorialHecho(),
                     ])
@@ -803,35 +799,7 @@ const ProductsPage = () => {
         }
     }, [])
 
-    interface PreferenceUpdate {
-        key: "modo_oscuro" | "notificaciones"
-        value: boolean
-    }
 
-    const toggleDarkMode = async () => {
-        const newDarkMode = !darkMode
-        setDarkMode(newDarkMode)
-
-        // Actualizar el sessionStorage
-        sessionStorage.setItem("modoOscuroClaro", newDarkMode.toString())
-
-        // Aplicar las clases de tema al body
-        document.body.classList.remove("light-theme", "dark-theme")
-        document.body.classList.add(newDarkMode ? "dark-theme" : "light-theme")
-
-        try {
-            // Crear el objeto PreferenceUpdate
-            const preferenceUpdate: PreferenceUpdate = {
-                key: "modo_oscuro",
-                value: newDarkMode,
-            }
-
-            // Actualizar en el backend
-            await SettingsService.updatePreference(preferenceUpdate)
-        } catch (error) {
-            console.error("Error al actualizar modo oscuro:", error)
-        }
-    }
 
     // Slider items
     const sliderItems: SliderItem[] = [
@@ -1322,7 +1290,6 @@ const ProductsPage = () => {
                             </div>
 
                             <div className="filter-content">
-                                {/* Ordenar por */}
                                 <div className="filter-section">
                                     <h4>Ordenar por</h4>
                                     <div className="filter-options">
@@ -1332,7 +1299,7 @@ const ProductsPage = () => {
                                                 name="sortBy"
                                                 value="none"
                                                 checked={tempFilterOptions.sortBy === "none"}
-                                                onChange={(e) => setTempFilterOptions({ ...tempFilterOptions, sortBy: e.target.value as any })}
+                                                onChange={(e) => setTempFilterOptions({ ...tempFilterOptions, sortBy: e.target.value as "none" | "points_desc" | "points_asc" | "date_desc" })}
                                             />
                                             <span>Sin ordenar</span>
                                         </label>
@@ -1342,7 +1309,7 @@ const ProductsPage = () => {
                                                 name="sortBy"
                                                 value="points_desc"
                                                 checked={tempFilterOptions.sortBy === "points_desc"}
-                                                onChange={(e) => setTempFilterOptions({ ...tempFilterOptions, sortBy: e.target.value as any })}
+                                                onChange={(e) => setTempFilterOptions({ ...tempFilterOptions, sortBy: e.target.value as "none" | "points_desc" | "points_asc" | "date_desc" })}
                                             />
                                             <span>Más puntos primero</span>
                                         </label>
@@ -1352,7 +1319,7 @@ const ProductsPage = () => {
                                                 name="sortBy"
                                                 value="points_asc"
                                                 checked={tempFilterOptions.sortBy === "points_asc"}
-                                                onChange={(e) => setTempFilterOptions({ ...tempFilterOptions, sortBy: e.target.value as any })}
+                                                onChange={(e) => setTempFilterOptions({ ...tempFilterOptions, sortBy: e.target.value as "none" | "points_desc" | "points_asc" | "date_desc" })}
                                             />
                                             <span>Menos puntos primero</span>
                                         </label>
@@ -1362,7 +1329,7 @@ const ProductsPage = () => {
                                                 name="sortBy"
                                                 value="date_desc"
                                                 checked={tempFilterOptions.sortBy === "date_desc"}
-                                                onChange={(e) => setTempFilterOptions({ ...tempFilterOptions, sortBy: e.target.value as any })}
+                                                onChange={(e) => setTempFilterOptions({ ...tempFilterOptions, sortBy: e.target.value as "none" | "points_desc" | "points_asc" | "date_desc" })}
                                             />
                                             <span>Más recientes</span>
                                         </label>
@@ -1568,9 +1535,9 @@ const ProductsPage = () => {
                         // Show message when there are no results
                         <div className="no-results">
                             {searchText ? (
-                                <p>No products found matching "{searchText}"</p>
+                                <p>Ningun  producto corresponde a:  "{searchText}"</p>
                             ) : (
-                                <p>No products found in the selected categories</p>
+                                <p>No hay ningún producto en las categorías seleccionadas</p>
                             )}
                             <IonButton
                                 onClick={() => {

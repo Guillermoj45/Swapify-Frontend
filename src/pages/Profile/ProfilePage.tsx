@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useHistory } from "react-router-dom"
 
 import {
@@ -22,6 +21,8 @@ import {
     IonSegmentButton,
     IonThumbnail,
     IonToolbar,
+    IonAlert,
+    IonToast,
 } from "@ionic/react"
 
 import {
@@ -33,27 +34,35 @@ import {
     cameraOutline,
     locationOutline,
     checkmarkCircleOutline,
+    trashOutline,
 } from "ionicons/icons"
 
 import ProfileService, { type ProfileDTO, type ProductDTO } from "../../Services/ProfileService"
-import {Product, ProductService} from "../../Services/ProductService"
+import { type Product, ProductService } from "../../Services/ProductService"
 import "./ProfilePage.css"
 import useAuthRedirect from "../../Services/useAuthRedirect"
 
 export default function ProfilePage() {
     const history = useHistory()
-
     useAuthRedirect()
 
     const [loading, setLoading] = useState(true)
     const [loadingSaved, setLoadingSaved] = useState(false)
+    const [deletingProductId, setDeletingProductId] = useState<string | null>(null)
     const [profileData, setProfileData] = useState<ProfileDTO | null>(null)
-    const [userProducts, setUserProducts] = useState<Product[]>([]) // Changed type to Product[]
+    const [userProducts, setUserProducts] = useState<Product[]>([])
     const [savedProducts, setSavedProducts] = useState<ProductDTO[]>([])
     const [showAllProducts, setShowAllProducts] = useState(false)
     const [showAllSavedProducts, setShowAllSavedProducts] = useState(false)
     const [activeTab, setActiveTab] = useState("reseñas")
     const [bannerImage, setBannerImage] = useState<string>("")
+
+    // Alert and Toast states
+    const [showDeleteAlert, setShowDeleteAlert] = useState(false)
+    const [productToDelete, setProductToDelete] = useState<string | null>(null)
+    const [showToast, setShowToast] = useState(false)
+    const [toastMessage, setToastMessage] = useState("")
+    const [toastColor, setToastColor] = useState<"success" | "danger">("success")
 
     const [userInfo, setUserInfo] = useState({
         name: "",
@@ -70,15 +79,92 @@ export default function ProfilePage() {
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    // Effects
+    // Memoized delete function to prevent multiple calls
+    const borrarProducto = useCallback(
+        async (productId: string) => {
+            if (deletingProductId) {
+                console.log("Delete already in progress, ignoring...")
+                return
+            }
 
+            try {
+                setDeletingProductId(productId)
+                console.log("Starting delete for product:", productId)
+
+                const result = await ProductService.borrarProducto(productId)
+
+                if (result.success) {
+                    // Immediately update local state
+                    setUserProducts((prevProducts) => {
+                        const updatedProducts = prevProducts.filter((product) => product.id !== productId)
+                        console.log("Updated products after deletion:", updatedProducts.length)
+                        return updatedProducts
+                    })
+
+                    // Update item count
+                    setUserInfo((prev) => ({
+                        ...prev,
+                        itemsForSale: prev.itemsForSale - 1,
+                    }))
+
+                    // Show success message
+                    setToastMessage(result.message)
+                    setToastColor("success")
+                    setShowToast(true)
+
+                    console.log("Product deleted successfully from UI")
+                } else {
+                    throw new Error(result.message)
+                }
+            } catch (error) {
+                console.error("Error al borrar el producto:", error)
+                setToastMessage(error instanceof Error ? error.message : "Error al eliminar el producto")
+                setToastColor("danger")
+                setShowToast(true)
+            } finally {
+                setDeletingProductId(null)
+                setShowDeleteAlert(false)
+                setProductToDelete(null)
+            }
+        },
+        [deletingProductId],
+    )
+
+    // Handle delete confirmation
+    const handleDeleteClick = (productId: string, event: React.MouseEvent) => {
+        event.stopPropagation()
+        setProductToDelete(productId)
+        setShowDeleteAlert(true)
+    }
+
+    const confirmDelete = () => {
+        if (productToDelete) {
+            borrarProducto(productToDelete)
+        }
+    }
+
+    // Load user products with better error handling
+    const loadUserProducts = useCallback(async (forceRefresh = false) => {
+        try {
+            console.log("Loading user products, forceRefresh:", forceRefresh)
+            const products = await ProductService.getUserProducts(true, forceRefresh)
+            setUserProducts(products)
+            setUserInfo((prev) => ({
+                ...prev,
+                itemsForSale: products.length,
+            }))
+            console.log("Loaded products:", products.length)
+        } catch (error) {
+            console.error("Error loading user products:", error)
+        }
+    }, [])
+
+    // Effects
     useEffect(() => {
-        // Listen for favorites updates from other pages
         const handleFavoritesUpdate = (event: CustomEvent) => {
             const { action, productId } = event.detail
 
             if (activeTab === "deseados") {
-                // Refresh saved products immediately when favorites are updated
                 const refreshSavedProducts = async () => {
                     try {
                         setLoadingSaved(true)
@@ -90,30 +176,24 @@ export default function ProfilePage() {
                         setLoadingSaved(false)
                     }
                 }
-
                 refreshSavedProducts()
             }
         }
 
-        // Add event listener for favorites updates
         window.addEventListener("favoritesUpdated", handleFavoritesUpdate as EventListener)
-
         return () => {
             window.removeEventListener("favoritesUpdated", handleFavoritesUpdate as EventListener)
         }
     }, [activeTab])
 
-    // Enhanced useEffect for deseados tab with better performance
     useEffect(() => {
         if (activeTab === "deseados") {
             const loadSaved = async () => {
-                // Only show loading if we don't have data yet
                 if (savedProducts.length === 0) {
                     setLoadingSaved(true)
                 }
 
                 try {
-                    // Always force refresh when switching to this tab for fresh data
                     const saved = await ProfileService.getSavedProducts(true)
                     setSavedProducts(saved)
                     setShowAllSavedProducts(false)
@@ -126,7 +206,6 @@ export default function ProfilePage() {
 
             loadSaved()
 
-            // Subscribe to cache changes for real-time updates
             const unsubscribe = ProfileService.subscribeSavedProducts((newData: ProductDTO[]) => {
                 if (newData && Array.isArray(newData)) {
                     setSavedProducts(newData)
@@ -149,7 +228,6 @@ export default function ProfilePage() {
 
             try {
                 if (profileId) {
-                    // Cargar perfil del vendedor
                     const profileInfo = await ProfileService.getProfileByIdAlternative(profileId)
                     setProfileData(profileInfo)
                     setBannerImage(profileInfo.banner)
@@ -159,19 +237,16 @@ export default function ProfilePage() {
                         name: profileInfo.nickname || "Vendedor",
                     }))
                 } else {
-                    // Cargar perfil del usuario autenticado
                     const profileInfo = await ProfileService.getProfileInfo()
                     setProfileData(profileInfo)
                     setBannerImage(profileInfo.banner)
 
-                    // Use ProductService instead of ProfileService for user products
-                    const products = await ProductService.getUserProducts(true) // Only get active products
-                    setUserProducts(products)
+                    // Load user products
+                    await loadUserProducts(true)
 
                     setUserInfo((prev) => ({
                         ...prev,
                         name: profileInfo.nickname || "Usuario",
-                        itemsForSale: products.length,
                     }))
                 }
             } catch (error) {
@@ -183,68 +258,7 @@ export default function ProfilePage() {
         }
 
         checkAuth()
-    }, [location.search, history])
-
-    useEffect(() => {
-        if (activeTab === "deseados") {
-            const loadSaved = async () => {
-                // Only show loading if we don't have data yet
-                if (savedProducts.length === 0) {
-                    setLoadingSaved(true)
-                }
-
-                try {
-                    // Use forceRefresh only if we suspect data might be stale
-                    const shouldForceRefresh = savedProducts.length === 0
-                    const saved = await ProfileService.getSavedProducts(shouldForceRefresh)
-
-                    setSavedProducts(saved)
-                    setShowAllSavedProducts(false)
-                } catch (error) {
-                    console.error("Error loading saved products:", error)
-                } finally {
-                    setLoadingSaved(false)
-                }
-            }
-
-            loadSaved()
-        }
-    }, [activeTab])
-
-    useEffect(() => {
-        if (activeTab === "deseados") {
-            // Set up a more intelligent refresh interval
-            const refreshInterval = setInterval(async () => {
-                try {
-                    // Only refresh if the page is visible to avoid unnecessary API calls
-                    if (!document.hidden) {
-                        const saved = await ProfileService.getSavedProducts(true)
-                        setSavedProducts(saved)
-                    }
-                } catch (error) {
-                    console.error("Error refreshing saved products:", error)
-                }
-            }, 60000) // Increased to 60 seconds for better performance
-
-            return () => clearInterval(refreshInterval)
-        }
-    }, [activeTab])
-
-    useEffect(() => {
-        const handleVisibilityChange = () => {
-            if (!document.hidden && activeTab === "deseados") {
-                // Page became visible, refresh saved products
-                ProfileService.getSavedProducts(true)
-                    .then((saved) => {
-                        setSavedProducts(saved)
-                    })
-                    .catch(console.error)
-            }
-        }
-
-        document.addEventListener("visibilitychange", handleVisibilityChange)
-        return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
-    }, [activeTab])
+    }, [location.search, history, loadUserProducts])
 
     useEffect(() => {
         const isDark = sessionStorage.getItem("modoOscuroClaro") === "true"
@@ -255,12 +269,9 @@ export default function ProfilePage() {
 
     useEffect(() => {
         applyTheme()
-
-        // Agregar un observador para cambios en sessionStorage
         const handleStorageChange = () => {
             applyTheme()
         }
-
         window.addEventListener("storage", handleStorageChange)
         return () => window.removeEventListener("storage", handleStorageChange)
     }, [])
@@ -291,12 +302,10 @@ export default function ProfilePage() {
         if (!file) return
 
         try {
-            // Mostrar preview local
             const reader = new FileReader()
             reader.onloadend = () => setBannerImage(reader.result as string)
             reader.readAsDataURL(file)
 
-            // Subir a servidor
             const result = await ProfileService.updateBanner(file)
 
             if (result.success) {
@@ -304,7 +313,6 @@ export default function ProfilePage() {
             }
         } catch (error) {
             console.error("Error al subir la imagen:", error)
-            // Aquí podrías mostrar un mensaje de error al usuario
         }
     }
 
@@ -364,12 +372,21 @@ export default function ProfilePage() {
                             {cat.name}
                           </span>
                                                 ))}
-                                                {product.categories.length > 2 && (
-                                                    <span className="more-tags">+{product.categories.length - 2}</span>
-                                                )}
                                             </div>
                                         )}
                                     </div>
+                                    {!new URLSearchParams(location.search).get("profileId") && (
+                                        <IonIcon
+                                            icon={trashOutline}
+                                            slot="end"
+                                            className={`delete-icon ${deletingProductId === product.id ? "deleting" : ""}`}
+                                            onClick={(e) => handleDeleteClick(product.id, e)}
+                                            style={{
+                                                opacity: deletingProductId === product.id ? 0.5 : 1,
+                                                pointerEvents: deletingProductId ? "none" : "auto",
+                                            }}
+                                        />
+                                    )}
                                 </IonItem>
                             ))
                         )}
@@ -517,8 +534,41 @@ export default function ProfilePage() {
                 <IonLoading
                     isOpen={loading}
                     message="Cargando perfil..."
-                    spinner="crescent" // Cambia el spinner a uno más moderno
+                    spinner="crescent"
                     cssClass="custom-loading-spinner"
+                />
+
+                {/* Delete Confirmation Alert */}
+                <IonAlert
+                    isOpen={showDeleteAlert}
+                    onDidDismiss={() => {
+                        setShowDeleteAlert(false)
+                        setProductToDelete(null)
+                    }}
+                    header="Confirmar eliminación"
+                    message="¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer."
+                    buttons={[
+                        {
+                            text: "Cancelar",
+                            role: "cancel",
+                            cssClass: "secondary",
+                        },
+                        {
+                            text: "Eliminar",
+                            cssClass: "danger",
+                            handler: confirmDelete,
+                        },
+                    ]}
+                />
+
+                {/* Toast for feedback */}
+                <IonToast
+                    isOpen={showToast}
+                    onDidDismiss={() => setShowToast(false)}
+                    message={toastMessage}
+                    duration={3000}
+                    color={toastColor}
+                    position="top"
                 />
 
                 <div
@@ -621,8 +671,8 @@ export default function ProfilePage() {
                         <div className="tab-content-container">{renderTabContent()}</div>
                     </div>
                 </section>
-                <br/>
-                <br/>
+                <br />
+                <br />
             </IonContent>
         </IonPage>
     )

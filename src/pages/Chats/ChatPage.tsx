@@ -722,20 +722,29 @@ const ChatPage: React.FC = () => {
                 await Promise.allSettled(loadPromises)
                 console.log("Carga de nombres de productos completada")
             }
-        } catch (error: any) {
-            console.error("Error al cargar chats:", error)
+        } catch (error: unknown) {
+            // Crear un tipo para la estructura esperada del error de la API
+            interface ApiError {
+                response?: {
+                    status?: number
+                }
+                message?: string
+            }
 
-            if (error?.response?.status === 401 || error?.response?.status === 403) {
+            // Comprobar si el error tiene la estructura esperada
+            const apiError = error as ApiError
+
+            if (apiError?.response?.status === 401 || apiError?.response?.status === 403) {
                 setError("Sesión expirada. Por favor, inicia sesión nuevamente.")
-            } else if (error?.response?.status === 500) {
+            } else if (apiError?.response?.status === 500) {
                 setError("Error del servidor. Inténtalo más tarde.")
-            } else if (error?.message?.includes("Network Error")) {
+            } else if (apiError?.message?.includes("Network Error")) {
                 setError("Error de conexión. Verifica tu conexión a internet.")
             } else {
                 setError("Error al cargar los chats. Inténtalo de nuevo.")
             }
 
-            if (error?.response?.status !== 401 && error?.response?.status !== 403) {
+            if (apiError?.response?.status !== 401 && apiError?.response?.status !== 403) {
                 setChats([])
             }
         } finally {
@@ -756,12 +765,11 @@ const ChatPage: React.FC = () => {
     }, [chats, searchTerm])
 
     // Función para manejar errores en suscripciones
-    const handleSubscriptionError = useCallback((error: any) => {
+    const handleSubscriptionError = useCallback((error: unknown) => {
         console.error("Error en suscripción:", error)
         setError("Error en la conexión del chat. Intentando reconectar...")
     }, [])
 
-    // Función para conectar al WebSocket
     const connectToWebSocket = useCallback(async () => {
         if (isConnecting || isConnected) return
 
@@ -796,14 +804,16 @@ const ChatPage: React.FC = () => {
                             }
                         }, 3000)
                     }
-                },
+                }
             )
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("❌ Error al conectar WebSocket:", error)
             setIsConnected(false)
             setIsConnecting(false)
 
-            if (error?.message?.includes("autenticación")) {
+            const errorMessage = error instanceof Error ? error.message : String(error)
+
+            if (errorMessage.includes("autenticación")) {
                 setError("Error de autenticación. Por favor, inicia sesión nuevamente.")
             } else {
                 setError("No se pudo conectar al servicio de chat.")
@@ -1269,60 +1279,68 @@ const ChatPage: React.FC = () => {
         )
     }
 
-    const handleProductsSelected = (products: Product[]) => {
-        setSelectedProducts(products)
+    const handleProductsSelected = async (products: Product[]) => {
+            try {
+                setSelectedProducts(products)
 
-        // For each selected product, create a message
-        products.forEach((product) => {
-            // Create a special product message
-            const productMessageContent = JSON.stringify({
-                type: "product",
-                productId: product.id,
-                productName: product.name,
-                productPoints: product.points,
-                productImage: product.imagenes && product.imagenes.length > 0 ? product.imagenes[0] : null,
-            })
+                const sendProductMessage = async (product: Product) => {
+                    if (!activeChat) return
 
-            // Send the product message
-            if (activeChat) {
-                const tempId = `temp-product-${Date.now()}-${Math.random()}`
+                    const productMessageContent = JSON.stringify({
+                        type: "product",
+                        productId: product.id,
+                        productName: product.name,
+                        productPoints: product.points,
+                        productImage: product.imagenes?.[0] ?? null,
+                    })
 
-                // Create temporary message
-                const newMessage: Message = {
-                    id: tempId,
-                    content: productMessageContent,
-                    sender: "user",
-                    timestamp: new Date(),
-                    read: false,
-                    delivered: false,
-                    status: "sending",
-                    isTemporary: true,
-                }
+                    const tempId = `temp-product-${Date.now()}-${Math.random()}`
+                    const newMessage: Message = {
+                        id: tempId,
+                        content: productMessageContent,
+                        sender: "user",
+                        timestamp: new Date(),
+                        read: false,
+                        delivered: false,
+                        status: "sending",
+                        isTemporary: true,
+                    }
 
-                // Add to messages
-                setMessages((prev) => [...prev, newMessage])
-                updateLastMessage(activeChat.id, `Producto: ${product.name}`, new Date())
+                    setMessages(prev => [...prev, newMessage])
+                    updateLastMessage(activeChat.id, `Producto: ${product.name}`, new Date())
 
-                // Send via chat service
-                if (!activeChat.isTemporaryChat) {
-                    chatService
-                        .sendMessage(activeChat.idProduct, activeChat.idProfileProduct, activeChat.idProfile, productMessageContent)
-                        .then(() => {
-                            // Update message status
-                            setMessages((prevMessages) =>
-                                prevMessages.map((msg) =>
-                                    msg.id === tempId ? { ...msg, status: "sent", delivered: true, isTemporary: false } : msg,
-                                ),
+                    if (!activeChat.isTemporaryChat) {
+                        try {
+                            await chatService.sendMessage(
+                                activeChat.idProduct,
+                                activeChat.idProfileProduct,
+                                activeChat.idProfile,
+                                productMessageContent
                             )
-                        })
-                        .catch((error) => {
-                            console.error("Error sending product message:", error)
-                            // Handle error
-                        })
+
+                            setMessages(prevMessages =>
+                                prevMessages.map(msg =>
+                                    msg.id === tempId
+                                        ? { ...msg, status: "sent", delivered: true, isTemporary: false }
+                                        : msg
+                                )
+                            )
+                        } catch (error: unknown) {
+                            console.error("Error al enviar mensaje de producto:", error)
+                            setError("No se pudo enviar el producto al chat.")
+
+                            // Eliminar mensaje temporal en caso de error
+                            setMessages(prev => prev.filter(msg => msg.id !== tempId))
+                        }
+                    }
                 }
+
+                await Promise.all(products.map(sendProductMessage))
+            } catch (error: unknown) {
+                console.error("Error al procesar productos seleccionados:", error)
+                setError("Error al procesar los productos seleccionados.")
             }
-        })
-    }
+        }
 
     // Modify the renderMessageContent function to handle product messages
     // Add this function after handleProductsSelected
@@ -1341,7 +1359,7 @@ const ChatPage: React.FC = () => {
                         createdAt: "",
                         updatedAt: "",
                         imagenes: productData.productImage ? [productData.productImage] : [],
-                        profile: { id: "", nickname: "", avatar: "", banAt: false, premium: "", newUser: false },
+                        profile: { id: "", nickname: "", avatar: "", banAt: false, premium: "", ubicacion: "" ,newUser: false },
                         categories: [],
                     }
 

@@ -189,9 +189,9 @@ const ProductDetailPage: React.FC = () => {
             setToastMessage("¡Enlace copiado al portapapeles!")
             setToastColor("success")
             setShowToast(true)
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Error al compartir el producto:", err)
-            setToastMessage(`Error al compartir: ${err.message || "Error desconocido"}`)
+            setToastMessage(`Error al compartir"}`)
             setToastColor("danger")
             setShowToast(true)
         } finally {

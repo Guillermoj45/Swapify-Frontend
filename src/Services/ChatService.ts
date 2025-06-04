@@ -353,88 +353,88 @@ class ChatService {
      * Suscribe a los mensajes de un chat específico con validación
      */
     subscribeToChat(
-        idProduct: string,
-        idProfileProduct: string,
-        idProfile: string,
-        onMessage: MessageCallback,
-        onError?: ErrorCallback,
-    ): string {
-        console.log("🔔 Intentando suscribirse al chat:", { idProduct, idProfileProduct, idProfile })
+                    idProduct: string,
+                    idProfileProduct: string,
+                    idProfile: string,
+                    onMessage: MessageCallback,
+                    onError?: ErrorCallback,
+                ): string {
+                    console.log("🔔 Intentando suscribirse al chat:", { idProduct, idProfileProduct, idProfile })
 
-        // Validar parámetros
-        if (!this.validateChatParams(idProduct, idProfileProduct, idProfile)) {
-            const error = new Error("Parámetros de chat inválidos - contienen undefined o están vacíos")
-            onError?.(error)
-            throw error
-        }
+                    if (!this.validateChatParams(idProduct, idProfileProduct, idProfile)) {
+                        const error = new Error("Parámetros de chat inválidos - contienen undefined o están vacíos")
+                        onError?.(error)
+                        throw error
+                    }
 
-        if (!this.isConnected || !this.stompClient) {
-            // Guardar suscripción pendiente para cuando se conecte
-            const subscriptionKey = `${idProduct}-${idProfileProduct}-${idProfile}`
-            this.pendingSubscriptions.set(subscriptionKey, {
-                idProduct,
-                idProfileProduct,
-                idProfile,
-                onMessage,
-                onError,
-            })
-
-            const error = new Error("WebSocket no está conectado - suscripción guardada como pendiente")
-            console.warn("⚠️", error.message)
-            onError?.(error)
-            throw error
-        }
-
-        const destination = `/topic/messages/${idProduct}/${idProfileProduct}/${idProfile}`
-        const subscriptionKey = `${idProduct}-${idProfileProduct}-${idProfile}`
-
-        // Cancelar suscripción anterior si existe
-        if (this.subscriptions.has(subscriptionKey)) {
-            try {
-                this.subscriptions.get(subscriptionKey).unsubscribe()
-                console.log(`🗑️ Cancelada suscripción anterior: ${subscriptionKey}`)
-            } catch (error) {
-                console.warn("Error al cancelar suscripción anterior:", error)
-            }
-        }
-
-        try {
-            const subscription = this.stompClient.subscribe(
-                destination,
-                (message) => {
-                    try {
-                        const messageData: MensajeRecibeDTO = JSON.parse(message.body)
-                        console.log("📨 Mensaje recibido por WebSocket:", messageData)
-
-                        // DEBUGGING: Verificar qué campos tiene el mensaje
-                        console.log("🔍 Campos del mensaje recibido:", {
-                            hasProfileProductSender: "profileProductSender" in messageData,
-                            profileProductSender: messageData.profileProductSender,
-                            senderNickname: messageData.senderNickname,
-                            userName: messageData.userName,
-                            allFields: Object.keys(messageData),
+                    if (!this.isConnected || !this.stompClient) {
+                        const subscriptionKey = `${idProduct}-${idProfileProduct}-${idProfile}`
+                        this.pendingSubscriptions.set(subscriptionKey, {
+                            idProduct,
+                            idProfileProduct,
+                            idProfile,
+                            onMessage,
+                            onError,
                         })
 
-                        onMessage(messageData)
-                    } catch (error) {
-                        console.error("Error al parsear mensaje:", error)
+                        const error = new Error("WebSocket no está conectado - suscripción guardada como pendiente")
+                        console.warn("⚠️", error.message)
                         onError?.(error)
+                        throw error
                     }
-                },
-                {
-                    // Solo incluir Authorization si está disponible
-                    ...(this.getAuthToken() && { Authorization: this.getAuthToken() }),
-                },
-            )
 
-            this.subscriptions.set(subscriptionKey, subscription)
-            console.log(`✅ Suscrito exitosamente a: ${destination}`)
-            return subscriptionKey
-        } catch (error) {
-            console.error("❌ Error al crear suscripción:", error)
-            throw error
-        }
-    }
+                    const destination = `/topic/messages/${idProduct}/${idProfileProduct}/${idProfile}`
+                    const subscriptionKey = `${idProduct}-${idProfileProduct}-${idProfile}`
+
+                    if (this.subscriptions.has(subscriptionKey)) {
+                        try {
+                            this.subscriptions.get(subscriptionKey).unsubscribe()
+                            console.log(`🗑️ Cancelada suscripción anterior: ${subscriptionKey}`)
+                        } catch (error) {
+                            console.warn("Error al cancelar suscripción anterior:", error)
+                        }
+                    }
+
+                    try {
+                        const token = this.getAuthToken()
+                        const headers: { [key: string]: string } = {}
+
+                        if (token) {
+                            headers.Authorization = token
+                        }
+
+                        const subscription = this.stompClient.subscribe(
+                            destination,
+                            (message) => {
+                                try {
+                                    const messageData: MensajeRecibeDTO = JSON.parse(message.body)
+                                    console.log("📨 Mensaje recibido por WebSocket:", messageData)
+
+                                    console.log("🔍 Campos del mensaje recibido:", {
+                                        hasProfileProductSender: "profileProductSender" in messageData,
+                                        profileProductSender: messageData.profileProductSender,
+                                        senderNickname: messageData.senderNickname,
+                                        userName: messageData.userName,
+                                        allFields: Object.keys(messageData),
+                                    })
+
+                                    onMessage(messageData)
+                                } catch (error) {
+                                    console.error("Error al parsear mensaje:", error)
+                                    onError?.(error)
+                                }
+                            },
+                            headers
+                        )
+
+                        this.subscriptions.set(subscriptionKey, subscription)
+                        console.log(`✅ Suscrito exitosamente a: ${destination}`)
+                        return subscriptionKey
+                    } catch (error) {
+                        console.error("❌ Error al crear suscripción:", error)
+                        throw error
+                    }
+                }
 
     /**
      * Cancela la suscripción a un chat específico

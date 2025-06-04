@@ -88,13 +88,6 @@ const Notifications: React.FC = () => {
         }
     });
 
-    // Función para cambiar el tema manualmente (opcional)
-    const toggleTheme = () => {
-        const newDarkMode = !darkMode;
-        setDarkMode(newDarkMode);
-        applyTheme(newDarkMode);
-        sessionStorage.setItem("modoOscuroClaro", newDarkMode.toString());
-    };
 
     const deleteNotification = async (notification: MensajeRecibeDTO) => {
         try {

@@ -94,7 +94,7 @@ const SuscripcionPage: React.FC = () => {
     }, []);
 
     // Al inicio, obtener el estado inicial del modo oscuro
-    const [isDarkMode, setDarkMode] = useState(() => {
+    const [isDarkMode] = useState(() => {
         const storedMode = sessionStorage.getItem('modoOscuroClaro');
         return storedMode === 'true';
     });

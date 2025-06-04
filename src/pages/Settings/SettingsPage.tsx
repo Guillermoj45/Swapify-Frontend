@@ -122,13 +122,6 @@ const Settings: React.FC = () => {
         sessionStorage.setItem("modoOscuroClaro", isDark.toString())
     }, [])
 
-    const initializeTheme = useCallback((): boolean => {
-        const savedDarkMode = sessionStorage.getItem("modoOscuroClaro")
-        const isDark = savedDarkMode === "true"
-        applyTheme(isDark)
-        return isDark
-    }, [applyTheme])
-
     // Settings Management
     const loadSettings = useCallback(async (): Promise<void> => {
         if (!sessionStorage.getItem("token")) {

@@ -20,7 +20,6 @@ import {
     IonText,
     IonButtons,
     IonMenuButton,
-    IonBadge,
     useIonToast,
     IonInput,
     IonRefresher,
@@ -178,8 +177,8 @@ const AIChatPage: React.FC = () => {
 
     // ==================== REFS ====================
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const contentRef = useRef<IonContent>(null)
-    const textareaRef = useRef<IonTextarea>(null)
+    const contentRef = useRef<HTMLIonContentElement>(null)
+    const textareaRef = useRef<HTMLIonTextareaElement>(null)
     const sidebarRef = useRef<HTMLDivElement>(null)
 
     // ==================== HOOKS ====================
