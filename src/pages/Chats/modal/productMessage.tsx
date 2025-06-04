@@ -17,7 +17,7 @@ export const ProductMessage: React.FC<ProductMessageProps> = ({ product }) => {
                     <img
                         src={
                             product.imagenes && product.imagenes.length > 0
-                                ? product.imagenes[0]
+                                ? cloudinaryImage(product.imagenes[0])
                                 : ""
                         }
                         alt={product.name}
