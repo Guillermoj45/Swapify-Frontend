@@ -4,8 +4,6 @@ import type { TradeoDTO, TradeOffer } from "../types/TradeTypes"
 import API from "./api"
 
 export class TradeService {
-    private static baseUrl = API
-
     static async createTrade(tradeoDTO: TradeoDTO): Promise<void> {
         const token = localStorage.getItem("token") || sessionStorage.getItem("token")
 
@@ -15,37 +13,35 @@ export class TradeService {
 
         console.log("🚀 Enviando intercambio al backend:", tradeoDTO)
 
-        const response = await fetch(`${this.baseUrl}/trade`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(tradeoDTO),
-        })
+        try {
+            const response = await API.post("/trade", tradeoDTO, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            })
 
-        console.log("📡 Respuesta del backend:", {
-            status: response.status,
-            statusText: response.statusText,
-        })
+            console.log("📡 Respuesta del backend:", response.status, response.statusText)
+            console.log("✅ Intercambio creado exitosamente en el backend")
+        } catch (error: any) {
+            console.error("❌ Error al crear el intercambio:", error)
 
-        if (!response.ok) {
-            const errorText = await response.text()
-            console.error("❌ Error response:", errorText)
+            if (error.response) {
+                const { status, data } = error.response
 
-            if (response.status === 401) {
-                throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente.")
-            } else if (response.status === 400) {
-                throw new Error("Datos de intercambio inválidos. Verifica los productos seleccionados.")
-            } else if (response.status === 403) {
-                throw new Error("No tienes permisos para realizar este intercambio.")
+                if (status === 401) {
+                    throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente.")
+                } else if (status === 400) {
+                    throw new Error("Datos de intercambio inválidos. Verifica los productos seleccionados.")
+                } else if (status === 403) {
+                    throw new Error("No tienes permisos para realizar este intercambio.")
+                } else {
+                    throw new Error(`Error al crear el intercambio: ${data || "Error desconocido"}`)
+                }
             } else {
-                throw new Error(`Error al crear el intercambio: ${errorText}`)
+                throw new Error("Error de red o inesperado al crear el intercambio")
             }
         }
-
-        // El backend no retorna nada en caso de éxito
-        console.log("✅ Intercambio creado exitosamente en el backend")
     }
 
     static async getTradeHistory(userId: string): Promise<TradeOffer[]> {
@@ -55,18 +51,17 @@ export class TradeService {
             throw new Error("No se encontró token de autenticación")
         }
 
-        // Nota: Este endpoint no está implementado en el backend proporcionado
-        // Se puede implementar más tarde si es necesario
-        const response = await fetch(`${this.baseUrl}/trades/history/${userId}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
+        try {
+            const response = await API.get(`/trades/history/${userId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
 
-        if (!response.ok) {
+            return response.data
+        } catch (error: any) {
+            console.error("❌ Error al obtener el historial de intercambios:", error)
             throw new Error("Error al obtener el historial de intercambios")
         }
-
-        return response.json()
     }
 }

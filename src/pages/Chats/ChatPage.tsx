@@ -1682,6 +1682,8 @@ const ChatPage: React.FC = () => {
                 onConfirmTrade={confirmTrade}
                 traderProductIds={tradeState.currentOffer?.traderProducts || []}
                 nonTraderProductIds={tradeState.currentOffer?.nonTraderProducts || []}
+                traderUserId={tradeState.currentOffer?.traderUserId || ""}
+                nonTraderUserId={tradeState.currentOffer?.nonTraderUserId || ""}
                 traderNickname={isCurrentUserProductOwner ? currentUserProfile?.nickname || "Tú" : "Vendedor"}
                 nonTraderNickname={isCurrentUserProductOwner ? "Comprador" : currentUserProfile?.nickname || "Tú"}
                 currentUserIsTrader={isCurrentUserProductOwner}

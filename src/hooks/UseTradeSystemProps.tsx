@@ -26,33 +26,51 @@ export const useTradeSystem = ({
         userRole: isCurrentUserProductOwner ? "trader" : "non_trader",
     })
 
+    // CORREGIDO: Estructura más clara para las selecciones
     const [temporarySelections, setTemporarySelections] = useState<{
-        trader: string[]
-        non_trader: string[]
+        productOwnerProducts: string[] // Productos del dueño del producto del chat
+        otherUserProducts: string[] // Productos del otro usuario
+        productOwnerUserId: string | null // ID del dueño del producto
+        otherUserId: string | null // ID del otro usuario
     }>({
-        trader: [],
-        non_trader: [],
+        productOwnerProducts: [],
+        otherUserProducts: [],
+        productOwnerUserId: null,
+        otherUserId: null,
     })
 
-    // Manejar selección de productos por el usuario actual
+    // CORREGIDO: Manejar selección de productos con lógica simplificada
     const handleProductsSelected = useCallback(
         (products: Product[]): TradeSelectionMessage => {
             const productIds = products.map((p) => p.id)
 
-            // Determinar el rol correcto basado en si es dueño del producto
-            const userRole = isCurrentUserProductOwner ? "trader" : "non_trader"
+            console.log(`📦 Usuario actual seleccionó productos:`, {
+                userId: currentUserId,
+                isProductOwner: isCurrentUserProductOwner,
+                productIds,
+            })
 
-            setTemporarySelections((prev) => ({
-                ...prev,
-                [userRole]: productIds,
-            }))
+            // Actualizar selecciones basado en si es dueño del producto o no
+            setTemporarySelections((prev) => {
+                if (isCurrentUserProductOwner) {
+                    return {
+                        ...prev,
+                        productOwnerProducts: productIds,
+                        productOwnerUserId: currentUserId,
+                    }
+                } else {
+                    return {
+                        ...prev,
+                        otherUserProducts: productIds,
+                        otherUserId: currentUserId,
+                    }
+                }
+            })
 
-            console.log(`📦 Usuario ${userRole} seleccionó productos:`, productIds)
-
-            // Crear mensaje especial indicando que el usuario ha seleccionado productos
+            // Crear mensaje de selección
             const tradeMessage: TradeSelectionMessage = {
                 type: "trade_selection",
-                userRole,
+                userRole: isCurrentUserProductOwner ? "trader" : "non_trader",
                 productIds,
                 userId: currentUserId,
                 chatId,
@@ -64,44 +82,55 @@ export const useTradeSystem = ({
         [isCurrentUserProductOwner, currentUserId, chatId, productDelChat],
     )
 
-    // Procesar mensaje de selección de productos recibido
+    // CORREGIDO: Procesar mensaje de selección con lógica mejorada
     const processTradeMessage = useCallback(
         (messageContent: string): boolean => {
             try {
                 const tradeData = JSON.parse(messageContent)
 
                 if (tradeData.type === "trade_selection") {
-                    // Determinar el rol del usuario que envió el mensaje
-                    const senderRole = tradeData.userRole
-
-                    // Si el mensaje es del usuario actual, ignorarlo
+                    // Ignorar mensajes propios
                     if (tradeData.userId === currentUserId) {
                         console.log("⚠️ Ignorando mensaje de intercambio propio")
                         return true
                     }
 
-                    // Actualizar las selecciones temporales con los productos del otro usuario
+                    console.log("📨 Procesando selección del otro usuario:", tradeData)
+
+                    // Determinar si el remitente es el dueño del producto
+                    const senderIsProductOwner = tradeData.userRole === "trader"
+
                     setTemporarySelections((prev) => {
-                        const newSelections = {
-                            ...prev,
-                            [senderRole]: tradeData.productIds,
+                        const newSelections = { ...prev }
+
+                        if (senderIsProductOwner) {
+                            // El remitente es el dueño del producto
+                            newSelections.productOwnerProducts = tradeData.productIds
+                            newSelections.productOwnerUserId = tradeData.userId
+                        } else {
+                            // El remitente NO es el dueño del producto
+                            newSelections.otherUserProducts = tradeData.productIds
+                            newSelections.otherUserId = tradeData.userId
                         }
 
                         console.log("📦 Selecciones actualizadas:", newSelections)
 
                         // Verificar si ambos usuarios han seleccionado productos
-                        if (newSelections.trader.length > 0 && newSelections.non_trader.length > 0) {
+                        const bothUsersReady =
+                            newSelections.productOwnerProducts.length > 0 && newSelections.otherUserProducts.length > 0
+
+                        if (bothUsersReady) {
                             console.log("✅ Ambos usuarios han seleccionado productos")
 
-                            // Crear oferta de intercambio
+                            // Crear oferta de intercambio con datos correctos
                             const tradeOffer: TradeOffer = {
                                 id: `trade-${chatId}-${Date.now()}`,
                                 chatId,
                                 productDelChat,
-                                traderProducts: newSelections.trader,
-                                nonTraderProducts: newSelections.non_trader,
-                                traderUserId: isCurrentUserProductOwner ? currentUserId : tradeData.userId,
-                                nonTraderUserId: isCurrentUserProductOwner ? tradeData.userId : currentUserId,
+                                traderProducts: newSelections.productOwnerProducts,
+                                nonTraderProducts: newSelections.otherUserProducts,
+                                traderUserId: newSelections.productOwnerUserId || "",
+                                nonTraderUserId: newSelections.otherUserId || "",
                                 acceptedByProfile1: false,
                                 acceptedByProfile2: false,
                                 completed: false,
@@ -115,14 +144,15 @@ export const useTradeSystem = ({
                             setTradeState((prev) => ({
                                 ...prev,
                                 currentOffer: tradeOffer,
-                                isTradeModalOpen: isCurrentUserProductOwner, // Solo mostrar al trader (dueño del producto)
+                                // Solo mostrar modal al dueño del producto (trader)
+                                isTradeModalOpen: isCurrentUserProductOwner,
                             }))
                         }
 
                         return newSelections
                     })
 
-                    return true // Indica que el mensaje fue procesado como mensaje de intercambio
+                    return true
                 }
             } catch (error) {
                 console.error("Error al procesar mensaje de intercambio:", error)
@@ -134,7 +164,7 @@ export const useTradeSystem = ({
         [chatId, isCurrentUserProductOwner, currentUserId, productDelChat],
     )
 
-    // Confirmar intercambio (solo para el trader - dueño del producto)
+    // CORREGIDO: Confirmar intercambio con validaciones mejoradas
     const confirmTrade = useCallback(async () => {
         if (!tradeState.currentOffer || !isCurrentUserProductOwner) {
             console.warn("No se puede confirmar: no hay oferta o el usuario no es el dueño del producto")
@@ -142,6 +172,8 @@ export const useTradeSystem = ({
         }
 
         try {
+            console.log("🚀 Confirmando intercambio:", tradeState.currentOffer)
+
             // Preparar el DTO para el backend
             const tradeoDTO: TradeoDTO = {
                 productUserTrader: tradeState.currentOffer.traderProducts,
@@ -151,15 +183,15 @@ export const useTradeSystem = ({
                 usuarioNotTrader: tradeState.currentOffer.nonTraderUserId,
             }
 
-            console.log("🚀 Enviando intercambio al backend:", tradeoDTO)
+            console.log("📡 Enviando al backend:", tradeoDTO)
 
             // Enviar al backend
             await TradeService.createTrade(tradeoDTO)
 
-            // Actualizar el estado local
+            // Actualizar estado local
             const confirmedOffer: TradeOffer = {
                 ...tradeState.currentOffer,
-                acceptedByProfile1: true, // El trader confirma
+                acceptedByProfile1: true,
                 status: "confirmed",
                 updatedAt: new Date(),
             }
@@ -170,8 +202,13 @@ export const useTradeSystem = ({
                 isTradeModalOpen: false,
             }))
 
-            // Limpiar selecciones temporales
-            setTemporarySelections({ trader: [], non_trader: [] })
+            // Limpiar selecciones
+            setTemporarySelections({
+                productOwnerProducts: [],
+                otherUserProducts: [],
+                productOwnerUserId: null,
+                otherUserId: null,
+            })
 
             // Notificar al componente padre
             onTradeConfirmed(confirmedOffer)
@@ -179,7 +216,7 @@ export const useTradeSystem = ({
             console.log("✅ Intercambio confirmado exitosamente")
         } catch (error) {
             console.error("❌ Error al confirmar intercambio:", error)
-            throw error // Re-lanzar para que el componente padre pueda manejarlo
+            throw error
         }
     }, [tradeState.currentOffer, isCurrentUserProductOwner, onTradeConfirmed])
 
@@ -198,7 +235,12 @@ export const useTradeSystem = ({
             isTradeModalOpen: false,
             userRole: isCurrentUserProductOwner ? "trader" : "non_trader",
         })
-        setTemporarySelections({ trader: [], non_trader: [] })
+        setTemporarySelections({
+            productOwnerProducts: [],
+            otherUserProducts: [],
+            productOwnerUserId: null,
+            otherUserId: null,
+        })
     }, [isCurrentUserProductOwner])
 
     return {
