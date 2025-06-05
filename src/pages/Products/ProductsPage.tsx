@@ -725,7 +725,8 @@ const ProductsPage = () => {
         let userResults: UserProfile[] = []
         try {
             const users = await UserService.searchUsers(normalizedQuery)
-            userResults = users.slice(0, 2) // Limit to 2 users
+            console.log(users)
+            userResults = users.slice(0, 2)
         } catch (error) {
             console.error("Error searching users:", error)
         }
@@ -1310,7 +1311,7 @@ const ProductsPage = () => {
                                 <>
                                     <IonChip className="seller-chip custom-chip" outline={true}>
                                         <span className="seller-name">{product.profile.nickname}</span>
-                                        {product.profile.newUser && <span className="new-user-badge">New</span>}
+                                        {product.newUser && <span className="new-user-badge">New</span>}
                                     </IonChip>
                                     <IonChip className="date-chip custom-chip" outline={true}>
                                         <span>{formatDate(product.createdAt)}</span>

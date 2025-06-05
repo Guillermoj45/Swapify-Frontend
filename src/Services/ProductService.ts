@@ -24,6 +24,7 @@ export interface Product {
     createdAt: string
     updatedAt: string
     imagenes: string[]
+    newUser: boolean
     profile: Profile
     categories: Category[]
 }
