@@ -754,6 +754,7 @@ const AIChatPage: React.FC = () => {
 
                 if (response.product) {
                     setProductId(response.product.id)
+                    setIsButtonSelected(false)
                 }
 
                 const lastAIMessage = response.lastMessage
@@ -769,7 +770,7 @@ const AIChatPage: React.FC = () => {
                     timestamp: new Date(lastAIMessage.createdAt || response.createdAt || Date.now()),
                     images: messageImages.length > 0 ? messageImages : undefined,
                 }
-
+                console.log("AI response message created:", aiResponse)
                 if (response && response.product) {
                     setProductInfo({
                         name: response.product.name || "Producto detectado",
