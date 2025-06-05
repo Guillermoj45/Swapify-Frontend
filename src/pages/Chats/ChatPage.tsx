@@ -72,7 +72,17 @@ interface TemporaryChatData {
     sellerNickname?: string
 }
 
-const ChatPage: React.FC = () => {
+// NUEVA INTERFAZ para las props
+interface ChatPageProps {
+    updateNavigationState?: (state: {
+        showChatPanel?: boolean
+        isWritingMode?: boolean
+        showProductSidebar?: boolean
+        showChatSidebar?: boolean
+    }) => void
+}
+
+const ChatPage: React.FC<ChatPageProps> = ({ updateNavigationState }) => {
     useAuthRedirect()
     const location = useLocation()
 
@@ -136,10 +146,45 @@ const ChatPage: React.FC = () => {
     // Estado para modal de productos
     const [showProductModal, setShowProductModal] = useState(false)
 
+    // NUEVO: Estado para detectar si el input está enfocado
+    const [isInputFocused, setIsInputFocused] = useState(false)
+
     // Determinar si el usuario actual es el dueño del producto
     const isCurrentUserProductOwner = useMemo(() => {
         return activeChat?.idProfileProduct === currentUserProfile?.id
     }, [activeChat?.idProfileProduct, currentUserProfile?.id])
+
+    // NUEVO: useEffect para comunicar cambios de estado a la navegación
+    useEffect(() => {
+        if (updateNavigationState) {
+            // Usar una función para evitar dependencias circulares
+            const newState = {
+                showChatPanel,
+                showChatSidebar: !showChatPanel, // Sidebar visible cuando no está en panel de chat
+                isWritingMode: isInputFocused || isKeyboardVisible,
+                showProductSidebar: false, // ChatPage no tiene sidebar de productos
+            }
+
+            updateNavigationState(newState)
+        }
+    }, [showChatPanel, isInputFocused, isKeyboardVisible, updateNavigationState])
+
+    // NUEVO: Detectar cuando el input está enfocado
+    useEffect(() => {
+        const handleInputFocus = () => setIsInputFocused(true)
+        const handleInputBlur = () => setIsInputFocused(false)
+
+        if (inputRef.current) {
+            const inputElement = inputRef.current
+            inputElement.addEventListener("focus", handleInputFocus)
+            inputElement.addEventListener("blur", handleInputBlur)
+
+            return () => {
+                inputElement.removeEventListener("focus", handleInputFocus)
+                inputElement.removeEventListener("blur", handleInputBlur)
+            }
+        }
+    }, [activeChat]) // Re-ejecutar cuando cambie el chat activo
 
     // FUNCIÓN NUEVA: Refrescar chats
     const refreshChats = useCallback(async () => {
@@ -720,21 +765,19 @@ const ChatPage: React.FC = () => {
                             activeChat.idProduct,
                             activeChat.idProfileProduct,
                             activeChat.idProfile,
-                            JSON.stringify(tradeMessage)
-                        );
+                            JSON.stringify(tradeMessage),
+                        )
 
-                        setMessages(prevMessages =>
-                            prevMessages.map(msg =>
-                                msg.id === tempId
-                                    ? { ...msg, status: "sent", delivered: true, isTemporary: false }
-                                    : msg
-                            )
-                        );
+                        setMessages((prevMessages) =>
+                            prevMessages.map((msg) =>
+                                msg.id === tempId ? { ...msg, status: "sent", delivered: true, isTemporary: false } : msg,
+                            ),
+                        )
 
-                        console.log("✅ Mensaje de intercambio enviado");
+                        console.log("✅ Mensaje de intercambio enviado")
                     } catch (error) {
-                        console.error("❌ Error al enviar mensaje de intercambio:", error);
-                        setError("Error al enviar la propuesta de intercambio");
+                        console.error("❌ Error al enviar mensaje de intercambio:", error)
+                        setError("Error al enviar la propuesta de intercambio")
                     }
                 }
             }
