@@ -715,25 +715,27 @@ const ChatPage: React.FC = () => {
 
                 // Enviar mensaje de intercambio (JSON) al backend
                 if (!activeChat.isTemporaryChat) {
-                    chatService
-                        .sendMessage(
+                    try {
+                        chatService.sendMessage(
                             activeChat.idProduct,
                             activeChat.idProfileProduct,
                             activeChat.idProfile,
-                            JSON.stringify(tradeMessage),
-                        )
-                        .then(() => {
-                            setMessages((prevMessages) =>
-                                prevMessages.map((msg) =>
-                                    msg.id === tempId ? { ...msg, status: "sent", delivered: true, isTemporary: false } : msg,
-                                ),
+                            JSON.stringify(tradeMessage)
+                        );
+
+                        setMessages(prevMessages =>
+                            prevMessages.map(msg =>
+                                msg.id === tempId
+                                    ? { ...msg, status: "sent", delivered: true, isTemporary: false }
+                                    : msg
                             )
-                            console.log("✅ Mensaje de intercambio enviado")
-                        })
-                        .catch((error) => {
-                            console.error("❌ Error al enviar mensaje de intercambio:", error)
-                            setError("Error al enviar la propuesta de intercambio")
-                        })
+                        );
+
+                        console.log("✅ Mensaje de intercambio enviado");
+                    } catch (error) {
+                        console.error("❌ Error al enviar mensaje de intercambio:", error);
+                        setError("Error al enviar la propuesta de intercambio");
+                    }
                 }
             }
 
@@ -1145,7 +1147,7 @@ const ChatPage: React.FC = () => {
                         createdAt: "",
                         updatedAt: "",
                         imagenes: productData.productImage ? [productData.productImage] : [],
-                        profile: { id: "", nickname: "", avatar: "", banAt: false, premium: "", newUser: false },
+                        profile: { id: "", nickname: "", avatar: "", banAt: false, premium: "", newUser: false, ubicacion: "" },
                         categories: [],
                     }
 

@@ -16,12 +16,10 @@ import {
     IonSpinner,
     IonChip,
     IonLabel,
-    IonPopover,
     IonText,
     IonButtons,
     IonMenuButton,
     useIonToast,
-    IonInput,
     IonRefresher,
     IonRefresherContent,
     type RefresherEventDetail,
@@ -151,6 +149,7 @@ const AIChatPage: React.FC = () => {
     const [hasMoreConversations, setHasMoreConversations] = useState<boolean>(true)
     const [loadingError, setLoadingError] = useState<string | null>(null)
     const [isButtonSelected, setIsButtonSelected] = useState<boolean>(false)
+    const [showNewChatAlert, setShowNewChatAlert] = useState<boolean>(false);
 
     // Product state
     const [showProductSidebar, setShowProductSidebar] = useState<boolean>(false)

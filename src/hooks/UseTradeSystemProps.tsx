@@ -6,11 +6,13 @@ import type { Product } from "../Services/ProductService"
 import { TradeService } from "../Services/TradeService"
 
 interface UseTradeSystemProps {
-    chatId: string
-    currentUserId: string
-    isCurrentUserProductOwner: boolean
-    productDelChat: string // ID del producto principal del chat
-    onTradeConfirmed: (tradeOffer: TradeOffer) => void
+    chatId: string;
+    currentUserId: string;
+    isCurrentUserProductOwner: boolean;
+    productDelChat: string;
+    onRefreshChats: () => Promise<void>;
+    onTradeConfirmed: (tradeOffer: any) => Promise<void>;
+    onModalsClose: () => void;
 }
 
 export const useTradeSystem = ({
