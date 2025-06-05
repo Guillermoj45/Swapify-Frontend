@@ -1628,7 +1628,7 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.section-title {
+.section-title-profile {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -1638,7 +1638,7 @@ body {
     margin: 0 0 var(--spacing-lg);
 }
 
-.section-title ion-icon {
+.section-title-profile ion-icon {
     color: var(--on-surface-variant);
     font-size: 20px;
 }

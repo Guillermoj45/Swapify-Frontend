@@ -105,7 +105,7 @@
 
 /* TabBar - Modo oscuro */
 .dark-mode .custom-tab-bar {
-    --background: var(--background-primary);
+    --background: linear-gradient(135deg, #1a1c2a, #232536);
     --border-color: var(--border-primary);
     backdrop-filter: blur(20px);
     box-shadow: 0 -4px 20px var(--shadow-primary);
@@ -232,7 +232,7 @@
 
 /* TabBar - Modo claro */
 .light-mode .custom-tab-bar {
-    --background: var(--background-primary);
+    --background: white;
     --border-color: var(--border-primary);
     backdrop-filter: blur(20px);
     box-shadow: 0 -4px 25px var(--shadow-primary);

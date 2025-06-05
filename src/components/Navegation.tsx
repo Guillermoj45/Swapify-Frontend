@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import {
     IonMenu,
@@ -21,37 +21,148 @@ import {
     personCircle,
     logOut,
     settings,
-    shieldCheckmark, notificationsCircleOutline,
-
+    shieldCheckmark,
+    notificationsCircleOutline,
 } from 'ionicons/icons';
 import './Navegation.css';
 
 const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDesktop, isChatView = false }) => {
-    // Estado para el modo oscuro/claro - ahora con funcionalidad de toggle
-    const [darkMode, setDarkMode] = useState(() => {
-        const saved = localStorage.getItem('darkMode');
-        return saved !== null ? JSON.parse(saved) : true;
-    });
-
     const history = useHistory();
     const location = useLocation();
+
+    // Estado para el modo oscuro/claro - sincronizado con Settings
+    const [darkMode, setDarkMode] = useState<boolean>(false);
+    // Estado adicional para forzar re-renderización
+    const [themeKey, setThemeKey] = useState<number>(0);
 
     // Siempre mostramos el menú hamburguesa para todas las pantallas en vistas de chat
     // En otras vistas, seguimos la lógica original basada en el tamaño de pantalla
     const showHamburgerMenu = isDesktop || isChatView;
     const showTabBar = !isDesktop && !isChatView;
 
-    // Efecto para aplicar la clase al body para tema claro/oscuro global
+    // Función para aplicar el tema - similar a Settings
+    const applyTheme = useCallback((isDark: boolean): void => {
+        const body = document.body;
+        const root = document.documentElement;
+
+        // Remover clases existentes
+        body.classList.remove("dark-theme", "light-theme", "dark-mode", "light-mode");
+
+        // Aplicar nuevas clases
+        body.classList.add(isDark ? "dark-theme" : "light-theme");
+        body.classList.add(isDark ? "dark-mode" : "light-mode");
+
+        // Establecer atributo en root para CSS variables
+        root.setAttribute("data-theme", isDark ? "dark" : "light");
+
+        // Guardar en sessionStorage para mantener consistencia con Settings
+        sessionStorage.setItem("modoOscuroClaro", isDark.toString());
+
+        // También mantener localStorage para compatibilidad hacia atrás
+        localStorage.setItem('darkMode', JSON.stringify(isDark));
+
+        // Forzar re-renderización del componente
+        setThemeKey(prev => prev + 1);
+    }, []);
+
+    // Inicializar tema al cargar el componente
     useEffect(() => {
-        document.body.classList.toggle('light-mode', !darkMode);
-        document.body.classList.toggle('dark-mode', darkMode);
-        localStorage.setItem('darkMode', JSON.stringify(darkMode));
-        return () => {
-            document.body.classList.remove('light-mode', 'dark-mode');
+        const initializeTheme = () => {
+            // Priorizar sessionStorage (usado por Settings) sobre localStorage
+            const sessionSaved = sessionStorage.getItem("modoOscuroClaro");
+            const localSaved = localStorage.getItem('darkMode');
+
+            let initialDarkMode = false;
+
+            if (sessionSaved !== null) {
+                initialDarkMode = sessionSaved === "true";
+            } else if (localSaved !== null) {
+                initialDarkMode = JSON.parse(localSaved);
+            }
+
+            setDarkMode(initialDarkMode);
+            applyTheme(initialDarkMode);
         };
-    }, [darkMode]);
 
+        initializeTheme();
+    }, [applyTheme]);
 
+    // Escuchar cambios en sessionStorage para sincronizar con Settings
+    useEffect(() => {
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === "modoOscuroClaro" && e.newValue !== null) {
+                const newDarkMode = e.newValue === "true";
+                setDarkMode(newDarkMode);
+                applyTheme(newDarkMode);
+            }
+        };
+
+        // También escuchar eventos personalizados para cambios en tiempo real
+        const handleThemeChange = (e: CustomEvent) => {
+            const newDarkMode = e.detail.darkMode;
+            setDarkMode(newDarkMode);
+            applyTheme(newDarkMode);
+        };
+
+        // Función para detectar cambios en tiempo real usando MutationObserver
+        const observeThemeChanges = () => {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'attributes' &&
+                        (mutation.attributeName === 'class' || mutation.attributeName === 'data-theme')) {
+
+                        const body = document.body;
+                        const isDark = body.classList.contains('dark-mode') || body.classList.contains('dark-theme');
+                        const currentTheme = sessionStorage.getItem("modoOscuroClaro");
+
+                        if (currentTheme !== null) {
+                            const storedDarkMode = currentTheme === "true";
+                            if (storedDarkMode !== darkMode) {
+                                setDarkMode(storedDarkMode);
+                                setThemeKey(prev => prev + 1);
+                            }
+                        }
+                    }
+                });
+            });
+
+            observer.observe(document.body, {
+                attributes: true,
+                attributeFilter: ['class', 'data-theme']
+            });
+
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['data-theme']
+            });
+
+            return observer;
+        };
+
+        // Polling para detectar cambios de tema cada 500ms
+        const themePolling = setInterval(() => {
+            const currentTheme = sessionStorage.getItem("modoOscuroClaro");
+            if (currentTheme !== null) {
+                const storedDarkMode = currentTheme === "true";
+                if (storedDarkMode !== darkMode) {
+                    setDarkMode(storedDarkMode);
+                    setThemeKey(prev => prev + 1);
+                }
+            }
+        }, 500);
+
+        const observer = observeThemeChanges();
+
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('themeChange' as any, handleThemeChange);
+
+        return () => {
+            clearInterval(themePolling);
+            observer.disconnect();
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('themeChange' as any, handleThemeChange);
+        };
+    }, [applyTheme, darkMode]);
 
     // Función para manejar la navegación con un enfoque más directo
     const navigateTo = (path: string) => {
@@ -65,16 +176,34 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
         }
     };
 
-    // Verificar si una ruta está activa (ahora con comparación insensible a mayúsculas/minúsculas)
+    // Verificar si una ruta está activa
     const isActive = (path: string) => {
         return location.pathname.toLowerCase() === path.toLowerCase();
     };
 
+    // Función para limpiar sesión (similar a Settings)
+    const handleLogout = () => {
+        // Limpiar tokens y datos de sesión
+        sessionStorage.removeItem("token");
+        localStorage.removeItem("token");
+
+        // Navegar a login
+        navigateTo('/login');
+    };
+
     return (
-        <div className={`navegacion-container ${darkMode ? 'dark-mode' : 'light-mode'}`}>
-            {/* Menú hamburguesa (siempre en vistas de chat, o cuando es escritorio en otras vistas) */}
+        <div
+            key={`navigation-${themeKey}-${darkMode}`}
+            className={`navegacion-container ${darkMode ? 'dark-mode' : 'light-mode'} ${darkMode ? 'dark-theme' : 'light-theme'}`}
+            data-theme={darkMode ? 'dark' : 'light'}
+        >
+            {/* Menú hamburguesa */}
             {showHamburgerMenu && (
-                <IonMenu contentId="main-content" side="start">
+                <IonMenu
+                    contentId="main-content"
+                    side="start"
+                    key={`menu-${themeKey}-${darkMode}`}
+                >
                     <IonHeader>
                         <IonToolbar>
                             <div className="menu-header">
@@ -133,7 +262,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                             </IonMenuToggle>
                             <IonMenuToggle autoHide={false}>
                                 <IonItem
-                                    className={`menu-item chat ${isActive('/notification') ? 'active' : ''}`}
+                                    className={`menu-item notification ${isActive('/notification') ? 'active' : ''}`}
                                     button
                                     onClick={() => (window.location.href = '/notification')}
                                     detail={false}
@@ -157,7 +286,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 <IonItem
                                     className={`menu-item ajustes ${isActive('/settings') ? 'active' : ''}`}
                                     button
-                                    onClick={() => ( window.location.href ='/settings')}
+                                    onClick={() => (window.location.href = '/settings')}
                                     detail={false}
                                 >
                                     <IonIcon slot="start" icon={settings} />
@@ -169,7 +298,7 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                                 <IonItem
                                     className="menu-item cerrar_sesion logout"
                                     button
-                                    onClick={() => navigateTo('/login')}
+                                    onClick={handleLogout}
                                     detail={false}
                                 >
                                     <IonIcon slot="start" icon={logOut} />
@@ -183,7 +312,10 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
 
             {/* TabBar for mobile devices */}
             {showTabBar && (
-                <IonFooter className="ion-no-border navigation-footer">
+                <IonFooter
+                    className="ion-no-border navigation-footer"
+                    key={`footer-${themeKey}-${darkMode}`}
+                >
                     <IonTabBar slot="bottom" className="custom-tab-bar">
                         <IonTabButton
                             tab="products"
@@ -220,10 +352,10 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
                         <IonTabButton
                             tab="notification"
                             onClick={() => navigateTo('/notification')}
-                            className={`custom-tab-button ${isActive('/chat') ? 'selected' : ''}`}
+                            className={`custom-tab-button ${isActive('/notification') ? 'selected' : ''}`}
                         >
                             <IonIcon icon={notificationsCircleOutline} />
-                            <IonLabel>notifs</IonLabel>
+                            <IonLabel>Notifs</IonLabel>
                         </IonTabButton>
                         <IonTabButton
                             tab="premium"
