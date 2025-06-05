@@ -208,7 +208,7 @@ class ChatService {
                 console.log("Iniciando conexión WebSocket...")
 
                 // Crear la conexión SockJS con configuración mejorada
-                const socket = new SockJS(`${import.meta.env.VITE_API_WEB_SOCKET_URL || "http://localhost:8080"}/ws`, null, {
+                const socket = new SockJS(`${import.meta.env.VITE_API_URLws || "http://localhost:8080"}/ws`, null, {
                     timeout: 30000, // 30 segundos de timeout
                 })
 
