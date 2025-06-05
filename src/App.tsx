@@ -76,10 +76,10 @@ const App: React.FC = () => {
 
                             // Verificar condiciones antes de mostrar el Toast
                             if (
-                                !isChatView &&
+                                !window.location.pathname.includes('/chat') &&
                                 transformedNotification.content !== `${transformedNotification.senderName} te ha escrito:` &&
                                 transformedNotification.content.trim() !== ''
-                            )  {
+                            ) {
                                 setToastMessage(`${transformedNotification.senderName}: ${transformedNotification.content}`);
                                 setShowToast(true);
                             }

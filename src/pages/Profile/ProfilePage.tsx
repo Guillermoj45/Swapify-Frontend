@@ -436,8 +436,11 @@ export default function ProfilePage() {
                         ) : items.length === 0 ? (
                             <div className="empty-state">
                                 <IonIcon icon={cartOutline} className="empty-icon" />
-                                <h4>No tienes productos en venta</h4>
-                                <p>Comienza a vender tus artículos</p>
+                                <h4>
+                                    {!new URLSearchParams(location.search).get("profileId")
+                                        ? "No tienes productos guardados"
+                                        : "En este apartado dentro te tu perfil podrás ver los productos que has guardado de otros usuarios"}
+                                </h4>
                             </div>
                         ) : (
                             items.map((product) => (
@@ -511,14 +514,16 @@ export default function ProfilePage() {
                                 <div className="loading-spinner"></div>
                                 <p>Cargando productos guardados...</p>
                             </div>
+                        ) : new URLSearchParams(location.search).get("profileId") ? (
+                            <div className="empty-state">
+                                <IonIcon icon={heartOutline} className="empty-icon" />
+                                <h4>Los productos deseados son privados</h4>
+                                <p>Solo puedes ver tus propios productos deseados</p>
+                            </div>
                         ) : items.length === 0 ? (
                             <div className="empty-state">
                                 <IonIcon icon={heartOutline} className="empty-icon" />
-                                <h4>
-                                    {!new URLSearchParams(location.search).get("profileId")
-                                        ? "No tienes productos guardados"
-                                        : "En este apartado dentro te tu perfil podrás ver los productos que has guardado de otros usuarios"}
-                                </h4>
+                                <h4>No tienes productos guardados</h4>
                                 <p>Guarda productos que te interesen</p>
                             </div>
                         ) : (
@@ -543,8 +548,8 @@ export default function ProfilePage() {
                                             <div className="category-tags">
                                                 {product.categories.slice(0, 2).map((cat, idx) => (
                                                     <span key={idx} className="category-tag">
-                            {cat.name}
-                          </span>
+                                            {cat.name}
+                                        </span>
                                                 ))}
                                             </div>
                                         )}
@@ -553,7 +558,7 @@ export default function ProfilePage() {
                             ))
                         )}
                     </IonList>
-                    {savedProducts.length > 3 && (
+                    {!new URLSearchParams(location.search).get("profileId") && savedProducts.length > 3 && (
                         <IonButton
                             expand="block"
                             className="modern-view-all-btn"
