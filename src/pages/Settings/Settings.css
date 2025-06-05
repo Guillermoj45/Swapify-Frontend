@@ -803,3 +803,61 @@ ion-button, ion-item, ion-toggle, ion-input {
         border-bottom: 2px solid var(--ion-border-color);
     }
 }
+
+/* Agregar esto a tu archivo Settings.css */
+
+/* Estilo para el título de configuraciones que se adapte al tema */
+.title-text-settings {
+    color: var(--ion-text-color) !important;
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: -0.3px;
+}
+
+/* Asegurar que funcione en modo claro */
+.light-theme .title-text-settings {
+    color: #000000 !important;
+}
+
+/* Asegurar que funcione en modo oscuro */
+.dark-theme .title-text-settings {
+    color: #ffffff !important;
+}
+
+/* Alternativa más específica si necesitas mayor control */
+body.light-theme .title-text-settings,
+.light-theme .title-text-settings {
+    color: #000000 !important;
+}
+
+body.dark-theme .title-text-settings,
+.dark-theme .title-text-settings {
+    color: #ffffff !important;
+}
+
+/* Estilo para el ícono del menú que se adapte al tema */
+.menu-icon {
+    font-size: 24px !important;
+    color: var(--ion-text-color) !important;
+}
+
+/* Asegurar que funcione en modo claro */
+.light-theme .menu-icon {
+    color: #000000 !important;
+}
+
+/* Asegurar que funcione en modo oscuro */
+.dark-theme .menu-icon {
+    color: #ffffff !important;
+}
+
+/* Alternativa más específica para el ícono del menú */
+body.light-theme .menu-icon,
+.light-theme .menu-icon {
+    color: #000000 !important;
+}
+
+body.dark-theme .menu-icon,
+.dark-theme .menu-icon {
+    color: #ffffff !important;
+}

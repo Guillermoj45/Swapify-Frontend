@@ -765,7 +765,7 @@ export default function ProfilePage() {
 
                             {/* Actividad reciente */}
                             <div className="activity-section">
-                                <h4 className="section-title">
+                                <h4 className="section-title-profile">
                                     <IonIcon icon={star} />
                                     Actividad Reciente
                                 </h4>
