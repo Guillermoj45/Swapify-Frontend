@@ -48,7 +48,7 @@ import useAuthRedirect from "../../Services/useAuthRedirect"
 import { menuController } from "@ionic/core"
 import { ProfileService } from "../../Services/ProfileService"
 import UserService, { type UserProfile } from "../../Services/UserService"
-import cloudinaryImage from "../../Services/CloudinaryService";
+import cloudinaryImage from "../../Services/CloudinaryService"
 
 // Define types for slider items
 interface SliderItem {
@@ -315,6 +315,8 @@ const ProductsPage = () => {
 
     // Add this state to control if the slider is paused
     const [sliderPaused, setSliderPaused] = useState(false)
+
+    const [isPremiumUser, setIsPremiumUser] = useState<boolean>(false)
 
     // Functions to pause/resume the slider when the user interacts
     const pauseSlider = () => {
@@ -605,6 +607,23 @@ const ProductsPage = () => {
         }
     }, [])
 
+    // Check if user is premium
+    useEffect(() => {
+        const checkPremiumStatus = async () => {
+            try {
+                const premiumStatus = await ProfileService.isPremium()
+                setIsPremiumUser(premiumStatus)
+            } catch (error) {
+                console.error("Error checking premium status:", error)
+                setIsPremiumUser(false) // Default to false if error
+            }
+        }
+
+        if (sessionStorage.getItem("token")) {
+            checkPremiumStatus()
+        }
+    }, [])
+
     useEffect(() => {
         if (isSearching) {
             const productsToFilter = searchText
@@ -846,9 +865,9 @@ const ProductsPage = () => {
     const sliderItems: SliderItem[] = [
         {
             id: 1,
-            title: "Descuentos Flash - 24h",
-            description: "Aprovecha ofertas especiales con hasta 70% de descuento solo por hoy",
-            buttonText: "Ver ofertas",
+            title: "Beneficios Exclusivos",
+            description: "Accede a funciones avanzadas y destaca tus productos con nuestro plan Premium.",
+            buttonText: "Descubre más",
             backgroundColor: darkMode
                 ? "linear-gradient(135deg, #1a3a63, #0f2541)"
                 : "linear-gradient(135deg, #e4edff, #d1e2ff)",
@@ -857,9 +876,9 @@ const ProductsPage = () => {
         },
         {
             id: 2,
-            title: "Categorías destacadas",
-            description: "Explora nuestras colecciones más populares del momento",
-            buttonText: "Explorar",
+            title: "Vende Más Rápido",
+            description: "Con Premium, tus productos se venden hasta 5 veces más rápido. ¡No te quedes atrás!",
+            buttonText: "Hazte Premium",
             backgroundColor: darkMode
                 ? "linear-gradient(135deg, #1e1a3a, #2a1a45)"
                 : "linear-gradient(135deg, #eee6ff, #dfd6ff)",
@@ -868,9 +887,9 @@ const ProductsPage = () => {
         },
         {
             id: 3,
-            title: "Vende rápido con Premium",
-            description: "Destaca tu producto por solo 9.99€/mes y véndelo hasta 5 veces más rápido",
-            buttonText: "Promocionar",
+            title: "Promociona tus Productos",
+            description: "Destaca tus productos y llega a más compradores con nuestro plan Premium.",
+            buttonText: "Suscríbete ahora",
             backgroundColor: darkMode
                 ? "linear-gradient(135deg, #3a1a2a, #45152a)"
                 : "linear-gradient(135deg, #ffe4ee, #ffd6e6)",
@@ -1526,9 +1545,9 @@ const ProductsPage = () => {
                         </div>
                     )}
 
-                    {!isSearching && (
+                    {!isSearching && !isPremiumUser && (
                         <>
-                            {/* Banner Slider - Only show if not searching */}
+                            {/* Banner Slider - Only show if not searching and user is not premium */}
                             <div className="slider-container">
                                 <div
                                     className={`slider-track ${sliderPaused ? "paused" : ""}`}
@@ -1574,7 +1593,9 @@ const ProductsPage = () => {
                     )}
 
                     {/* Filter chips - Show always to allow filtering */}
-                    <div className="filters-container-wrapper">
+                    <div
+                        className={`filters-container-wrapper ${isPremiumUser ? "premium-margin" : ""}`}
+                    >
                         <button
                             className="filters-nav-button filters-nav-prev"
                             onClick={() => {

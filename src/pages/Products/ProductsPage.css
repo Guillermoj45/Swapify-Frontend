@@ -1492,3 +1492,7 @@ body {
         max-height: 300px;
     }
 }
+
+.premium-margin {
+    margin-top: 100px;
+}
