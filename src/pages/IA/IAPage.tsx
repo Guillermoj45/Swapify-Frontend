@@ -1205,7 +1205,7 @@ const AIChatPage: React.FC = () => {
                             >
                                 <div className="chat-item-avatar">
                                     <div className="ai-avatar">
-                                        <img src={"public/Swapify.png"} alt={"IA"}/>
+                                        <img src={"Swapify.png"} alt={"IA"}/>
                                     </div>
                                     {!chat.loadedFromBackend && <div className="local-chat-indicator" title="Conversación local"></div>}
                                 </div>
@@ -1424,7 +1424,7 @@ const AIChatPage: React.FC = () => {
                                     {message.sender === "ai" ? (
                                         <IonAvatar>
                                             <div className="ai-avatar">
-                                                <img src={"public/Swapify.png"} alt={"AI"}/>
+                                                <img src={"Swapify.png"} alt={"AI"}/>
                                             </div>
                                         </IonAvatar>
                                     ) : (
