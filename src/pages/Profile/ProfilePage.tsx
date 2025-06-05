@@ -37,7 +37,7 @@ import {
     trashOutline,
 } from "ionicons/icons"
 
-import ProfileService, { type ProfileDTO, type ProductDTO } from "../../Services/ProfileService"
+import ProfileService, { type ProfileDTO, type ProductDTO, type estadisticasDTO } from "../../Services/ProfileService"
 import { type Product, ProductService } from "../../Services/ProductService"
 import "./ProfilePage.css"
 import useAuthRedirect from "../../Services/useAuthRedirect"
@@ -56,7 +56,10 @@ export default function ProfilePage() {
     const [savedProducts, setSavedProducts] = useState<ProductDTO[]>([])
     const [showAllProducts, setShowAllProducts] = useState(false)
     const [showAllSavedProducts, setShowAllSavedProducts] = useState(false)
-    const [activeTab, setActiveTab] = useState("reseñas")
+    const [activeTab, setActiveTab] = useState(() => {
+        const profileId = new URLSearchParams(location.search).get("profileId")
+        return profileId ? "enVenta" : "reseñas"
+    })
     const [bannerImage, setBannerImage] = useState<string>("")
 
     // Alert and Toast states
@@ -87,6 +90,9 @@ export default function ProfilePage() {
     const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null)
     const [showDeleteReviewAlert, setShowDeleteReviewAlert] = useState(false)
     const [reviewToDelete, setReviewToDelete] = useState<string | null>(null)
+
+    const [statistics, setStatistics] = useState<estadisticasDTO | null>(null)
+    const [loadingStatistics, setLoadingStatistics] = useState(false)
 
     // Memoized delete function to prevent multiple calls
     const borrarProducto = useCallback(
@@ -183,6 +189,20 @@ export default function ProfilePage() {
             setReviews([])
         } finally {
             setLoadingReviews(false)
+        }
+    }, [])
+
+    // Load statistics for the current profile
+    const loadStatistics = useCallback(async (profileId: string) => {
+        try {
+            setLoadingStatistics(true)
+            const statisticsData = await ProfileService.getProfileStatistics(profileId)
+            setStatistics(statisticsData)
+        } catch (error) {
+            console.error("Error loading statistics:", error)
+            setStatistics(null)
+        } finally {
+            setLoadingStatistics(false)
         }
     }, [])
 
@@ -310,6 +330,9 @@ export default function ProfilePage() {
                     // Load reviews for the profile
                     await loadReviews(profileId)
 
+                    // Add this line:
+                    await loadStatistics(profileId)
+
                     // Add this code to load the other user's products
                     try {
                         const otherUserProducts = await ProductService.getProductsByProfileId(profileId)
@@ -330,6 +353,9 @@ export default function ProfilePage() {
                     // Load reviews for own profile
                     await loadReviews(profileInfo.id)
 
+                    // Add this line:
+                    await loadStatistics(profileInfo.id)
+
                     // Load user products
                     await loadUserProducts(true)
 
@@ -347,7 +373,7 @@ export default function ProfilePage() {
         }
 
         checkAuth()
-    }, [location.search, history, loadUserProducts, loadReviews])
+    }, [location.search, history, loadUserProducts, loadReviews, loadStatistics])
 
     useEffect(() => {
         const isDark = sessionStorage.getItem("modoOscuroClaro") === "true"
@@ -571,6 +597,262 @@ export default function ProfilePage() {
             )
         }
 
+        if (activeTab === "estadisticas") {
+            return (
+                <div className="tab-content">
+                    <div className="tab-header">
+                        <h3 className="tab-title">
+                            <IonIcon icon={star} className="tab-icon" />
+                            Estadísticas
+                        </h3>
+                    </div>
+                    {loadingStatistics ? (
+                        <div className="loading-state">
+                            <div className="loading-spinner"></div>
+                            <p>Cargando estadísticas...</p>
+                        </div>
+                    ) : !statistics ? (
+                        <div className="empty-state">
+                            <IonIcon icon={star} className="empty-icon" />
+                            <h4>No se pudieron cargar las estadísticas</h4>
+                            <p>Inténtalo de nuevo más tarde</p>
+                        </div>
+                    ) : (
+                        <div className="statistics-container">
+                            {/* Métricas principales con círculos */}
+                            <div className="main-metrics">
+                                <div className="metric-circle-card">
+                                    <div className="circle-progress" data-percentage={Math.min((statistics.promedioPuntuacion / 5) * 100, 100)}>
+                                        <svg className="progress-ring" width="120" height="120">
+                                            <circle
+                                                className="progress-ring-circle-bg"
+                                                stroke="#e5e7eb"
+                                                strokeWidth="8"
+                                                fill="transparent"
+                                                r="52"
+                                                cx="60"
+                                                cy="60"
+                                            />
+                                            <circle
+                                                className="progress-ring-circle"
+                                                stroke="url(#gradient1)"
+                                                strokeWidth="8"
+                                                fill="transparent"
+                                                r="52"
+                                                cx="60"
+                                                cy="60"
+                                                strokeDasharray={`${(statistics.promedioPuntuacion / 5) * 326.73} 326.73`}
+                                                strokeDashoffset="0"
+                                                transform="rotate(-90 60 60)"
+                                            />
+                                            <defs>
+                                                <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                    <stop offset="0%" stopColor="#667eea" />
+                                                    <stop offset="100%" stopColor="#764ba2" />
+                                                </linearGradient>
+                                            </defs>
+                                        </svg>
+                                        <div className="circle-content">
+                                            <div className="circle-value">{statistics.promedioPuntuacion.toFixed(1)}</div>
+                                            <div className="circle-label">Puntuación</div>
+                                            <div className="circle-stars">{renderStars(Math.round(statistics.promedioPuntuacion))}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="metric-circle-card">
+                                    <div className="circle-progress" data-percentage={Math.min((statistics.totalTradeos / 100) * 100, 100)}>
+                                        <svg className="progress-ring" width="120" height="120">
+                                            <circle
+                                                className="progress-ring-circle-bg"
+                                                stroke="#e5e7eb"
+                                                strokeWidth="8"
+                                                fill="transparent"
+                                                r="52"
+                                                cx="60"
+                                                cy="60"
+                                            />
+                                            <circle
+                                                className="progress-ring-circle"
+                                                stroke="url(#gradient2)"
+                                                strokeWidth="8"
+                                                fill="transparent"
+                                                r="52"
+                                                cx="60"
+                                                cy="60"
+                                                strokeDasharray={`${Math.min((statistics.totalTradeos / 100) * 326.73, 326.73)} 326.73`}
+                                                strokeDashoffset="0"
+                                                transform="rotate(-90 60 60)"
+                                            />
+                                            <defs>
+                                                <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                    <stop offset="0%" stopColor="#4facfe" />
+                                                    <stop offset="100%" stopColor="#00f2fe" />
+                                                </linearGradient>
+                                            </defs>
+                                        </svg>
+                                        <div className="circle-content">
+                                            <div className="circle-value">{statistics.totalTradeos}</div>
+                                            <div className="circle-label">Total Tradeos</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Estadísticas en tarjetas */}
+                            <div className="stats-grid">
+                                <div className="stat-card modern">
+                                    <div className="stat-icon-container">
+                                        <IonIcon icon={cartOutline} className="stat-icon" />
+                                    </div>
+                                    <div className="stat-content">
+                                        <div className="stat-number">{statistics.objetosEnVenta}</div>
+                                        <div className="stat-label">En Venta</div>
+                                    </div>
+                                    <div className="stat-trend positive">
+                                        <IonIcon icon={checkmarkCircleOutline} />
+                                    </div>
+                                </div>
+
+                                <div className="stat-card modern">
+                                    <div className="stat-icon-container sold">
+                                        <IonIcon icon={checkmarkCircleOutline} className="stat-icon" />
+                                    </div>
+                                    <div className="stat-content">
+                                        <div className="stat-number">{statistics.objetosVendidos}</div>
+                                        <div className="stat-label">Vendidos</div>
+                                    </div>
+                                    <div className="stat-progress">
+                                        <div
+                                            className="progress-bar"
+                                            style={{
+                                                width: `${Math.min((statistics.objetosVendidos / (statistics.objetosVendidos + statistics.objetosEnVenta)) * 100, 100)}%`
+                                            }}
+                                        ></div>
+                                    </div>
+                                </div>
+
+                                <div className="stat-card modern">
+                                    <div className="stat-icon-container reviews">
+                                        <IonIcon icon={chatbubbleOutline} className="stat-icon" />
+                                    </div>
+                                    <div className="stat-content">
+                                        <div className="stat-number">{statistics.numeroResenas}</div>
+                                        <div className="stat-label">Reseñas</div>
+                                    </div>
+                                    <div className="stat-badge">
+                                        <span>{statistics.numeroResenas > 10 ? 'Popular' : 'Nuevo'}</span>
+                                    </div>
+                                </div>
+
+                                <div className="stat-card modern">
+                                    <div className="stat-icon-container users">
+                                        <IonIcon icon={heartOutline} className="stat-icon" />
+                                    </div>
+                                    <div className="stat-content">
+                                        <div className="stat-number">{statistics.usuariosConLosQueHaTradeado}</div>
+                                        <div className="stat-label">Usuarios</div>
+                                    </div>
+                                    <div className="stat-network">
+                                        <div className="network-dots">
+                                            {Array.from({length: Math.min(statistics.usuariosConLosQueHaTradeado, 5)}).map((_, i) => (
+                                                <div key={i} className="network-dot" style={{animationDelay: `${i * 0.1}s`}}></div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Actividad reciente */}
+                            <div className="activity-section">
+                                <h4 className="section-title">
+                                    <IonIcon icon={star} />
+                                    Actividad Reciente
+                                </h4>
+                                <div className="activity-cards">
+                                    <div className="activity-card today">
+                                        <div className="activity-header">
+                                            <div className="activity-icon">
+                                                <IonIcon icon={star} />
+                                            </div>
+                                            <div className="activity-info">
+                                                <div className="activity-title">Hoy</div>
+                                                <div className="activity-subtitle">Tradeos realizados</div>
+                                            </div>
+                                        </div>
+                                        <div className="activity-value">{statistics.tradeosHoy}</div>
+                                        <div className="activity-progress">
+                                            <div
+                                                className="progress-fill today"
+                                                style={{
+                                                    width: `${Math.min((statistics.tradeosHoy / Math.max(statistics.tradeosEsteMes, 1)) * 100, 100)}%`
+                                                }}
+                                            ></div>
+                                        </div>
+                                    </div>
+
+                                    <div className="activity-card month">
+                                        <div className="activity-header">
+                                            <div className="activity-icon">
+                                                <IonIcon icon={cartOutline} />
+                                            </div>
+                                            <div className="activity-info">
+                                                <div className="activity-title">Este Mes</div>
+                                                <div className="activity-subtitle">Total de tradeos</div>
+                                            </div>
+                                        </div>
+                                        <div className="activity-value">{statistics.tradeosEsteMes}</div>
+                                        <div className="activity-progress">
+                                            <div
+                                                className="progress-fill month"
+                                                style={{
+                                                    width: `${Math.min((statistics.tradeosEsteMes / Math.max(statistics.totalTradeos, 1)) * 100, 100)}%`
+                                                }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Información adicional */}
+                            <div className="additional-info">
+                                <div className="info-card">
+                                    <div className="info-header">
+                                        <IonIcon icon={checkmarkCircleOutline} />
+                                        <span>Miembro desde</span>
+                                    </div>
+                                    <div className="info-content">
+                                        <div className="info-date">{new Date(statistics.fechaRegistro).toLocaleDateString('es-ES', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        })}</div>
+                                        <div className="info-days">{statistics.diasDesdeRegistro} días activo</div>
+                                    </div>
+                                </div>
+
+                                {statistics.ultimaFechaTradeo && (
+                                    <div className="info-card">
+                                        <div className="info-header">
+                                            <IonIcon icon={star} />
+                                            <span>Último tradeo</span>
+                                        </div>
+                                        <div className="info-content">
+                                            <div className="info-date">{new Date(statistics.ultimaFechaTradeo).toLocaleDateString('es-ES', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            })}</div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )
+        }
+
         // Reseñas por defecto
         return (
             <div className="tab-content">
@@ -780,10 +1062,19 @@ export default function ProfilePage() {
                                     <IonLabel>En venta</IonLabel>
                                 </div>
                             </IonSegmentButton>
-                            <IonSegmentButton value="deseados" className="modern-segment-button">
+                            {/* Only show "Deseados" tab when viewing own profile */}
+                            {!new URLSearchParams(location.search).get("profileId") && (
+                                <IonSegmentButton value="deseados" className="modern-segment-button">
+                                    <div className="segment-content">
+                                        <IonIcon icon={heartOutline} />
+                                        <IonLabel>Deseados</IonLabel>
+                                    </div>
+                                </IonSegmentButton>
+                            )}
+                            <IonSegmentButton value="estadisticas" className="modern-segment-button">
                                 <div className="segment-content">
-                                    <IonIcon icon={heartOutline} />
-                                    <IonLabel>Deseados</IonLabel>
+                                    <IonIcon icon={star} />
+                                    <IonLabel>Estadísticas</IonLabel>
                                 </div>
                             </IonSegmentButton>
                             <IonSegmentButton value="reseñas" className="modern-segment-button">
