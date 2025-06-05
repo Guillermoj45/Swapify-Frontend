@@ -34,6 +34,21 @@ export interface SaveProductDTO {
     profileId: string;
 }
 
+export interface estadisticasDTO {
+    idUsuario: string;
+    totalTradeos: number;
+    tradeosHoy: number;
+    tradeosEsteMes: number;
+    numeroResenas: number;
+    promedioPuntuacion: number;
+    objetosEnVenta: number;
+    objetosVendidos: number;
+    fechaRegistro: string;
+    diasDesdeRegistro: number;
+    usuariosConLosQueHaTradeado: number;
+    ultimaFechaTradeo: string;
+}
+
 // Enhanced Cache management with better performance
 class CacheManager {
     private static cache = new Map<string, { data: any, timestamp: number }>();
@@ -136,6 +151,31 @@ export const ProfileService = {
             return response.data;
         } catch (error) {
             console.error('Error al obtener información del perfil:', error);
+            throw error;
+        }
+    },
+
+    getProfileStatistics: async (profileId: string): Promise<estadisticasDTO> => {
+        try {
+            const token = sessionStorage.getItem('token');
+            if (!token) {
+                throw new Error('No se encontró el token de autenticación');
+            }
+
+            const config = {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                params: {
+                    idPerfilQueSeBusca: profileId
+                }
+            };
+
+            const response = await API.get('/profile/obtenerEstadisticas', config);
+            return response.data;
+
+        } catch (error) {
+            console.error('Error al obtener estadísticas del perfil:', error);
             throw error;
         }
     },
@@ -397,6 +437,8 @@ export const ProfileService = {
     getCacheStats: () => {
         return CacheManager.getStats();
     }
+
+
 };
 
 export default ProfileService;

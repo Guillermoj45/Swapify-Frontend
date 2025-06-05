@@ -512,15 +512,12 @@ const Settings: React.FC = () => {
                             <IonMenuButton>
                                 <IonIcon
                                     icon={menuOutline}
-                                    style={{
-                                        color: profile.preferencias?.modo_oscuro ? "white" : "black",
-                                        fontSize: "24px",
-                                    }}
+                                    className="menu-icon"
                                 />
                             </IonMenuButton>
                         </IonButtons>
                         <IonTitle className="toolbar-title">
-                            <span className="title-text">Ajustes</span>
+                            <span className="title-text-settings">Ajustes</span>
                         </IonTitle>
                         <IonButtons slot="end">
                             <IonButton onClick={() => setShowAboutAlert(true)}>

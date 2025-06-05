@@ -19,13 +19,13 @@ import {
     IonList,
     IonItem,
     IonBadge,
+    IonAvatar,
 } from "@ionic/react"
 import {
     chevronForward,
     heart,
     heartOutline,
     add,
-    search,
     checkmarkCircle,
     arrowForward,
     arrowBack,
@@ -34,9 +34,11 @@ import {
     menuOutline,
     funnelOutline,
     closeOutline,
+    person,
+    storefront,
 } from "ionicons/icons"
 import "./ProductsPage.css"
-import { useHistory} from "react-router-dom"
+import { useHistory } from "react-router-dom"
 import { ProductService, type RecommendDTO, type Product } from "../../Services/ProductService"
 import type { SaveProductDTO } from "../../Services/ProfileService"
 import { Settings as SettingsService } from "../../Services/SettingsService"
@@ -45,8 +47,8 @@ import "driver.js/dist/driver.css"
 import useAuthRedirect from "../../Services/useAuthRedirect"
 import { menuController } from "@ionic/core"
 import { ProfileService } from "../../Services/ProfileService"
-
-
+import UserService, { type UserProfile } from "../../Services/UserService"
+import cloudinaryImage from "../../Services/CloudinaryService"
 
 // Define types for slider items
 interface SliderItem {
@@ -83,6 +85,12 @@ interface FilterOptions {
     maxPoints: number
 }
 
+// Define search result types
+interface SearchResult {
+    type: "product" | "user"
+    data: Product | UserProfile
+}
+
 const ProductsPage = () => {
     useAuthRedirect()
 
@@ -94,7 +102,7 @@ const ProductsPage = () => {
                     element: ".shopify-searchbar",
                     popover: {
                         title: "🔍 Barra de búsqueda",
-                        description: "Busca productos por nombre o descripción 🛍️",
+                        description: "Busca productos por nombre o descripción, y también perfiles de usuarios 🛍️👤",
                         side: "bottom",
                         align: "start",
                     },
@@ -259,9 +267,10 @@ const ProductsPage = () => {
     const history = useHistory()
 
     const [searchText, setSearchText] = useState("")
-    const [searchResults, setSearchResults] = useState<Product[]>([])
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([])
     const [showSearchResults, setShowSearchResults] = useState(false)
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
+    const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([])
     const [isSearching, setIsSearching] = useState(false)
     const [selectedCategories, setSelectedCategories] = useState<string[]>([])
     const [isDesktop, setIsDesktop] = useState(false)
@@ -306,6 +315,8 @@ const ProductsPage = () => {
 
     // Add this state to control if the slider is paused
     const [sliderPaused, setSliderPaused] = useState(false)
+
+    const [isPremiumUser, setIsPremiumUser] = useState<boolean>(false)
 
     // Functions to pause/resume the slider when the user interacts
     const pauseSlider = () => {
@@ -596,6 +607,23 @@ const ProductsPage = () => {
         }
     }, [])
 
+    // Check if user is premium
+    useEffect(() => {
+        const checkPremiumStatus = async () => {
+            try {
+                const premiumStatus = await ProfileService.isPremium()
+                setIsPremiumUser(premiumStatus)
+            } catch (error) {
+                console.error("Error checking premium status:", error)
+                setIsPremiumUser(false) // Default to false if error
+            }
+        }
+
+        if (sessionStorage.getItem("token")) {
+            checkPremiumStatus()
+        }
+    }, [])
+
     useEffect(() => {
         if (isSearching) {
             const productsToFilter = searchText
@@ -634,10 +662,7 @@ const ProductsPage = () => {
                 }
 
                 if (sessionStorage.getItem("token")) {
-                    const [profileData] = await Promise.all([
-                        ProfileService.getProfileInfo(),
-                        ProfileService.getTutorialHecho(),
-                    ])
+                    const [profileData] = await Promise.all([ProfileService.getProfileInfo(), ProfileService.getTutorialHecho()])
 
                     setProfileId(profileData.id)
 
@@ -682,43 +707,73 @@ const ProductsPage = () => {
         checkTutorial()
     }, [isInitialLoadComplete])
 
-    // Function to search products while typing
-    const searchProducts = (query: string) => {
+    // Function to search both products and users while typing
+    const searchProductsAndUsers = async (query: string) => {
         if (!query.trim()) {
             setSearchResults([])
             return
         }
 
         const normalizedQuery = query.toLowerCase().trim()
-        const results = allProducts.filter((product) => product.name.toLowerCase().includes(normalizedQuery))
 
-        setSearchResults(results.slice(0, 5)) // Limit to 5 results for suggestions
+        // Search products
+        const productResults = allProducts
+            .filter((product) => product.name.toLowerCase().includes(normalizedQuery))
+            .slice(0, 3) // Limit to 3 products
+
+        // Search users
+        let userResults: UserProfile[] = []
+        try {
+            const users = await UserService.searchUsers(normalizedQuery)
+            userResults = users.slice(0, 2) // Limit to 2 users
+        } catch (error) {
+            console.error("Error searching users:", error)
+        }
+
+        // Combine results
+        const combinedResults: SearchResult[] = [
+            ...productResults.map((product) => ({ type: "product" as const, data: product })),
+            ...userResults.map((user) => ({ type: "user" as const, data: user })),
+        ]
+
+        setSearchResults(combinedResults)
     }
 
     // Update search results while typing
     useEffect(() => {
-        searchProducts(searchText)
+        searchProductsAndUsers(searchText)
         // Only show suggestions if there is text and results
         setShowSearchResults(!!searchText && searchResults.length > 0)
-    }, [searchText, allProducts, searchResults.length])
+    }, [searchText, allProducts])
 
     // Function to handle complete search
-    const handleSearch = (query: string) => {
+    const handleSearch = async (query: string) => {
         setIsSearching(true)
         const normalizedQuery = query.toLowerCase().trim()
 
         if (!normalizedQuery) {
             setFilteredProducts([])
+            setFilteredUsers([])
             setIsSearching(false)
             return
         }
 
-        let filtered = allProducts.filter((product) => product.name.toLowerCase().includes(normalizedQuery))
+        // Search products
+        let filteredProductsResult = allProducts.filter((product) => product.name.toLowerCase().includes(normalizedQuery))
 
-        // Aplicar filtros activos a los resultados de búsqueda
-        filtered = applyFiltersToProducts(filtered)
+        // Apply filters to products
+        filteredProductsResult = applyFiltersToProducts(filteredProductsResult)
 
-        setFilteredProducts(filtered)
+        // Search users
+        let filteredUsersResult: UserProfile[] = []
+        try {
+            filteredUsersResult = await UserService.searchUsers(normalizedQuery)
+        } catch (error) {
+            console.error("Error searching users:", error)
+        }
+
+        setFilteredProducts(filteredProductsResult)
+        setFilteredUsers(filteredUsersResult)
         setShowSearchResults(false) // Hide suggestions after search
     }
 
@@ -737,9 +792,16 @@ const ProductsPage = () => {
     }
 
     // Function to select a suggestion
-    const handleSelectSuggestion = (product: Product) => {
-        setSearchText(product.name)
-        handleSearch(product.name)
+    const handleSelectSuggestion = (result: SearchResult) => {
+        if (result.type === "product") {
+            const product = result.data as Product
+            setSearchText(product.name)
+            handleSearch(product.name)
+        } else {
+            const user = result.data as UserProfile
+            setSearchText(user.nickname)
+            handleSearch(user.nickname)
+        }
         setShowSearchResults(false)
     }
 
@@ -799,15 +861,13 @@ const ProductsPage = () => {
         }
     }, [])
 
-
-
     // Slider items
     const sliderItems: SliderItem[] = [
         {
             id: 1,
-            title: "Descuentos Flash - 24h",
-            description: "Aprovecha ofertas especiales con hasta 70% de descuento solo por hoy",
-            buttonText: "Ver ofertas",
+            title: "Beneficios Exclusivos",
+            description: "Accede a funciones avanzadas y destaca tus productos con nuestro plan Premium.",
+            buttonText: "Descubre más",
             backgroundColor: darkMode
                 ? "linear-gradient(135deg, #1a3a63, #0f2541)"
                 : "linear-gradient(135deg, #e4edff, #d1e2ff)",
@@ -816,9 +876,9 @@ const ProductsPage = () => {
         },
         {
             id: 2,
-            title: "Categorías destacadas",
-            description: "Explora nuestras colecciones más populares del momento",
-            buttonText: "Explorar",
+            title: "Vende Más Rápido",
+            description: "Con Premium, tus productos se venden hasta 5 veces más rápido. ¡No te quedes atrás!",
+            buttonText: "Hazte Premium",
             backgroundColor: darkMode
                 ? "linear-gradient(135deg, #1e1a3a, #2a1a45)"
                 : "linear-gradient(135deg, #eee6ff, #dfd6ff)",
@@ -827,9 +887,9 @@ const ProductsPage = () => {
         },
         {
             id: 3,
-            title: "Vende rápido con Premium",
-            description: "Destaca tu producto por solo 9.99€/mes y véndelo hasta 5 veces más rápido",
-            buttonText: "Promocionar",
+            title: "Promociona tus Productos",
+            description: "Destaca tus productos y llega a más compradores con nuestro plan Premium.",
+            buttonText: "Suscríbete ahora",
             backgroundColor: darkMode
                 ? "linear-gradient(135deg, #3a1a2a, #45152a)"
                 : "linear-gradient(135deg, #ffe4ee, #ffd6e6)",
@@ -944,6 +1004,7 @@ const ProductsPage = () => {
     const clearSearch = () => {
         setSearchText("")
         setFilteredProducts([])
+        setFilteredUsers([])
         setIsSearching(false)
         setShowSearchResults(false)
         // Si no hay categorías seleccionadas, también resetear los filtros
@@ -971,6 +1032,7 @@ const ProductsPage = () => {
             setTempFilterOptions(defaultFilters)
             setIsSearching(false)
             setFilteredProducts([])
+            setFilteredUsers([])
         }
     }
 
@@ -1017,6 +1079,7 @@ const ProductsPage = () => {
             if (!searchText) {
                 setIsSearching(false)
                 setFilteredProducts([])
+                setFilteredUsers([])
             }
             return
         }
@@ -1030,6 +1093,8 @@ const ProductsPage = () => {
         filtered = applyFiltersToProducts(filtered)
 
         setFilteredProducts(filtered)
+        // Clear users when filtering by categories
+        setFilteredUsers([])
     }, [selectedCategories, recommendedData, filterOptions])
 
     // Function to format points
@@ -1072,6 +1137,44 @@ const ProductsPage = () => {
         return null
     }
 
+    // Function to render a user card
+    const renderUserCard = (user: UserProfile) => {
+        return (
+            <div
+                key={user.id}
+                className="user-card"
+                onClick={() => {
+                    console.log("User selected:", user)
+                    history.push(`/profile?profileId=${user.id}`)
+                }}
+            >
+                <div className="user-card-header">
+                    <IonAvatar className="user-avatar">
+                        {user.avatar ? (
+                            <img src={cloudinaryImage(user.avatar) || "/placeholder.svg"} alt={user.nickname} />
+                        ) : (
+                            <div className="user-avatar-placeholder">{user.nickname.charAt(0).toUpperCase()}</div>
+                        )}
+                    </IonAvatar>
+                    <div className="user-info">
+                        <h3 className="user-nickname">{user.nickname}</h3>
+                        {user.ubicacion && <p className="user-location">{user.ubicacion}</p>}
+                    </div>
+                    <IonIcon icon={person} className="user-type-icon" />
+                </div>
+
+                <div className="user-meta">
+                    {renderPremiumBadge(user.premium)}
+                    {user.newUser && (
+                        <IonBadge color="success" className="new-user-badge">
+                            Nuevo
+                        </IonBadge>
+                    )}
+                </div>
+            </div>
+        )
+    }
+
     // Function to render a product card with image navigation
     const renderProductCard = (product: Product, isHorizontalScroll = false) => {
         const currentImageIndex = currentImages[product.id] || 0
@@ -1093,6 +1196,10 @@ const ProductsPage = () => {
                     }
                 }}
             >
+                <div className="product-type-indicator">
+                    <IonIcon icon={storefront} className="product-type-icon" />
+                </div>
+
                 <div
                     className="product-image-container"
                     onClick={(e: React.MouseEvent) => {
@@ -1244,7 +1351,7 @@ const ProductsPage = () => {
                                 value={searchText}
                                 onIonInput={handleSearchChange}
                                 onKeyPress={handleKeyPress}
-                                placeholder="Búsqueda de productos"
+                                placeholder="Buscar productos y usuarios"
                                 showCancelButton="focus"
                                 onIonCancel={clearSearch}
                                 onIonClear={clearSearch}
@@ -1253,14 +1360,17 @@ const ProductsPage = () => {
                             {showSearchResults && searchResults.length > 0 && (
                                 <div className="search-suggestions">
                                     <IonList>
-                                        {searchResults.map((product) => (
-                                            <IonItem
-                                                key={product.id}
-                                                onClick={() => handleSelectSuggestion(product)}
-                                                style={{ marginLeft: "200px" }}
-                                            >
-                                                <IonIcon icon={search} slot="start" />
-                                                <IonLabel>{product.name}</IonLabel>
+                                        {searchResults.map((result, index) => (
+                                            <IonItem key={`${result.type}-${index}`} onClick={() => handleSelectSuggestion(result)}>
+                                                <IonIcon icon={result.type === "product" ? storefront : person} slot="start" />
+                                                <IonLabel>
+                                                    <h3>
+                                                        {result.type === "product"
+                                                            ? (result.data as Product).name
+                                                            : (result.data as UserProfile).nickname}
+                                                    </h3>
+                                                    <p>{result.type === "product" ? "Producto" : "Usuario"}</p>
+                                                </IonLabel>
                                             </IonItem>
                                         ))}
                                     </IonList>
@@ -1299,7 +1409,12 @@ const ProductsPage = () => {
                                                 name="sortBy"
                                                 value="none"
                                                 checked={tempFilterOptions.sortBy === "none"}
-                                                onChange={(e) => setTempFilterOptions({ ...tempFilterOptions, sortBy: e.target.value as "none" | "points_desc" | "points_asc" | "date_desc" })}
+                                                onChange={(e) =>
+                                                    setTempFilterOptions({
+                                                        ...tempFilterOptions,
+                                                        sortBy: e.target.value as "none" | "points_desc" | "points_asc" | "date_desc",
+                                                    })
+                                                }
                                             />
                                             <span>Sin ordenar</span>
                                         </label>
@@ -1309,7 +1424,12 @@ const ProductsPage = () => {
                                                 name="sortBy"
                                                 value="points_desc"
                                                 checked={tempFilterOptions.sortBy === "points_desc"}
-                                                onChange={(e) => setTempFilterOptions({ ...tempFilterOptions, sortBy: e.target.value as "none" | "points_desc" | "points_asc" | "date_desc" })}
+                                                onChange={(e) =>
+                                                    setTempFilterOptions({
+                                                        ...tempFilterOptions,
+                                                        sortBy: e.target.value as "none" | "points_desc" | "points_asc" | "date_desc",
+                                                    })
+                                                }
                                             />
                                             <span>Más puntos primero</span>
                                         </label>
@@ -1319,7 +1439,12 @@ const ProductsPage = () => {
                                                 name="sortBy"
                                                 value="points_asc"
                                                 checked={tempFilterOptions.sortBy === "points_asc"}
-                                                onChange={(e) => setTempFilterOptions({ ...tempFilterOptions, sortBy: e.target.value as "none" | "points_desc" | "points_asc" | "date_desc" })}
+                                                onChange={(e) =>
+                                                    setTempFilterOptions({
+                                                        ...tempFilterOptions,
+                                                        sortBy: e.target.value as "none" | "points_desc" | "points_asc" | "date_desc",
+                                                    })
+                                                }
                                             />
                                             <span>Menos puntos primero</span>
                                         </label>
@@ -1329,7 +1454,12 @@ const ProductsPage = () => {
                                                 name="sortBy"
                                                 value="date_desc"
                                                 checked={tempFilterOptions.sortBy === "date_desc"}
-                                                onChange={(e) => setTempFilterOptions({ ...tempFilterOptions, sortBy: e.target.value as "none" | "points_desc" | "points_asc" | "date_desc" })}
+                                                onChange={(e) =>
+                                                    setTempFilterOptions({
+                                                        ...tempFilterOptions,
+                                                        sortBy: e.target.value as "none" | "points_desc" | "points_asc" | "date_desc",
+                                                    })
+                                                }
                                             />
                                             <span>Más recientes</span>
                                         </label>
@@ -1415,9 +1545,9 @@ const ProductsPage = () => {
                         </div>
                     )}
 
-                    {!isSearching && (
+                    {!isSearching && !isPremiumUser && (
                         <>
-                            {/* Banner Slider - Only show if not searching */}
+                            {/* Banner Slider - Only show if not searching and user is not premium */}
                             <div className="slider-container">
                                 <div
                                     className={`slider-track ${sliderPaused ? "paused" : ""}`}
@@ -1463,7 +1593,9 @@ const ProductsPage = () => {
                     )}
 
                     {/* Filter chips - Show always to allow filtering */}
-                    <div className="filters-container-wrapper">
+                    <div
+                        className={`filters-container-wrapper ${isPremiumUser ? "premium-margin" : ""}`}
+                    >
                         <button
                             className="filters-nav-button filters-nav-prev"
                             onClick={() => {
@@ -1524,18 +1656,32 @@ const ProductsPage = () => {
                             <p>Could not load products. Please try again later.</p>
                             <IonButton onClick={() => window.location.reload()}>Retry</IonButton>
                         </div>
-                    ) : isSearching && filteredProducts.length > 0 ? (
+                    ) : isSearching && (filteredProducts.length > 0 || filteredUsers.length > 0) ? (
                         // Show search results
                         <div className="search-results">
-                            <div className="products-grid responsive-grid">
-                                {filteredProducts.map((product) => renderProductCard(product, false))}
-                            </div>
+                            {/* Show users first if any */}
+                            {filteredUsers.length > 0 && (
+                                <div className="users-section">
+                                    <h3 className="section-title">Usuarios</h3>
+                                    <div className="users-grid">{filteredUsers.map((user) => renderUserCard(user))}</div>
+                                </div>
+                            )}
+
+                            {/* Show products */}
+                            {filteredProducts.length > 0 && (
+                                <div className="products-section">
+                                    <h3 className="section-title">Productos</h3>
+                                    <div className="products-grid responsive-grid">
+                                        {filteredProducts.map((product) => renderProductCard(product, false))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    ) : isSearching && filteredProducts.length === 0 ? (
+                    ) : isSearching && filteredProducts.length === 0 && filteredUsers.length === 0 ? (
                         // Show message when there are no results
                         <div className="no-results">
                             {searchText ? (
-                                <p>Ningun  producto corresponde a:  "{searchText}"</p>
+                                <p>No se encontraron productos ni usuarios para: "{searchText}"</p>
                             ) : (
                                 <p>No hay ningún producto en las categorías seleccionadas</p>
                             )}
