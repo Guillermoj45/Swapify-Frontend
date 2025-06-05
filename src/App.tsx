@@ -187,7 +187,11 @@ const App: React.FC = () => {
                         {
                             text: 'Ver',
                             handler: () => {
-                                window.location.href = '/notification';
+                                if (toastMessage.includes('te ha escrito')) {
+                                    window.location.href = '/chat';
+                                } else {
+                                    window.location.href = '/notification';
+                                }
                             }
                         }
                     ]}
