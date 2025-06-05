@@ -7,6 +7,37 @@
 }
 
 /* ========================================
+   OCULTAR MENÚ HAMBURGUESA EN MOBILE
+   ======================================== */
+
+/* Ocultar el botón del menú hamburguesa en pantallas pequeñas */
+@media (max-width: 768px) {
+    ion-menu-button {
+        display: none !important;
+    }
+
+    ion-menu-toggle ion-button {
+        display: none !important;
+    }
+
+    /* Asegurar que cualquier botón de menú esté oculto */
+    .menu-toggle-hidden {
+        display: none !important;
+    }
+}
+
+/* Solo mostrar el menú hamburguesa en desktop */
+@media (min-width: 769px) {
+    .custom-tab-bar {
+        display: none !important;
+    }
+
+    .navigation-footer {
+        display: none !important;
+    }
+}
+
+/* ========================================
    MODO OSCURO - DISEÑO FIJO
    ======================================== */
 .navegacion-container.dark-mode {

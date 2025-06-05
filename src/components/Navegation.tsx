@@ -35,10 +35,10 @@ const Navegacion: React.FC<{isDesktop: boolean, isChatView?: boolean}> = ({ isDe
     // Estado adicional para forzar re-renderización
     const [themeKey, setThemeKey] = useState<number>(0);
 
-    // Siempre mostramos el menú hamburguesa para todas las pantallas en vistas de chat
-    // En otras vistas, seguimos la lógica original basada en el tamaño de pantalla
-    const showHamburgerMenu = isDesktop || isChatView;
-    const showTabBar = !isDesktop && !isChatView;
+    // Solo mostramos el menú hamburguesa en desktop
+    // En mobile siempre usamos el footer/tabbar
+    const showHamburgerMenu = isDesktop;
+    const showTabBar = !isDesktop;
 
     // Función para aplicar el tema - similar a Settings
     const applyTheme = useCallback((isDark: boolean): void => {
