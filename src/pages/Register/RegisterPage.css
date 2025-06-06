@@ -142,7 +142,7 @@ ion-content {
 
 ion-input {
     --background: #e0e0e0;
-    --color: #000000;
+    --color: #000000 !important;
     --padding-start: 8px;
     --padding-end: 8px;
     --padding-top: 8px;
