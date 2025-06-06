@@ -450,7 +450,7 @@ OjU2KzAwOjAw0ssWdwAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyMy0wMi0xM1QwODoxOTo1Nisw MDo
                                         <div className="form-row">
                                             <div className="form-field">
                                                 <IonItem className="modern-input" lines="none">
-                                                    <IonLabel position="floating">Nombre del titular</IonLabel>
+                                                    <IonLabel position="floating">Nombre del titular</IonLabel><br/>
                                                     <IonInput
                                                         type="text"
                                                         value={cardName}
@@ -464,7 +464,7 @@ OjU2KzAwOjAw0ssWdwAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyMy0wMi0xM1QwODoxOTo1Nisw MDo
                                         <div className="form-row">
                                             <div className="form-field">
                                                 <IonItem className="modern-input" lines="none">
-                                                    <IonLabel position="floating">Número de tarjeta</IonLabel>
+                                                    <IonLabel position="floating">Número de tarjeta</IonLabel><br/>
                                                     <IonInput
                                                         type="text"
                                                         value={cardNumber}
@@ -478,7 +478,7 @@ OjU2KzAwOjAw0ssWdwAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyMy0wMi0xM1QwODoxOTo1Nisw MDo
                                         <div className="form-row form-row-split">
                                             <div className="form-field">
                                                 <IonItem className="modern-input" lines="none">
-                                                    <IonLabel position="floating">Fecha de caducidad</IonLabel>
+                                                    <IonLabel position="floating">Fecha de caducidad</IonLabel><br/>
                                                     <IonInput
                                                         type="text"
                                                         value={expiryDate}
@@ -489,7 +489,7 @@ OjU2KzAwOjAw0ssWdwAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyMy0wMi0xM1QwODoxOTo1Nisw MDo
                                             </div>
                                             <div className="form-field">
                                                 <IonItem className="modern-input" lines="none">
-                                                    <IonLabel position="floating">CVC</IonLabel>
+                                                    <IonLabel position="floating">CVC</IonLabel><br/>
                                                     <IonInput
                                                         type="text"
                                                         value={cvc}
