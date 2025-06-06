@@ -72,6 +72,11 @@ const App: React.FC = () => {
 
     // NUEVA FUNCIÓN: Detectar modo escritura basado en eventos del DOM
     useEffect(() => {
+        // Solo activar la detección en páginas de chat
+        if (!isChatView) {
+            return
+        }
+
         const detectWritingMode = () => {
             const activeElement = document.activeElement
             const isInputFocused =
@@ -114,7 +119,7 @@ const App: React.FC = () => {
             document.removeEventListener("focusout", detectWritingMode)
             window.removeEventListener("resize", handleResize)
         }
-    }, [isDesktop])
+    }, [isDesktop, isChatView])
 
     useEffect(() => {
         WebSocketService.connect()

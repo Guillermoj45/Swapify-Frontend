@@ -575,7 +575,7 @@ ion-input:focus {
 }
 
 body.dark-theme ion-input {
-    --color: black;
+    --color: var(--dark-text);
     --placeholder-color: var(--dark-text-secondary);
 }
 
