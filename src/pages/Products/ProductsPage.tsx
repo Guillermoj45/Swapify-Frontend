@@ -25,7 +25,6 @@ import {
     chevronForward,
     heart,
     heartOutline,
-    add,
     checkmarkCircle,
     arrowForward,
     arrowBack,
@@ -36,6 +35,9 @@ import {
     closeOutline,
     person,
     storefront,
+    diamond,
+    trendingUp,
+    flash,
 } from "ionicons/icons"
 import "./ProductsPage.css"
 import { useHistory } from "react-router-dom"
@@ -59,6 +61,8 @@ interface SliderItem {
     backgroundColor: string
     textColor: string
     buttonColor: string
+    imageUrl: string
+    icon: string
 }
 
 // Define types for slider ref
@@ -862,40 +866,49 @@ const ProductsPage = () => {
         }
     }, [])
 
-    // Slider items
+    // Enhanced Slider items with images and icons
     const sliderItems: SliderItem[] = [
         {
             id: 1,
-            title: "Beneficios Exclusivos",
-            description: "Accede a funciones avanzadas y destaca tus productos con nuestro plan Premium.",
-            buttonText: "Descubre más",
+            title: "Beneficios Exclusivos Premium",
+            description:
+                "Accede a funciones avanzadas, analytics detallados y destaca tus productos con nuestro plan Premium.",
+            buttonText: "Descubre Premium",
             backgroundColor: darkMode
                 ? "linear-gradient(135deg, #1a3a63, #0f2541)"
-                : "linear-gradient(135deg, #e4edff, #d1e2ff)",
-            textColor: darkMode ? "#5c8fee" : "#4a80e4",
-            buttonColor: darkMode ? "#6495fa" : "#4a80e4",
+                : "linear-gradient(135deg, #667eea, #764ba2)",
+            textColor: "#ffffff",
+            buttonColor: "#4facfe",
+            imageUrl: "public/funcionalidad.png",
+            icon: diamond,
         },
         {
             id: 2,
-            title: "Vende Más Rápido",
-            description: "Con Premium, tus productos se venden hasta 5 veces más rápido. ¡No te quedes atrás!",
-            buttonText: "Hazte Premium",
+            title: "Vende 5x Más Rápido",
+            description:
+                "Con Premium, tus productos aparecen primero en búsquedas y tienes acceso a herramientas de promoción avanzadas.",
+            buttonText: "Acelera tus Ventas",
             backgroundColor: darkMode
                 ? "linear-gradient(135deg, #1e1a3a, #2a1a45)"
-                : "linear-gradient(135deg, #eee6ff, #dfd6ff)",
-            textColor: darkMode ? "#a48aff" : "#7e5cff",
-            buttonColor: darkMode ? "#a48aff" : "#7e5cff",
+                : "linear-gradient(135deg, #f093fb, #f5576c)",
+            textColor: "#ffffff",
+            buttonColor: "#ff6b6b",
+            imageUrl: "public/rapido.jpg",
+            icon: trendingUp,
         },
         {
             id: 3,
-            title: "Promociona tus Productos",
-            description: "Destaca tus productos y llega a más compradores con nuestro plan Premium.",
-            buttonText: "Suscríbete ahora",
+            title: "Promoción Inteligente",
+            description:
+                "Usa IA para optimizar tus anuncios, llega a más compradores y maximiza tus ganancias automáticamente.",
+            buttonText: "Suscríbete Ahora",
             backgroundColor: darkMode
                 ? "linear-gradient(135deg, #3a1a2a, #45152a)"
-                : "linear-gradient(135deg, #ffe4ee, #ffd6e6)",
-            textColor: darkMode ? "#ff8ab2" : "#e64a8a",
-            buttonColor: darkMode ? "#ff8ab2" : "#e64a8a",
+                : "linear-gradient(135deg, #a8edea, #fed6e3)",
+            textColor: "#ffffff",
+            buttonColor: "#00d2ff",
+            imageUrl: "public/IA.png",
+            icon: flash,
         },
     ]
 
@@ -920,6 +933,20 @@ const ProductsPage = () => {
             default:
                 break
         }
+    }
+
+    // Go to specific slide
+    const goToSlide = (index: number) => {
+        setCurrentSlide(index)
+        if (sliderRef.current) {
+            const scrollAmount = sliderRef.current.offsetWidth * index
+            sliderRef.current.scrollTo({
+                left: scrollAmount,
+                behavior: "smooth",
+            })
+        }
+        pauseSlider()
+        setTimeout(resumeSlider, 5000)
     }
 
     // Effect to set up auto-scroll of slider
@@ -1548,8 +1575,8 @@ const ProductsPage = () => {
 
                     {!isSearching && !isPremiumUser && (
                         <>
-                            {/* Banner Slider - Only show if not searching and user is not premium */}
-                            <div className="slider-container">
+                            {/* Enhanced Banner Slider - Only show if not searching and user is not premium */}
+                            <div className="enhanced-slider-container">
                                 <div
                                     className={`slider-track ${sliderPaused ? "paused" : ""}`}
                                     ref={sliderRef}
@@ -1563,40 +1590,79 @@ const ProductsPage = () => {
                                     {sliderItems.map((item, index) => (
                                         <div
                                             key={item.id}
-                                            className={`slider-item slide-${item.id}`}
+                                            className="enhanced-slider-item"
                                             style={{
-                                                backgroundColor: item.backgroundColor,
-                                                marginLeft: index === 0 ? "0" : "10px", // Agrega margen solo a los elementos después del primero
+                                                background: item.backgroundColor,
                                             }}
                                         >
-                                            <div className="slider-content">
-                                                <div className="slider-text" style={{ color: item.textColor }}>
-                                                    <h2 className="slider-title">{item.title}</h2>
-                                                    <p className="slider-description">{item.description}</p>
+                                            <div className="slider-content-wrapper">
+                                                <div className="slider-text-section">
+                                                    <div className="slider-icon-wrapper">
+                                                        <IonIcon icon={item.icon} className="slider-main-icon" />
+                                                    </div>
+                                                    <h2 className="enhanced-slider-title" style={{ color: item.textColor }}>
+                                                        {item.title}
+                                                    </h2>
+                                                    <p className="enhanced-slider-description" style={{ color: item.textColor }}>
+                                                        {item.description}
+                                                    </p>
                                                     <button
-                                                        className="slider-button"
-                                                        style={{ backgroundColor: item.buttonColor }}
+                                                        className="enhanced-slider-button"
+                                                        style={{
+                                                            background: `linear-gradient(135deg, ${item.buttonColor}, ${item.buttonColor}dd)`,
+                                                            boxShadow: `0 8px 32px ${item.buttonColor}40`,
+                                                        }}
                                                         onClick={() => handleSliderButtonClick(item.id)}
                                                     >
-                                                        <IonIcon icon={add} className="button-icon" />
+                                                        <IonIcon icon={arrowForward} className="button-icon" />
                                                         {item.buttonText}
                                                     </button>
                                                 </div>
-                                                <div className="slider-image">
-                                                    {/* Aquí podrías agregar imágenes relevantes para cada slide */}
+                                                <div className="slider-image-section">
+                                                    <div className="image-container">
+                                                        <img src={item.imageUrl || "/placeholder.svg"} alt={item.title} className="slider-image" />
+                                                        <div className="image-overlay"></div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
+
+                                {/* Enhanced indicators */}
+                                <div className="enhanced-slider-indicators">
+                                    {sliderItems.map((_, index) => (
+                                        <button
+                                            key={index}
+                                            className={`enhanced-slider-indicator ${index === currentSlide ? "active" : ""}`}
+                                            onClick={() => goToSlide(index)}
+                                            aria-label={`Go to slide ${index + 1}`}
+                                        />
+                                    ))}
+                                </div>
+
+                                {/* Navigation arrows */}
+                                <button
+                                    className="slider-nav-button slider-nav-prev"
+                                    onClick={() => goToSlide((currentSlide - 1 + sliderItems.length) % sliderItems.length)}
+                                    aria-label="Previous slide"
+                                >
+                                    <IonIcon icon={arrowBack} />
+                                </button>
+
+                                <button
+                                    className="slider-nav-button slider-nav-next"
+                                    onClick={() => goToSlide((currentSlide + 1) % sliderItems.length)}
+                                    aria-label="Next slide"
+                                >
+                                    <IonIcon icon={arrowForward} />
+                                </button>
                             </div>
                         </>
                     )}
 
                     {/* Filter chips - Show always to allow filtering */}
-                    <div
-                        className={`filters-container-wrapper ${isPremiumUser ? "premium-margin" : ""}`}
-                    >
+                    <div className={`filters-container-wrapper ${isPremiumUser ? "premium-margin" : ""}`}>
                         <button
                             className="filters-nav-button filters-nav-prev"
                             onClick={() => {
