@@ -229,7 +229,7 @@ const App: React.FC = () => {
                         <PasswordRecover />
                     </Route>
                     <Route exact path="/IA">
-                        <IA updateNavigationState={updateNavigationState} />
+                        <IA/>
                     </Route>
                     <Route exact path="/premiumSuscribe">
                         <SuscripcionPage />
