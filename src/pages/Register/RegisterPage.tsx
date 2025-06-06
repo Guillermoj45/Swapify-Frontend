@@ -34,6 +34,7 @@ interface FormData {
     name: string
     rol: string,
     email: string
+    ubicacion: string
     bornDate: string
     password: string,
 }
@@ -54,6 +55,7 @@ const RegisterPage: React.FC = () => {
         name: "",
         email: "",
         rol: "USER",
+        ubicacion: "",
         bornDate: "",
         password: "",
     })
@@ -99,9 +101,9 @@ const RegisterPage: React.FC = () => {
     };
 
     const handleRegister = async () => {
-        const { nickname, name, email, bornDate, password } = form;
+        const { nickname, name, email, bornDate, password, ubicacion } = form;
 
-        if (!nickname || !name || !email || !bornDate || !password) {
+        if (!nickname || !name || !email || !bornDate || !password || !ubicacion) {
             setToastMessage("Por favor, completa todos los campos.");
             setToastColor("danger");
             setShowToast(true);
@@ -248,6 +250,14 @@ const RegisterPage: React.FC = () => {
                                                             placeholder="Email"
                                                             value={form.email}
                                                             onIonChange={(e) => handleChange("email", e.detail.value!)}
+                                                        />
+                                                    </IonItem>
+
+                                                    <IonItem className="form-item">
+                                                        <IonInput
+                                                            placeholder="Ubicacion"
+                                                            value={form.ubicacion}
+                                                            onIonChange={(e) => handleChange("ubicacion", e.detail.value!)}
                                                         />
                                                     </IonItem>
 
