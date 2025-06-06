@@ -1619,7 +1619,7 @@ const ProductsPage = () => {
                                                     </button>
                                                 </div>
                                                 <div className="slider-image-section">
-                                                    <div className="image-container">
+                                                    <div className="image-container-products">
                                                         <img src={item.imageUrl || "/placeholder.svg"} alt={item.title} className="slider-image" />
                                                         <div className="image-overlay"></div>
                                                     </div>
