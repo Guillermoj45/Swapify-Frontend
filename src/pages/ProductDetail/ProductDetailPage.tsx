@@ -490,12 +490,12 @@ const ProductDetailPage: React.FC = () => {
                             </div>
 
                             {/* Botones de acción */}
-                            <div className="modern-actions">
-                                <IonButton expand="block" className="modern-primary-button" onClick={handleContactSeller}>
-                                    <IonIcon slot="start" icon={chatbubbleOutline} />
-                                    Hacer una pregunta
-                                </IonButton>
-                            </div>
+                                <div className="modern-actions">
+                                    <IonButton expand="block" className="modern-primary-button" onClick={handleContactSeller}>
+                                        <IonIcon slot="start" icon={chatbubbleOutline} />
+                                        Hacer una pregunta
+                                    </IonButton>
+                                </div>
                         </div>
 
                         {/* Productos relacionados */}

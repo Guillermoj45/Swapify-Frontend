@@ -489,13 +489,17 @@ export default function ProfilePage() {
                             </div>
                         ) : (
                             items.map((product) => (
-                                <IonItem key={product.id} className="modern-item-card">
+                                <IonItem
+                                    key={product.id}
+                                    className="modern-item-card"
+                                    onClick={() => history.push(`/product/${product.id}/${product.profile.id}`)}
+                                >
                                     <IonThumbnail slot="start" className="modern-thumbnail">
                                         <img
                                             src={getProductImage(product.imagenes) || "/placeholder.svg"}
                                             alt={product.name}
                                             onError={(e) => {
-                                                ;(e.target as HTMLImageElement).src = "/placeholder.svg?height=60&width=60"
+                                                (e.target as HTMLImageElement).src = "/placeholder.svg?height=60&width=60"
                                             }}
                                         />
                                     </IonThumbnail>
@@ -506,8 +510,8 @@ export default function ProfilePage() {
                                             <div className="category-tags">
                                                 {product.categories.slice(0, 2).map((cat, idx) => (
                                                     <span key={idx} className="category-tag">
-                            {cat.name}
-                          </span>
+                                                        {cat.name}
+                                                    </span>
                                                 ))}
                                             </div>
                                         )}
@@ -517,7 +521,10 @@ export default function ProfilePage() {
                                             icon={trashOutline}
                                             slot="end"
                                             className={`delete-icon ${deletingProductId === product.id ? "deleting" : ""}`}
-                                            onClick={(e) => handleDeleteClick(product.id, e)}
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // Evita que el evento de clic en el producto se dispare
+                                                handleDeleteClick(product.id, e);
+                                            }}
                                             style={{
                                                 opacity: deletingProductId === product.id ? 0.5 : 1,
                                                 pointerEvents: deletingProductId ? "none" : "auto",
