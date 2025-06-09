@@ -48,7 +48,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, profileId, p
         };
 
         // Escuchar cambios en sessionStorage
-        const handleStorageChange = (e) => {
+        const handleStorageChange = (e: StorageEvent) => {
             if (e.key === 'modoOscuroClaro') {
                 setIsDarkMode(e.newValue === 'true');
             }

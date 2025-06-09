@@ -1192,6 +1192,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ updateNavigationState }) => {
                         imagenes: productData.productImage ? [productData.productImage] : [],
                         profile: { id: "", nickname: "", avatar: "", banAt: false, premium: "", newUser: false, ubicacion: "" },
                         categories: [],
+                        newUser: false,
                     }
 
                     return <ProductMessage product={product} />
