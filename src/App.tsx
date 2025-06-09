@@ -123,9 +123,14 @@ const App: React.FC = () => {
 
     useEffect(() => {
         WebSocketService.connect()
-            .then((conectado) => {
+            .then(async (conectado) => {
                 if (conectado) {
                     console.log("Conexión exitosa al WebSocket")
+                    await (async function waitForToken() {
+                        while (!sessionStorage.getItem("token")) {
+                            await new Promise((resolve) => setTimeout(resolve, 1000));
+                        }
+                    })();
                     return WebSocketService.subscribeToNotification().then(() => {
                         WebSocketService.setNotificationCallback((newNotification) => {
                             console.log("Nueva notificación (App):", newNotification)
