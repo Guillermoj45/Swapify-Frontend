@@ -56,7 +56,8 @@ import Navegacion from "../../components/Navegation"
 // Styles
 import "./IA.css"
 import "./chat-alert.css"
-import ProfileService, {type ProfileDTO} from "../../Services/ProfileService";
+import ProfileService, { type ProfileDTO } from "../../Services/ProfileService"
+import cloudinaryService from "../../Services/CloudinaryService";
 
 // ==================== INTERFACES & TYPES ====================
 interface Message {
@@ -87,18 +88,24 @@ interface SideContentProps {
     children?: React.ReactNode
 }
 
+// ✅ MEJORADO: Interface para el producto con categorías
+interface ProductInfo {
+    name: string
+    image: string
+    price: number
+    description: string
+    categories?: Array<{
+        name: string
+        description: string
+    }>
+}
+
 interface ProductSidePanelProps {
     showProductSidebar: boolean
     setShowProductSidebar: (show: boolean) => void
-    productInfo: {
-        name: string
-        image: string
-        price: number
-        description: string
-    }
+    productInfo: ProductInfo
     handleProductAction: (action: "upload" | "cancel") => void
 }
-
 
 // ==================== UTILITY COMPONENTS ====================
 const SideContent: React.FC<SideContentProps> = ({ children, className, collapsed }) => {
@@ -136,7 +143,6 @@ const AIChatPage: React.FC = () => {
     const [selectedImages, setSelectedImages] = useState<File[]>([])
     const [previewImages, setPreviewImages] = useState<string[]>([])
 
-
     const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768)
     const [darkMode, setDarkMode] = useState<boolean>(true)
 
@@ -149,15 +155,16 @@ const AIChatPage: React.FC = () => {
     const [hasMoreConversations, setHasMoreConversations] = useState<boolean>(true)
     const [loadingError, setLoadingError] = useState<string | null>(null)
     const [isButtonSelected, setIsButtonSelected] = useState<boolean>(false)
-    const [showNewChatAlert, setShowNewChatAlert] = useState<boolean>(false);
+    const [showNewChatAlert, setShowNewChatAlert] = useState<boolean>(false)
 
-    // Product state
+    // ✅ MEJORADO: Estado del producto con categorías
     const [showProductSidebar, setShowProductSidebar] = useState<boolean>(false)
-    const [productInfo, setProductInfo] = useState({
+    const [productInfo, setProductInfo] = useState<ProductInfo>({
         name: "",
         image: "",
         price: 0,
         description: "",
+        categories: [],
     })
     const [productSummaryMode, setProductSummaryMode] = useState<boolean>(false)
 
@@ -278,6 +285,7 @@ const AIChatPage: React.FC = () => {
         }
     }
 
+    // ✅ CORREGIDO: Función mejorada para cargar mensajes de conversación sin usar processImageUrl en el frontend
     const loadConversationMessages = async (conversationId: string) => {
         try {
             console.log("🔍 Cargando mensajes completos para conversación:", conversationId)
@@ -318,6 +326,7 @@ const AIChatPage: React.FC = () => {
                         text: msg.message || msg.text || "",
                         sender: msg.sender || (msg.isUser ? "user" : "ai"),
                         timestamp: msg.createdAt ? new Date(msg.createdAt) : new Date(),
+                        // ✅ CORREGIDO: Las imágenes ya vienen procesadas del servicio
                         images: msg.images || undefined,
                     }))
 
@@ -330,6 +339,18 @@ const AIChatPage: React.FC = () => {
 
             setMessages(messagesToSet)
             setCurrentChatId(conversationId)
+
+            // ✅ NUEVO: Cargar información del producto si existe
+            if (fullConversation.product) {
+                setProductInfo({
+                    name: fullConversation.product.name || "Producto detectado",
+                    image: fullConversation.product.imagenes?.[0] || "",
+                    price: fullConversation.product.points || 0,
+                    description: fullConversation.product.description || "",
+                    categories: fullConversation.product.categories || [],
+                })
+                setProductId(fullConversation.product.id)
+            }
 
             setChatSessions((prev) =>
                 prev.map((session) =>
@@ -355,6 +376,24 @@ const AIChatPage: React.FC = () => {
                 color: "danger",
             })
         }
+    }
+
+    // ✅ CORREGIDO: Función para procesar imágenes directamente en el frontend
+    const processImageUrlLocal = (imageUrl: string): string => {
+        if (!imageUrl) return "/placeholder.svg"
+
+        // Si ya es una URL completa, devolverla tal como está
+        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+            return imageUrl
+        }
+
+        // Si es una ruta relativa que empieza con /, devolverla tal como está
+        if (imageUrl.startsWith("/")) {
+            return imageUrl
+        }
+
+        // Si es solo el nombre del archivo, asumir que está en la carpeta uploads
+        return `/uploads/${imageUrl}`
     }
 
     const loadConversationsFromBackend = async (page = 0, append = false) => {
@@ -412,7 +451,11 @@ const AIChatPage: React.FC = () => {
                                 text: msg.message || msg.text || "",
                                 sender: msg.user ? "user" : "ai",
                                 timestamp: msg.createdAt ? new Date(msg.createdAt) : new Date(),
-                                images: msg.images || undefined,
+                                // ✅ CORREGIDO: Usar la función local para procesar imágenes
+                                images:
+                                    msg.images && msg.images.length > 0
+                                        ? msg.images.map((img: string) => cloudinaryService(img))
+                                        : undefined,
                             }))
 
                             chatSession.messages = processedMessages as Message[]
@@ -528,7 +571,7 @@ const AIChatPage: React.FC = () => {
 
         try {
             // Validar que hay un título o usar uno por defecto
-            const chatTitle =  undefined
+            const chatTitle = undefined
 
             // Crear el nuevo chat
             const newChatId = `temp-${Date.now()}`
@@ -558,7 +601,6 @@ const AIChatPage: React.FC = () => {
             if (!isDesktop) {
                 setShowChatSidebar(false)
             }
-
         } catch (error) {
             console.error("Error al crear nuevo chat:", error)
         } finally {
@@ -735,7 +777,7 @@ const AIChatPage: React.FC = () => {
             if (response) {
                 console.log("Response received:", response)
 
-                const chat = chatSessions.find((chat => chat.id === activeChatId))
+                const chat = chatSessions.find((chat) => chat.id === activeChatId)
 
                 if (!chat) {
                     console.error("Chat not found for activeChatId:", activeChatId)
@@ -745,12 +787,7 @@ const AIChatPage: React.FC = () => {
                 chat.id = response.id
                 chat.title = response.nombre
 
-
-
                 console.log("Chat session updated with new ID and title:", chatSessions)
-
-
-                // updateChatSessionAsBackendLoaded(activeChatId, response.id)
 
                 if (response.product) {
                     setProductId(response.product.id)
@@ -768,15 +805,19 @@ const AIChatPage: React.FC = () => {
                     text: lastAIMessage.message || "No se recibió respuesta de texto",
                     sender: "ai",
                     timestamp: new Date(lastAIMessage.createdAt || response.createdAt || Date.now()),
-                    images: messageImages.length > 0 ? messageImages : undefined,
+                    // ✅ CORREGIDO: Procesar las imágenes de la respuesta de la IA usando la función local
+                    images: messageImages.length > 0 ? messageImages.map((img: string) => processImageUrlLocal(img)) : undefined,
                 }
                 console.log("AI response message created:", aiResponse)
+
+                // ✅ MEJORADO: Actualizar información del producto con categorías
                 if (response && response.product) {
                     setProductInfo({
                         name: response.product.name || "Producto detectado",
                         image: response.product.imagenes[0],
                         price: response.product.points || productInfo.price,
                         description: response.product.description || "IA ha detectado un posible producto basado en tu imagen.",
+                        categories: response.product.categories || [], // ✅ NUEVO: Incluir categorías
                     })
 
                     if (productSummaryMode) {
@@ -801,22 +842,19 @@ const AIChatPage: React.FC = () => {
                 const currentChat = chatSessions.find((chat) => chat.id === activeChatId)
                 console.log("EL TITULO ES::::::", response.nombre)
                 if (currentChat) {
-                    const finalTitle =
-                        response.nombre || generateChatTitle(currentText !== "" ? currentText : displayText)
+                    const finalTitle = response.nombre || generateChatTitle(currentText !== "" ? currentText : displayText)
                     updateChatTitle(activeChatId, finalTitle)
                 }
-               setChatSessions(prevSessions => {
-                    const updatedSessions = prevSessions.map(session =>
-                        session.id === activeChatId
-                            ? { ...session, id: response.id, title: response.nombre }
-                            : session
-                    );
+                setChatSessions((prevSessions) => {
+                    const updatedSessions = prevSessions.map((session) =>
+                        session.id === activeChatId ? { ...session, id: response.id, title: response.nombre } : session,
+                    )
 
-                    setActiveChatId(response.id);
-                    setCurrentChatId(response.id);
+                    setActiveChatId(response.id)
+                    setCurrentChatId(response.id)
 
-                    return updatedSessions;
-                });
+                    return updatedSessions
+                })
             }
         } catch (error) {
             console.error("Error sending message:", error)
@@ -1206,7 +1244,7 @@ const AIChatPage: React.FC = () => {
                             >
                                 <div className="chat-item-avatar">
                                     <div className="ai-avatar">
-                                        <img src={"public/Swapify.png"} alt={"IA"}/>
+                                        <img src={"public/Swapify.png"} alt={"IA"} />
                                     </div>
                                     {!chat.loadedFromBackend && <div className="local-chat-indicator" title="Conversación local"></div>}
                                 </div>
@@ -1279,7 +1317,7 @@ const AIChatPage: React.FC = () => {
         </IonContent>
     )
 
-
+    // ✅ MEJORADO: Componente del panel de producto con categorías
     const ProductSidePanel: React.FC<ProductSidePanelProps> = ({
                                                                    showProductSidebar,
                                                                    setShowProductSidebar,
@@ -1305,9 +1343,14 @@ const AIChatPage: React.FC = () => {
 
                 <div className="product-name">
                     <h2>{productInfo.name || "Producto Premium"}</h2>
-                    <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                        <span className="product-badge">Nuevo</span>
-                        <span className="product-badge">Premium</span>
+                    <div style={{ display: "flex", justifyContent: "center", gap: "8px", flexWrap: "wrap" }}>
+                        {productInfo.categories &&
+                            productInfo.categories.length > 0 &&
+                            productInfo.categories.map((category, index) => (
+                                <span key={index} className="product-badge category-badge" title={category.description}>
+                  {category.name}
+                </span>
+                            ))}
                     </div>
                 </div>
 
@@ -1319,6 +1362,7 @@ const AIChatPage: React.FC = () => {
                             "Este producto premium ofrece características excepcionales diseñadas para satisfacer tus necesidades. Fabricado con materiales de alta calidad y acabados profesionales, garantiza durabilidad y rendimiento superior. Perfecto para uso diario o profesional."}
                     </p>
                 </div>
+
             </div>
 
             <div className="product-actions">
@@ -1350,7 +1394,6 @@ const AIChatPage: React.FC = () => {
             handleSend()
         }
     }
-
 
     // ==================== RENDER ====================
     return (
@@ -1425,18 +1468,18 @@ const AIChatPage: React.FC = () => {
                                     {message.sender === "ai" ? (
                                         <IonAvatar>
                                             <div className="ai-avatar">
-                                                <img src={"public/Swapify.png"} alt={"AI"}/>
+                                                <img src={"public/Swapify.png"} alt={"AI"} />
                                             </div>
                                         </IonAvatar>
                                     ) : (
                                         <IonAvatar>
                                             <div className="user-avatar">
                                                 <img
-                                                    src={currentUserProfile?.avatar || '/default-avatar.png'}
-                                                    alt={currentUserProfile?.nickname || 'Usuario'}
+                                                    src={currentUserProfile?.avatar || "/default-avatar.png"}
+                                                    alt={currentUserProfile?.nickname || "Usuario"}
                                                     onError={(e) => {
                                                         // Imagen de respaldo si falla la carga
-                                                        e.currentTarget.src = '/default-avatar.png'
+                                                        e.currentTarget.src = "/default-avatar.png"
                                                     }}
                                                 />
                                             </div>
