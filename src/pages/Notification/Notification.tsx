@@ -68,7 +68,7 @@ const Notifications: React.FC = () => {
             .then(notifications => {
                 // Ordenar las notificaciones de más antigua a más nueva
                 const sortedNotifications = notifications.sort((a, b) => {
-                    return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+                    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
                 });
                 setGlobalNotifications(sortedNotifications);
             })
