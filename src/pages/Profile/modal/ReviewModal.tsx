@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React, {useEffect} from "react"
 import { useState } from "react"
 import {
     IonButton,
@@ -34,6 +34,36 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, profileId, p
     const [showToast, setShowToast] = useState(false)
     const [toastMessage, setToastMessage] = useState("")
     const [toastColor, setToastColor] = useState<"success" | "danger">("success")
+
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        // Leer desde sessionStorage
+        const modoOscuroClaro = sessionStorage.getItem('modoOscuroClaro');
+        return modoOscuroClaro === 'true';
+    });
+
+    useEffect(() => {
+        const checkDarkMode = () => {
+            const modoOscuroClaro = sessionStorage.getItem('modoOscuroClaro');
+            setIsDarkMode(modoOscuroClaro === 'true');
+        };
+
+        // Escuchar cambios en sessionStorage
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'modoOscuroClaro') {
+                setIsDarkMode(e.newValue === 'true');
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
+        // También verificar periódicamente por si se cambia desde la misma pestaña
+        const interval = setInterval(checkDarkMode, 100);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInterval(interval);
+        };
+    }, []);
 
     const handleSubmit = async () => {
         if (rating === 0) {
@@ -129,7 +159,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, profileId, p
                         {rating > 0 && (
                             <p
                                 style={{
-                                    color: "var(--on-surface-variant)",
+                                    color: isDarkMode ? "white" : "black",
                                     fontSize: "14px",
                                     margin: "8px 0 0",
                                     fontWeight: "var(--font-weight-medium)",
@@ -146,8 +176,8 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, profileId, p
 
                     {/* Campo de texto */}
                     <div className="modern-textarea-container">
-                        <IonItem lines="none" style={{ "--background": "transparent" }}>
-                            <div style={{ width: "100%" }}>
+                        <IonItem lines="none" style={{"--background": "transparent"}}>
+                            <div style={{width: "100%"}}>
                                 <IonLabel className="modern-textarea-label">Escribe tu reseña</IonLabel>
                                 <IonTextarea
                                     className="modern-textarea"

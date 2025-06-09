@@ -2,7 +2,7 @@
 
 /* Global styles */
 :root {
-    --primary-color: #3880ff;
+    --primary-color: #334155;
     --secondary-color: #005685;
     --accent-color: #ff8a00;
     --gradient-start: #ff8a00;
@@ -15,6 +15,11 @@
     --border-radius: 16px;
     --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     --feature-text-color: #333333; /* Negro para modo claro */
+
+    /* Header colors for light mode */
+    --header-bg: #ffffff;
+    --header-text: #333333;
+    --menu-icon-color: #333333;
 }
 
 body.dark {
@@ -23,11 +28,16 @@ body.dark {
     --text-light: #ffffff;
     --secondary-color: #5dabf8;
     --feature-text-color: #f4f4f4; /* Gris claro para modo oscuro */
+
+    /* Header colors for dark mode */
+    --header-bg: #334155;
+    --header-text: #ffffff;
+    --menu-icon-color: #ffffff;
 }
 
 .subscription-content {
     background-color: #f5f7fa; /* Celeste claro en modo normal */
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     --background: #f5f7fa;
 }
 
@@ -35,13 +45,19 @@ body.dark .subscription-content {
     --background: #0c1e37; /* Azul marino en lugar de #121212 */
 }
 
-/* Main toolbar */
+/* Main toolbar - Updated for theme support */
 .main-toolbar {
-    --background: var(--primary-color);
-    --color: var(--text-light);
+    --background: var(--header-bg);
+    --color: var(--header-text);
     font-weight: 600;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     height: 64px;
+}
+
+/* Menu icon styling */
+.menu-icon {
+    color: var(--menu-icon-color);
+    font-size: 24px;
 }
 
 .toolbar-title {
@@ -53,6 +69,7 @@ body.dark .subscription-content {
 .title-text {
     font-size: 20px;
     font-weight: 700;
+    color: var(--header-text);
 }
 
 .upgrade-chip {
@@ -103,8 +120,13 @@ body.dark .subscription-content {
 }
 
 @keyframes sparkle {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
 }
 
 /* Hero section */
@@ -240,7 +262,8 @@ body.dark .premium-subtitle {
         transform: translate(-50%, -50%) scale(0.8);
         opacity: 0.8;
     }
-    80%, 100% {
+    80%,
+    100% {
         transform: translate(-50%, -50%) scale(1.3);
         opacity: 0;
     }
@@ -282,7 +305,7 @@ body.dark .premium-subtitle {
 }
 
 .plans-comparison::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -498,13 +521,13 @@ body.dark .limited-check {
 }
 
 .premium-button::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     width: 150%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3))
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3));
 }
 
 @media (max-width: 767px) {

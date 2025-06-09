@@ -15,6 +15,8 @@ export interface UserProfile {
 
 class UserService {
     static async registerUser(user: User) {
+
+        console.log(user)
         try {
             const response = await api.post("/user/create", user.toPayload(), {
                 headers: {

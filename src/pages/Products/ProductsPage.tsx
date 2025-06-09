@@ -25,7 +25,6 @@ import {
     chevronForward,
     heart,
     heartOutline,
-    add,
     checkmarkCircle,
     arrowForward,
     arrowBack,
@@ -49,27 +48,10 @@ import { menuController } from "@ionic/core"
 import { ProfileService } from "../../Services/ProfileService"
 import UserService, { type UserProfile } from "../../Services/UserService"
 import cloudinaryImage from "../../Services/CloudinaryService"
+import NormalSlider from "./carrusel/NormalSlider"
+import PremiumSlider from "./carrusel/PremiumSlider"
 
-// Define types for slider items
-interface SliderItem {
-    id: number
-    title: string
-    description: string
-    buttonText: string
-    backgroundColor: string
-    textColor: string
-    buttonColor: string
-}
-
-// Define types for slider ref
-interface SliderRef extends HTMLDivElement {
-    dataset: {
-        touchStartX?: string
-        touchStartScrollX?: string
-    }
-}
-
-// Define type for image indexes
+// Define types for image indexes
 interface ImageIndexes {
     [key: string]: number
 }
@@ -274,9 +256,7 @@ const ProductsPage = () => {
     const [isSearching, setIsSearching] = useState(false)
     const [selectedCategories, setSelectedCategories] = useState<string[]>([])
     const [isDesktop, setIsDesktop] = useState(false)
-    const [currentSlide, setCurrentSlide] = useState(0)
     const [darkMode, setDarkMode] = useState(false)
-    const sliderRef = useRef<SliderRef | null>(null)
     const searchContainerRef = useRef<HTMLDivElement | null>(null)
     const searchInputRef = useRef<HTMLIonSearchbarElement | null>(null)
 
@@ -313,19 +293,7 @@ const ProductsPage = () => {
     // State to track current image for each product
     const [currentImages, setCurrentImages] = useState<ImageIndexes>({})
 
-    // Add this state to control if the slider is paused
-    const [sliderPaused, setSliderPaused] = useState(false)
-
     const [isPremiumUser, setIsPremiumUser] = useState<boolean>(false)
-
-    // Functions to pause/resume the slider when the user interacts
-    const pauseSlider = () => {
-        setSliderPaused(true)
-    }
-
-    const resumeSlider = () => {
-        setSliderPaused(false)
-    }
 
     // Function to handle image navigation
     const navigateProductImage = (
@@ -352,10 +320,6 @@ const ProductsPage = () => {
                 [productId]: newIndex,
             }
         })
-
-        // Pause slider temporarily when user interacts with product images
-        pauseSlider()
-        setTimeout(resumeSlider, 5000)
     }
 
     // Función para aplicar filtros a los productos
@@ -725,7 +689,8 @@ const ProductsPage = () => {
         let userResults: UserProfile[] = []
         try {
             const users = await UserService.searchUsers(normalizedQuery)
-            userResults = users.slice(0, 2) // Limit to 2 users
+            console.log(users)
+            userResults = users.slice(0, 2)
         } catch (error) {
             console.error("Error searching users:", error)
         }
@@ -861,142 +826,74 @@ const ProductsPage = () => {
         }
     }, [])
 
-    // Slider items
-    const sliderItems: SliderItem[] = [
-        {
-            id: 1,
-            title: "Beneficios Exclusivos",
-            description: "Accede a funciones avanzadas y destaca tus productos con nuestro plan Premium.",
-            buttonText: "Descubre más",
-            backgroundColor: darkMode
-                ? "linear-gradient(135deg, #1a3a63, #0f2541)"
-                : "linear-gradient(135deg, #e4edff, #d1e2ff)",
-            textColor: darkMode ? "#5c8fee" : "#4a80e4",
-            buttonColor: darkMode ? "#6495fa" : "#4a80e4",
-        },
-        {
-            id: 2,
-            title: "Vende Más Rápido",
-            description: "Con Premium, tus productos se venden hasta 5 veces más rápido. ¡No te quedes atrás!",
-            buttonText: "Hazte Premium",
-            backgroundColor: darkMode
-                ? "linear-gradient(135deg, #1e1a3a, #2a1a45)"
-                : "linear-gradient(135deg, #eee6ff, #dfd6ff)",
-            textColor: darkMode ? "#a48aff" : "#7e5cff",
-            buttonColor: darkMode ? "#a48aff" : "#7e5cff",
-        },
-        {
-            id: 3,
-            title: "Promociona tus Productos",
-            description: "Destaca tus productos y llega a más compradores con nuestro plan Premium.",
-            buttonText: "Suscríbete ahora",
-            backgroundColor: darkMode
-                ? "linear-gradient(135deg, #3a1a2a, #45152a)"
-                : "linear-gradient(135deg, #ffe4ee, #ffd6e6)",
-            textColor: darkMode ? "#ff8ab2" : "#e64a8a",
-            buttonColor: darkMode ? "#ff8ab2" : "#e64a8a",
-        },
-    ]
+    // Nuevas funciones para manejar la navegación del slider premium
+    const handleNavigateToNewProducts = () => {
+        // Filtrar productos por fecha de creación (últimos 7 días)
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
+        const recentProducts = allProducts
+            .filter((product) => {
+                const productDate = new Date(product.createdAt)
+                return productDate >= sevenDaysAgo
+            })
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+        setFilteredProducts(recentProducts)
+        setIsSearching(true)
+        setSearchText("Productos nuevos")
+    }
+
+    const handleNavigateToExclusiveOffers = () => {
+        // Filtrar productos con puntos bajos (ofertas)
+        const offerProducts = allProducts
+            .filter((product) => product.points <= 50 && product.points > 0)
+            .sort((a, b) => a.points - b.points)
+
+        setFilteredProducts(offerProducts)
+        setIsSearching(true)
+        setSearchText("Ofertas exclusivas")
+    }
+
+    const handleNavigateToTrendingProducts = () => {
+        // Simular productos en tendencia (los más recientes con más puntos)
+        const trending = allProducts
+            .filter((product) => product.points >= 100)
+            .sort((a, b) => {
+                // Combinar puntos y fecha para determinar tendencia
+                const scoreA = a.points + new Date(a.createdAt).getTime() / 1000000
+                const scoreB = b.points + new Date(b.createdAt).getTime() / 1000000
+                return scoreB - scoreA
+            })
+            .slice(0, 20)
+
+        setFilteredProducts(trending)
+        setIsSearching(true)
+        setSearchText("Productos en tendencia")
+    }
+
+    const handleNavigateToPremiumFeatures = () => {
+        // Redirigir a una página de características premium o mostrar modal
+        history.push("/premium-features")
+    }
+
+    // Función para manejar los clics en los botones del slider normal
     const handleSliderButtonClick = (slideId: number) => {
         switch (slideId) {
-            case 1: // Descuentos Flash
-                    // Filtrar productos con descuento
-                setSelectedCategories(["Ofertas", "Descuentos"])
+            case 1: // Artículos de Coleccionista
+                setSelectedCategories(["Coleccionables", "Libros", "Figuras"])
+                setIsSearching(true)
                 break
-            case 2: // Categorías destacadas
-                    // Mostrar categorías populares o destacadas
-                if (availableCategories.length > 0) {
-                    // Tomar las 3 primeras categorías como ejemplo de destacadas
-                    const featuredCategories = availableCategories.slice(0, 3)
-                    setSelectedCategories(featuredCategories)
-                }
+            case 2: // Artículos de Decoración
+                setSelectedCategories(["Decoración", "Hogar"])
+                setIsSearching(true)
                 break
-            case 3: // Vende rápido con Premium
-                    // Redirigir a la página de crear anuncio con opción premium preseleccionada
-                history.push("/premiumSuscribe")
+            case 3: // Artículos de Moda
+                setSelectedCategories(["Moda", "Ropa", "Accesorios"])
+                setIsSearching(true)
                 break
             default:
                 break
-        }
-    }
-
-    // Effect to set up auto-scroll of slider
-    useEffect(() => {
-        let timer: number | null = null
-
-        // Only set up the timer if not in search mode and not paused
-        if (!isSearching && !sliderPaused) {
-            timer = window.setInterval(() => {
-                if (sliderItems.length > 0) {
-                    setCurrentSlide((prev) => {
-                        const nextSlide = (prev + 1) % sliderItems.length
-
-                        // Make sure to scroll the slider when currentSlide changes
-                        if (sliderRef.current) {
-                            const scrollAmount = sliderRef.current.offsetWidth * nextSlide
-                            sliderRef.current.scrollTo({
-                                left: scrollAmount,
-                                behavior: "smooth",
-                            })
-                        }
-
-                        return nextSlide
-                    })
-                }
-            }, 5000)
-        }
-
-        return () => {
-            if (timer) clearInterval(timer)
-        }
-    }, [sliderItems.length, isSearching, sliderPaused])
-
-    // Handle manual scroll
-    const handleScroll = () => {
-        if (sliderRef.current) {
-            const scrollPosition = sliderRef.current.scrollLeft
-            const slideWidth = sliderRef.current.offsetWidth
-            const newSlide = Math.round(scrollPosition / slideWidth)
-
-            if (newSlide !== currentSlide && newSlide >= 0 && newSlide < sliderItems.length) {
-                setCurrentSlide(newSlide)
-
-                // Pause slider temporarily when user manually scrolls
-                pauseSlider()
-                setTimeout(resumeSlider, 5000)
-            }
-        }
-    }
-
-    const handleTouchStart = (e: React.TouchEvent) => {
-        pauseSlider()
-
-        // Store the initial touch position
-        if (sliderRef.current) {
-            sliderRef.current.dataset.touchStartX = e.touches[0].clientX.toString()
-            sliderRef.current.dataset.touchStartScrollX = sliderRef.current.scrollLeft.toString()
-        }
-    }
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-        if (sliderRef.current && sliderRef.current.dataset.touchStartX) {
-            const touchStartX = Number.parseFloat(sliderRef.current.dataset.touchStartX)
-            const touchStartScrollX = Number.parseFloat(sliderRef.current.dataset.touchStartScrollX || "0")
-            const touchDiff = touchStartX - e.touches[0].clientX
-
-            // Set scroll position directly for smoother swiping
-            sliderRef.current.scrollLeft = touchStartScrollX + touchDiff
-        }
-    }
-
-    const handleTouchEnd = () => {
-        setTimeout(resumeSlider, 5000)
-
-        // Clean up touch data
-        if (sliderRef.current) {
-            delete sliderRef.current.dataset.touchStartX
-            delete sliderRef.current.dataset.touchStartScrollX
         }
     }
 
@@ -1175,7 +1072,7 @@ const ProductsPage = () => {
         )
     }
 
-    // Function to render a product card with image navigation
+    // Function to render a product card
     const renderProductCard = (product: Product, isHorizontalScroll = false) => {
         const currentImageIndex = currentImages[product.id] || 0
         const hasMultipleImages = product.imagenes && product.imagenes.length > 1
@@ -1310,7 +1207,7 @@ const ProductsPage = () => {
                                 <>
                                     <IonChip className="seller-chip custom-chip" outline={true}>
                                         <span className="seller-name">{product.profile.nickname}</span>
-                                        {product.profile.newUser && <span className="new-user-badge">New</span>}
+                                        {product.newUser && <span className="new-user-badge">New</span>}
                                     </IonChip>
                                     <IonChip className="date-chip custom-chip" outline={true}>
                                         <span>{formatDate(product.createdAt)}</span>
@@ -1545,57 +1442,27 @@ const ProductsPage = () => {
                         </div>
                     )}
 
-                    {!isSearching && !isPremiumUser && (
+                    {/* Slider condicional: Premium o Regular */}
+                    {!isSearching && (
                         <>
-                            {/* Banner Slider - Only show if not searching and user is not premium */}
-                            <div className="slider-container">
-                                <div
-                                    className={`slider-track ${sliderPaused ? "paused" : ""}`}
-                                    ref={sliderRef}
-                                    onScroll={handleScroll}
-                                    onMouseEnter={pauseSlider}
-                                    onMouseLeave={resumeSlider}
-                                    onTouchStart={handleTouchStart}
-                                    onTouchMove={handleTouchMove}
-                                    onTouchEnd={handleTouchEnd}
-                                >
-                                    {sliderItems.map((item, index) => (
-                                        <div
-                                            key={item.id}
-                                            className={`slider-item slide-${item.id}`}
-                                            style={{
-                                                backgroundColor: item.backgroundColor,
-                                                marginLeft: index === 0 ? "0" : "10px", // Agrega margen solo a los elementos después del primero
-                                            }}
-                                        >
-                                            <div className="slider-content">
-                                                <div className="slider-text" style={{ color: item.textColor }}>
-                                                    <h2 className="slider-title">{item.title}</h2>
-                                                    <p className="slider-description">{item.description}</p>
-                                                    <button
-                                                        className="slider-button"
-                                                        style={{ backgroundColor: item.buttonColor }}
-                                                        onClick={() => handleSliderButtonClick(item.id)}
-                                                    >
-                                                        <IonIcon icon={add} className="button-icon" />
-                                                        {item.buttonText}
-                                                    </button>
-                                                </div>
-                                                <div className="slider-image">
-                                                    {/* Aquí podrías agregar imágenes relevantes para cada slide */}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                            {isPremiumUser ? (
+                                // Slider Premium con contenido exclusivo
+                                <PremiumSlider
+                                    darkMode={darkMode}
+                                    onNavigateToNewProducts={handleNavigateToNewProducts}
+                                    onNavigateToExclusiveOffers={handleNavigateToExclusiveOffers}
+                                    onNavigateToPremiumFeatures={handleNavigateToPremiumFeatures}
+                                    onNavigateToTrendingProducts={handleNavigateToTrendingProducts}
+                                />
+                            ) : (
+                                // Slider regular para usuarios no premium
+                                <NormalSlider darkMode={darkMode} onSliderButtonClick={handleSliderButtonClick} />
+                            )}
                         </>
                     )}
 
                     {/* Filter chips - Show always to allow filtering */}
-                    <div
-                        className={`filters-container-wrapper ${isPremiumUser ? "premium-margin" : ""}`}
-                    >
+                    <div className="filters-container-wrapper">
                         <button
                             className="filters-nav-button filters-nav-prev"
                             onClick={() => {

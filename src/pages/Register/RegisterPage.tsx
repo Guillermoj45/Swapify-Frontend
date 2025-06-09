@@ -1,10 +1,12 @@
-import React, {useState} from "react"
+"use client"
+
+import type React from "react"
+import { useState } from "react"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay, Pagination } from "swiper/modules"
-import UserService from "../../Services/UserService";
-import { User } from "../../Models/User";
-import { useHistory } from "react-router-dom";
-
+import UserService from "../../Services/UserService"
+import { User } from "../../Models/User"
+import { useHistory } from "react-router-dom"
 
 import "swiper/css"
 import "swiper/css/pagination"
@@ -22,31 +24,30 @@ import {
     IonGrid,
     IonRow,
     IonCol,
-    IonButton, IonToast, IonInputPasswordToggle, IonText, IonLoading
+    IonButton,
+    IonToast,
+    IonInputPasswordToggle,
+    IonText,
+    IonLoading,
 } from "@ionic/react"
-import { FaGoogle, FaGithub, FaDiscord ,FaArrowLeft} from "react-icons/fa"
-import { CgProfile } from "react-icons/cg";
+import { FaGoogle, FaGithub, FaDiscord, FaArrowLeft } from "react-icons/fa"
+import { CgProfile } from "react-icons/cg"
 import "./RegisterPage.css"
-import api from "../../Services/apiConfig";
+import api from "../../Services/apiConfig"
 
 interface FormData {
     nickname: string
     name: string
-    rol: string,
+    rol: string
     email: string
+    ubicacion: string
     bornDate: string
-    password: string,
+    password: string
 }
 
 const RegisterPage: React.FC = () => {
-
     //Fotos que salen en el registro a la izq
-    const photos: string[] = [
-        "Home.png",
-        "NuevaVenta.png",
-        "Perfil_En_Venta.png",
-        "PlanesSwapify.png"
-    ]
+    const photos: string[] = ["Home.png", "NuevaVenta.png", "Perfil_En_Venta.png", "PlanesSwapify.png"]
 
     //Formulario reactivo con el que se construye el objeto
     const [form, setForm] = useState<FormData>({
@@ -54,6 +55,7 @@ const RegisterPage: React.FC = () => {
         name: "",
         email: "",
         rol: "USER",
+        ubicacion: "",
         bornDate: "",
         password: "",
     })
@@ -63,15 +65,14 @@ const RegisterPage: React.FC = () => {
     const [selectedImage, setSelectedImage] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string>("")
 
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState("");
-    const [toastColor, setToastColor] = useState("");
+    const [showToast, setShowToast] = useState(false)
+    const [toastMessage, setToastMessage] = useState("")
+    const [toastColor, setToastColor] = useState("")
 
     // Add this with your other state variables
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false)
 
-    const history = useHistory();
-
+    const history = useHistory()
 
     const handleChange = (field: keyof FormData, value: string) => {
         setForm({ ...form, [field]: value })
@@ -83,74 +84,72 @@ const RegisterPage: React.FC = () => {
     }
 
     const uploadPhoto = () => {
-        const fileInput = document.getElementById("fileInput") as HTMLInputElement;
+        const fileInput = document.getElementById("fileInput") as HTMLInputElement
         if (fileInput) {
-            fileInput.click();
+            fileInput.click()
         }
-    };
+    }
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
+        const file = event.target.files?.[0]
         if (file) {
-            setSelectedImage(file);
-            const preview = URL.createObjectURL(file);
-            setPreviewUrl(preview);
+            setSelectedImage(file)
+            const preview = URL.createObjectURL(file)
+            setPreviewUrl(preview)
         }
-    };
+    }
 
     const handleRegister = async () => {
-        const { nickname, name, email, bornDate, password } = form;
+        const { nickname, name, email, bornDate, password, ubicacion } = form
 
-        if (!nickname || !name || !email || !bornDate || !password) {
-            setToastMessage("Por favor, completa todos los campos.");
-            setToastColor("danger");
-            setShowToast(true);
-            return;
+        if (!nickname || !name || !email || !bornDate || !password || !ubicacion) {
+            setToastMessage("Por favor, completa todos los campos.")
+            setToastColor("danger")
+            setShowToast(true)
+            return
         }
 
-        if(password.length < 8) {
-            setToastMessage("La contraseña debe tener al menos 8 caracteres.");
-            setToastColor("danger");
-            setShowToast(true);
-            return;
+        if (password.length < 8) {
+            setToastMessage("La contraseña debe tener al menos 8 caracteres.")
+            setToastColor("danger")
+            setShowToast(true)
+            return
         }
 
-
-        setIsLoading(true);
+        setIsLoading(true)
 
         try {
-            const user = User.fromFormData(form);
+            console.log("Form data before creating user:", form) // Debug log
+            const user = User.fromFormData(form)
+            console.log("User object after fromFormData:", user) // Debug log
 
             if (selectedImage) {
-                const base64Image = await User.fileToBase64(selectedImage);
-                user.profileImage = base64Image;
+                const base64Image = await User.fileToBase64(selectedImage)
+                user.profileImage = base64Image
             }
 
-            const response = await UserService.registerUser(user);
-            console.log("User registered successfully:", response);
+            const response = await UserService.registerUser(user)
+            console.log("User registered successfully:", response)
 
             // Mostrar mensaje de correo de verificación
-            setToastMessage("Registro exitoso. Te hemos enviado un correo de verificación.");
-            setToastColor("success");
-            setShowToast(true);
+            setToastMessage("Registro exitoso. Te hemos enviado un correo de verificación.")
+            setToastColor("success")
+            setShowToast(true)
 
             // Esperar un momento para que el usuario vea el mensaje
             setTimeout(() => {
-                history.push("/login");
-            }, 2500); // 2.5 segundos
-
+                history.push("/login")
+            }, 2500) // 2.5 segundos
         } catch (error) {
-            setToastMessage("Error al registrar usuario. Inténtalo de nuevo.");
-            setToastColor("danger");
-            setShowToast(true);
-            console.error("Failed to register user:", error);
-        }
-        finally {
+            setToastMessage("Error al registrar usuario. Inténtalo de nuevo.")
+            setToastColor("danger")
+            setShowToast(true)
+            console.error("Failed to register user:", error)
+        } finally {
             // Hide loading when done (whether success or error)
-            setIsLoading(false);
+            setIsLoading(false)
         }
-    };
-
+    }
 
     return (
         <IonPage className="register-page">
@@ -186,7 +185,10 @@ const RegisterPage: React.FC = () => {
                             <div className="form-wrapper">
                                 <IonCard className="register-card">
                                     <IonCardHeader>
-                                        <div className="logo-container" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <div
+                                            className="logo-container"
+                                            style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+                                        >
                                             {showImageInput && (
                                                 <button
                                                     className="register-button-back"
@@ -198,26 +200,33 @@ const RegisterPage: React.FC = () => {
                                             )}
                                             <img src="/Logo2.png" alt="Logo" className="logo" />
                                         </div>
-                                        { !showImageInput
-                                            ? (<h2 className="register-title">Registrarse</h2>)
-                                            : (<h2 className="register-title">
-                                                { selectedImage ? "Confirmar imagen de perfil" : "Añade una imagen de perfil" }
-                                            </h2>)
-                                        }
+                                        {!showImageInput ? (
+                                            <h2 className="register-title">Registrarse</h2>
+                                        ) : (
+                                            <h2 className="register-title">
+                                                {selectedImage ? "Confirmar imagen de perfil" : "Añade una imagen de perfil"}
+                                            </h2>
+                                        )}
                                     </IonCardHeader>
 
                                     <IonCardContent>
-                                        { !showImageInput ? (
+                                        {!showImageInput ? (
                                             <>
                                                 <div className="social-icons">
                                                     <a href={api.getUri() + "/oauth2/authorization/discord"}>
-                                                        <div className="icon black"><FaDiscord/></div>
+                                                        <div className="icon black">
+                                                            <FaDiscord />
+                                                        </div>
                                                     </a>
                                                     <a href={api.getUri() + "/oauth2/authorization/google"}>
-                                                        <div className="icon red"><FaGoogle/></div>
+                                                        <div className="icon red">
+                                                            <FaGoogle />
+                                                        </div>
                                                     </a>
                                                     <a href={api.getUri() + "/oauth2/authorization/github"}>
-                                                        <div className="icon blue"><FaGithub/></div>
+                                                        <div className="icon blue">
+                                                            <FaGithub />
+                                                        </div>
                                                     </a>
                                                 </div>
 
@@ -253,12 +262,19 @@ const RegisterPage: React.FC = () => {
 
                                                     <IonItem className="form-item">
                                                         <IonInput
+                                                            placeholder="Ubicacion"
+                                                            value={form.ubicacion}
+                                                            onIonChange={(e) => handleChange("ubicacion", e.detail.value!)}
+                                                        />
+                                                    </IonItem>
+
+                                                    <IonItem className="form-item">
+                                                        <IonInput
                                                             type="date"
                                                             placeholder="Fecha de Nacimiento"
                                                             value={form.bornDate}
                                                             onIonChange={(e) => handleChange("bornDate", e.detail.value!)}
                                                         />
-
                                                     </IonItem>
 
                                                     <IonItem className="form-item">
@@ -294,19 +310,19 @@ const RegisterPage: React.FC = () => {
                                                             height: "150px",
                                                             padding: 0,
                                                             borderRadius: "50%",
-                                                            overflow: "hidden" // Ensures content doesn't overflow the circular shape
+                                                            overflow: "hidden", // Ensures content doesn't overflow the circular shape
                                                         }}
                                                         onClick={uploadPhoto}
                                                     >
                                                         {previewUrl ? (
                                                             <img
-                                                                src={previewUrl}
+                                                                src={previewUrl || "/placeholder.svg"}
                                                                 alt="Preview"
                                                                 style={{
                                                                     width: "100%",
                                                                     height: "100%",
                                                                     objectFit: "cover",
-                                                                    borderRadius: "50%"
+                                                                    borderRadius: "50%",
                                                                 }}
                                                             />
                                                         ) : (
@@ -330,17 +346,15 @@ const RegisterPage: React.FC = () => {
                                                         Registrarse
                                                     </button>
                                                 </div>
-
-
                                             </>
                                         )}
-                                        <br/>
+                                        <br />
                                         <IonText className="ion-text-center">
                                             <p className="login-link">
                                                 ¿Tienes cuenta?{" "}
                                                 <span onClick={() => history.push("/login")} className="clickable">
-                                                        Ir a Login
-                                                </span>
+                          Ir a Login
+                        </span>
                                             </p>
                                         </IonText>
                                     </IonCardContent>
@@ -358,12 +372,7 @@ const RegisterPage: React.FC = () => {
                     color={toastColor}
                 />
 
-                <IonLoading
-                    isOpen={isLoading}
-                    message={'Registrando usuario...'}
-                    spinner="circles"
-                />
-
+                <IonLoading isOpen={isLoading} message={"Registrando usuario..."} spinner="circles" />
             </IonContent>
         </IonPage>
     )

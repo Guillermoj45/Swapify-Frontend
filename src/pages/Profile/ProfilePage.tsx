@@ -35,6 +35,7 @@ import {
     locationOutline,
     checkmarkCircleOutline,
     trashOutline,
+    settingsOutline,
 } from "ionicons/icons"
 
 import ProfileService, { type ProfileDTO, type ProductDTO, type estadisticasDTO } from "../../Services/ProfileService"
@@ -61,6 +62,7 @@ export default function ProfilePage() {
         return profileId ? "enVenta" : "reseñas"
     })
     const [bannerImage, setBannerImage] = useState<string>("")
+    const [isMobile, setIsMobile] = useState(false)
 
     // Alert and Toast states
     const [showDeleteAlert, setShowDeleteAlert] = useState(false)
@@ -93,6 +95,23 @@ export default function ProfilePage() {
 
     const [statistics, setStatistics] = useState<estadisticasDTO | null>(null)
     const [loadingStatistics, setLoadingStatistics] = useState(false)
+
+    // Check if screen is mobile size
+    useEffect(() => {
+        const checkScreenSize = () => {
+            setIsMobile(window.innerWidth <= 768)
+        }
+
+        checkScreenSize()
+        window.addEventListener("resize", checkScreenSize)
+
+        return () => window.removeEventListener("resize", checkScreenSize)
+    }, [])
+
+    // Handle settings navigation
+    const handleSettingsClick = () => {
+        history.push("/settings")
+    }
 
     // Memoized delete function to prevent multiple calls
     const borrarProducto = useCallback(
@@ -470,13 +489,17 @@ export default function ProfilePage() {
                             </div>
                         ) : (
                             items.map((product) => (
-                                <IonItem key={product.id} className="modern-item-card">
+                                <IonItem
+                                    key={product.id}
+                                    className="modern-item-card"
+                                    onClick={() => history.push(`/product/${product.id}/${product.profile.id}`)}
+                                >
                                     <IonThumbnail slot="start" className="modern-thumbnail">
                                         <img
                                             src={getProductImage(product.imagenes) || "/placeholder.svg"}
                                             alt={product.name}
                                             onError={(e) => {
-                                                ;(e.target as HTMLImageElement).src = "/placeholder.svg?height=60&width=60"
+                                                (e.target as HTMLImageElement).src = "/placeholder.svg?height=60&width=60"
                                             }}
                                         />
                                     </IonThumbnail>
@@ -487,8 +510,8 @@ export default function ProfilePage() {
                                             <div className="category-tags">
                                                 {product.categories.slice(0, 2).map((cat, idx) => (
                                                     <span key={idx} className="category-tag">
-                            {cat.name}
-                          </span>
+                                                        {cat.name}
+                                                    </span>
                                                 ))}
                                             </div>
                                         )}
@@ -498,7 +521,10 @@ export default function ProfilePage() {
                                             icon={trashOutline}
                                             slot="end"
                                             className={`delete-icon ${deletingProductId === product.id ? "deleting" : ""}`}
-                                            onClick={(e) => handleDeleteClick(product.id, e)}
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // Evita que el evento de clic en el producto se dispare
+                                                handleDeleteClick(product.id, e);
+                                            }}
                                             style={{
                                                 opacity: deletingProductId === product.id ? 0.5 : 1,
                                                 pointerEvents: deletingProductId ? "none" : "auto",
@@ -574,8 +600,8 @@ export default function ProfilePage() {
                                             <div className="category-tags">
                                                 {product.categories.slice(0, 2).map((cat, idx) => (
                                                     <span key={idx} className="category-tag">
-                                            {cat.name}
-                                        </span>
+                            {cat.name}
+                          </span>
                                                 ))}
                                             </div>
                                         )}
@@ -622,7 +648,10 @@ export default function ProfilePage() {
                             {/* Métricas principales con círculos */}
                             <div className="main-metrics">
                                 <div className="metric-circle-card">
-                                    <div className="circle-progress" data-percentage={Math.min((statistics.promedioPuntuacion / 5) * 100, 100)}>
+                                    <div
+                                        className="circle-progress"
+                                        data-percentage={Math.min((statistics.promedioPuntuacion / 5) * 100, 100)}
+                                    >
                                         <svg className="progress-ring" width="120" height="120">
                                             <circle
                                                 className="progress-ring-circle-bg"
@@ -661,7 +690,10 @@ export default function ProfilePage() {
                                 </div>
 
                                 <div className="metric-circle-card">
-                                    <div className="circle-progress" data-percentage={Math.min((statistics.totalTradeos / 100) * 100, 100)}>
+                                    <div
+                                        className="circle-progress"
+                                        data-percentage={Math.min((statistics.totalTradeos / 100) * 100, 100)}
+                                    >
                                         <svg className="progress-ring" width="120" height="120">
                                             <circle
                                                 className="progress-ring-circle-bg"
@@ -726,7 +758,7 @@ export default function ProfilePage() {
                                         <div
                                             className="progress-bar"
                                             style={{
-                                                width: `${Math.min((statistics.objetosVendidos / (statistics.objetosVendidos + statistics.objetosEnVenta)) * 100, 100)}%`
+                                                width: `${Math.min((statistics.objetosVendidos / (statistics.objetosVendidos + statistics.objetosEnVenta)) * 100, 100)}%`,
                                             }}
                                         ></div>
                                     </div>
@@ -741,7 +773,7 @@ export default function ProfilePage() {
                                         <div className="stat-label">Reseñas</div>
                                     </div>
                                     <div className="stat-badge">
-                                        <span>{statistics.numeroResenas > 10 ? 'Popular' : 'Nuevo'}</span>
+                                        <span>{statistics.numeroResenas > 10 ? "Popular" : "Nuevo"}</span>
                                     </div>
                                 </div>
 
@@ -755,8 +787,8 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="stat-network">
                                         <div className="network-dots">
-                                            {Array.from({length: Math.min(statistics.usuariosConLosQueHaTradeado, 5)}).map((_, i) => (
-                                                <div key={i} className="network-dot" style={{animationDelay: `${i * 0.1}s`}}></div>
+                                            {Array.from({ length: Math.min(statistics.usuariosConLosQueHaTradeado, 5) }).map((_, i) => (
+                                                <div key={i} className="network-dot" style={{ animationDelay: `${i * 0.1}s` }}></div>
                                             ))}
                                         </div>
                                     </div>
@@ -785,7 +817,7 @@ export default function ProfilePage() {
                                             <div
                                                 className="progress-fill today"
                                                 style={{
-                                                    width: `${Math.min((statistics.tradeosHoy / Math.max(statistics.tradeosEsteMes, 1)) * 100, 100)}%`
+                                                    width: `${Math.min((statistics.tradeosHoy / Math.max(statistics.tradeosEsteMes, 1)) * 100, 100)}%`,
                                                 }}
                                             ></div>
                                         </div>
@@ -806,7 +838,7 @@ export default function ProfilePage() {
                                             <div
                                                 className="progress-fill month"
                                                 style={{
-                                                    width: `${Math.min((statistics.tradeosEsteMes / Math.max(statistics.totalTradeos, 1)) * 100, 100)}%`
+                                                    width: `${Math.min((statistics.tradeosEsteMes / Math.max(statistics.totalTradeos, 1)) * 100, 100)}%`,
                                                 }}
                                             ></div>
                                         </div>
@@ -822,11 +854,13 @@ export default function ProfilePage() {
                                         <span>Miembro desde</span>
                                     </div>
                                     <div className="info-content">
-                                        <div className="info-date">{new Date(statistics.fechaRegistro).toLocaleDateString('es-ES', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
-                                        })}</div>
+                                        <div className="info-date">
+                                            {new Date(statistics.fechaRegistro).toLocaleDateString("es-ES", {
+                                                year: "numeric",
+                                                month: "long",
+                                                day: "numeric",
+                                            })}
+                                        </div>
                                         <div className="info-days">{statistics.diasDesdeRegistro} días activo</div>
                                     </div>
                                 </div>
@@ -838,11 +872,13 @@ export default function ProfilePage() {
                                             <span>Último tradeo</span>
                                         </div>
                                         <div className="info-content">
-                                            <div className="info-date">{new Date(statistics.ultimaFechaTradeo).toLocaleDateString('es-ES', {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric'
-                                            })}</div>
+                                            <div className="info-date">
+                                                {new Date(statistics.ultimaFechaTradeo).toLocaleDateString("es-ES", {
+                                                    year: "numeric",
+                                                    month: "long",
+                                                    day: "numeric",
+                                                })}
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -935,7 +971,14 @@ export default function ProfilePage() {
         <IonPage>
             <IonHeader>
                 <IonToolbar className="modern-toolbar">
-                    <IonMenuButton slot="start" />
+                    {/* Show hamburger menu on desktop or settings button on mobile */}
+                    {isMobile ? (
+                        <IonButton slot="start" fill="clear" className="mobile-settings-btn" onClick={handleSettingsClick}>
+                            <IonIcon icon={settingsOutline} />
+                        </IonButton>
+                    ) : (
+                        <IonMenuButton slot="start" />
+                    )}
                 </IonToolbar>
             </IonHeader>
             <IonContent fullscreen className={sessionStorage.getItem("modoOscuroClaro") === "true" ? "dark-mode" : ""}>
