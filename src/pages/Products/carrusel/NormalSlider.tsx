@@ -48,7 +48,7 @@ const NormalSlider: React.FC<NormalSliderProps> = ({ darkMode, onSliderButtonCli
                 : "linear-gradient(135deg, #667eea, #764ba2)",
             textColor: "#ffffff",
             buttonColor: "#4facfe",
-            imageUrl: "public/funcionalidad.png",
+            imageUrl: "funcionalidad.png",
             icon: diamond,
         },
         {
@@ -62,7 +62,7 @@ const NormalSlider: React.FC<NormalSliderProps> = ({ darkMode, onSliderButtonCli
                 : "linear-gradient(135deg, #f093fb, #f5576c)",
             textColor: "#ffffff",
             buttonColor: "#ff6b6b",
-            imageUrl: "public/rapido.jpg",
+            imageUrl: "rapido.jpg",
             icon: trendingUp,
         },
         {
@@ -76,7 +76,7 @@ const NormalSlider: React.FC<NormalSliderProps> = ({ darkMode, onSliderButtonCli
                 : "linear-gradient(135deg, #a8edea, #fed6e3)",
             textColor: "#ffffff",
             buttonColor: "#00d2ff",
-            imageUrl: "public/IA.png",
+            imageUrl: "IA.png",
             icon: flash,
         },
     ]
