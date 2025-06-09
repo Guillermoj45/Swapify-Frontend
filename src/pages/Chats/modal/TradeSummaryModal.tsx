@@ -75,8 +75,9 @@ export const TradeSummaryModal: React.FC<TradeSummaryModalProps> = ({
                                 createdAt: "",
                                 updatedAt: "",
                                 imagenes: [],
-                                profile: { id: userId, nickname: "Usuario", avatar: "", banAt: false, premium: "", newUser: false, ubicacion: ""},
+                                profile: { id: userId, nickname: "Usuario", avatar: "", banAt: false, premium: "", newUser: false, ubicacion: "" },
                                 categories: [],
+                                newUser: false, // Agregado para cumplir con la interfaz Product
                             }
                             products.push(placeholderProduct)
                         }
