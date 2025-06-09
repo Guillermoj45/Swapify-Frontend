@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { IonIcon } from "@ionic/react"
-import { arrowForward, arrowBack, diamond, home } from "ionicons/icons"
+import {arrowForward, arrowBack, diamond, home, trendingUp, flash} from "ionicons/icons"
 
 interface SliderItem {
     id: number
@@ -39,45 +39,48 @@ const NormalSlider: React.FC<NormalSliderProps> = ({ darkMode, onSliderButtonCli
     const sliderItems: SliderItem[] = [
         {
             id: 1,
-            title: "Artículos de Coleccionista",
-            description: "Encuentra objetos únicos y de colección. Desde figuras hasta libros raros y ediciones limitadas.",
-            buttonText: "Explorar Coleccionables",
+            title: "Beneficios Exclusivos Premium",
+            description:
+                "Accede a funciones avanzadas, analytics detallados y destaca tus productos con nuestro plan Premium.",
+            buttonText: "Descubre Premium",
             backgroundColor: darkMode
                 ? "linear-gradient(135deg, #1a3a63, #0f2541)"
                 : "linear-gradient(135deg, #667eea, #764ba2)",
             textColor: "#ffffff",
             buttonColor: "#4facfe",
-            imageUrl: "/placeholder.svg?height=300&width=400",
+            imageUrl: "public/funcionalidad.png",
             icon: diamond,
         },
         {
             id: 2,
-            title: "Artículos de Decoración",
+            title: "Vende 5x Más Rápido",
             description:
-                "Transforma tu hogar con nuestra selección de artículos decorativos. Encuentra el estilo perfecto para cada espacio.",
-            buttonText: "Ver Decoración",
+                "Con Premium, tus productos aparecen primero en búsquedas y tienes acceso a herramientas de promoción avanzadas.",
+            buttonText: "Acelera tus Ventas",
             backgroundColor: darkMode
                 ? "linear-gradient(135deg, #1e1a3a, #2a1a45)"
                 : "linear-gradient(135deg, #f093fb, #f5576c)",
             textColor: "#ffffff",
             buttonColor: "#ff6b6b",
-            imageUrl: "/placeholder.svg?height=300&width=400",
-            icon: home,
+            imageUrl: "public/rapido.jpg",
+            icon: trendingUp,
         },
         {
             id: 3,
-            title: "Artículos de Moda",
-            description: "Descubre las últimas tendencias en moda. Ropa, accesorios y calzado para todos los estilos.",
-            buttonText: "Explorar Moda",
+            title: "Promoción Inteligente",
+            description:
+                "Usa IA para optimizar tus anuncios, llega a más compradores y maximiza tus ganancias automáticamente.",
+            buttonText: "Suscríbete Ahora",
             backgroundColor: darkMode
                 ? "linear-gradient(135deg, #3a1a2a, #45152a)"
                 : "linear-gradient(135deg, #a8edea, #fed6e3)",
             textColor: "#ffffff",
             buttonColor: "#00d2ff",
-            imageUrl: "/placeholder.svg?height=300&width=400",
-            icon: home,
+            imageUrl: "public/IA.png",
+            icon: flash,
         },
     ]
+
 
     // Functions to pause/resume the slider when the user interacts
     const pauseSlider = () => {
