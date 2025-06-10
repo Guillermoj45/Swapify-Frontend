@@ -126,9 +126,9 @@ const AIChatPage: React.FC = () => {
 
     const suggestedPrompts = [
         "¿Puedes analizar esta imagen?",
-        "Cuéntame sobre la IA generativa",
-        "Necesito ayuda con mi código",
-        "¿Cómo puedo mejorar mi proyecto?",
+        "Cuéntame sobre Swapify",
+        "Necesito ayuda con mi producto",
+        "¿Cómo puedo mejorar mi producto?",
     ]
 
     // ==================== STATE MANAGEMENT ====================
