@@ -1052,22 +1052,6 @@ export default function ProfilePage() {
                                         <span className="location-text">{profileData.ubicacion}</span>
                                     </div>
                                 )}
-
-                                <div className="rating-container">
-                                    <div className="stars-wrapper">{renderStars(userInfo.rating)}</div>
-                                    <span className="rating-text">({userInfo.totalReviews} reseñas)</span>
-                                </div>
-
-                                <div className="stats-container">
-                                    <div className="stat-item">
-                                        <IonIcon icon={checkmarkCircleOutline} className="stat-icon" />
-                                        <span>100% fiable</span>
-                                    </div>
-                                    <div className="stat-item">
-                                        <IonIcon icon={cartOutline} className="stat-icon" />
-                                        <span>31 comprados</span>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
