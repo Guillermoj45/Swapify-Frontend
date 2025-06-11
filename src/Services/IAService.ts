@@ -208,16 +208,11 @@ export const IAChat = async (
     guillermo?: boolean,
 ): Promise<IAChatResponse> => {
     const formData = new FormData()
-
-    // Agregamos primero el mensaje para asegurarnos que sea procesado
     formData.append("message", message)
 
-    // Luego agregamos los archivos, si hay alguno
     if (files && files.length > 0) {
-        // IMPORTANTE: El backend espera una lista con el nombre "file", no "files" o "images"
         for (const file of files) {
             let fileToUpload = file
-
             console.log("Archivo a subir:", file.type)
             const fileExtension = file.name.split(".").pop()?.toLowerCase()
             if (fileExtension === "jpg" || fileExtension === "jpeg") {
@@ -232,12 +227,10 @@ export const IAChat = async (
                     continue
                 }
             }
-
             formData.append("file", fileToUpload)
         }
     }
 
-    // Agregamos los demás parámetros
     if (chatID) formData.append("chatID", chatID)
     if (productId) formData.append("productId", productId)
     if (titulo) formData.append("titulo", titulo)
@@ -249,13 +242,24 @@ export const IAChat = async (
                 "Content-Type": "multipart/form-data",
             },
         })
-
         return response.data
     } catch (error: any) {
         console.error("Error en petición IAChat:", error)
+
+        // ✅ MEJORADO: Preservar el mensaje de error específico del backend
+        if (error.response?.status === 400 && error.response?.data) {
+            // Crear un error personalizado que preserve el mensaje del backend
+            const customError = new Error(error.response.data.message || error.response.data)
+            customError.name = 'BackendError'
+            // Preservar la respuesta original para acceso en el componente
+            ;(customError as any).response = error.response
+            throw customError
+        }
+
         if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
             console.error("Tiempo de espera agotado.")
         }
+
         throw error
     }
 }
