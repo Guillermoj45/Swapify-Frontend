@@ -747,24 +747,6 @@ export default function ProfilePage() {
                                 </div>
 
                                 <div className="stat-card modern">
-                                    <div className="stat-icon-container sold">
-                                        <IonIcon icon={checkmarkCircleOutline} className="stat-icon" />
-                                    </div>
-                                    <div className="stat-content">
-                                        <div className="stat-number">{statistics.objetosVendidos}</div>
-                                        <div className="stat-label">Vendidos</div>
-                                    </div>
-                                    <div className="stat-progress">
-                                        <div
-                                            className="progress-bar"
-                                            style={{
-                                                width: `${Math.min((statistics.objetosVendidos / (statistics.objetosVendidos + statistics.objetosEnVenta)) * 100, 100)}%`,
-                                            }}
-                                        ></div>
-                                    </div>
-                                </div>
-
-                                <div className="stat-card modern">
                                     <div className="stat-icon-container reviews">
                                         <IonIcon icon={chatbubbleOutline} className="stat-icon" />
                                     </div>
