@@ -122,16 +122,20 @@ const App: React.FC = () => {
     }, [isDesktop, isChatView])
 
     useEffect(() => {
-        WebSocketService.connect()
-            .then(async (conectado) => {
+        const waitForToken = async () => {
+            while (!sessionStorage.getItem("token")) {
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+        };
+        waitForToken().then(() => {
+              WebSocketService.connect()
+            .then((conectado) => {
                 if (conectado) {
                     console.log("Conexión exitosa al WebSocket")
-                    await (async function waitForToken() {
-                        while (!sessionStorage.getItem("token")) {
-                            await new Promise((resolve) => setTimeout(resolve, 1000));
-                        }
-                    })();
+
+                    console.log("Token encontrado, suscribiendo a notificaciones", sessionStorage.getItem("token"))
                     return WebSocketService.subscribeToNotification().then(() => {
+                        console.log("Suscripción a notificaciones exitosa")
                         WebSocketService.setNotificationCallback((newNotification) => {
                             console.log("Nueva notificación (App):", newNotification)
 
@@ -164,6 +168,7 @@ const App: React.FC = () => {
             .catch((error) => {
                 console.error("Error al conectar al WebSocket:", error)
             })
+        });
     }, []) // Se ejecuta una sola vez al montar el componente
 
     useEffect(() => {

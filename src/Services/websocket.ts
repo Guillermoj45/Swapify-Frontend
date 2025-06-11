@@ -23,9 +23,6 @@ export const WebSocketService = new class {
   private client: Client | null = null;
   private messageCallback: MessageCallback | null = null;
   private notificationCallback:MessageCallback | null = null;
-  private headers = {
-    'Authorization': `Bearer ${sessionStorage.getItem('token')}`
-  };
   private subscribeChatMessages?: StompSubscription;
   private isConnected = false;
 
@@ -36,9 +33,13 @@ export const WebSocketService = new class {
     }
 
     return new Promise((resolve) => {
+      const headers = {
+        'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+      };
+
       this.client = new Client({
         brokerURL: import.meta.env.VITE_API_WEB_SOCKET_URL || 'ws://localhost:8080/ws-native',
-        connectHeaders: this.headers,
+        connectHeaders: headers,
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
@@ -77,7 +78,10 @@ export const WebSocketService = new class {
 
     const profile = await ProfileService.getProfileInfo();
     if (!profile) throw new Error('No se pudo obtener el perfil');
-
+    console.log("Perfil obtenido:", profile);
+      const headers = {
+        'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+      };
     this.client!.subscribe(
         `/topic/notification/${profile.id}`,
         (message: Message) => {
@@ -95,13 +99,15 @@ export const WebSocketService = new class {
             });
           }
         },
-        this.headers
+        headers
     );
   }
 
   subscribeToChat(idProduct: string, idProfileProduct: string, idProfile: string) {
     if (!this.client) return;
-
+      const headers = {
+        'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+      };
     this.subscribeChatMessages = this.client.subscribe(
         `/topic/messages/${idProduct}/${idProfileProduct}/${idProfile}`,
         (message: Message) => {
@@ -110,7 +116,7 @@ export const WebSocketService = new class {
             this.messageCallback(data);
           }
         },
-        this.headers
+        headers
     );
   }
 
