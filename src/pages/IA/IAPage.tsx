@@ -805,19 +805,17 @@ const AIChatPage: React.FC = () => {
                     text: lastAIMessage.message || "No se recibió respuesta de texto",
                     sender: "ai",
                     timestamp: new Date(lastAIMessage.createdAt || response.createdAt || Date.now()),
-                    // ✅ CORREGIDO: Procesar las imágenes de la respuesta de la IA usando la función local
                     images: messageImages.length > 0 ? messageImages.map((img: string) => processImageUrlLocal(img)) : undefined,
                 }
                 console.log("AI response message created:", aiResponse)
 
-                // ✅ MEJORADO: Actualizar información del producto con categorías
                 if (response && response.product) {
                     setProductInfo({
                         name: response.product.name || "Producto detectado",
                         image: response.product.imagenes[0],
                         price: response.product.points || productInfo.price,
                         description: response.product.description || "IA ha detectado un posible producto basado en tu imagen.",
-                        categories: response.product.categories || [], // ✅ NUEVO: Incluir categorías
+                        categories: response.product.categories || [],
                     })
 
                     if (productSummaryMode) {
@@ -856,8 +854,23 @@ const AIChatPage: React.FC = () => {
                     return updatedSessions
                 })
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error sending message:", error)
+
+            // ✅ NUEVO: Manejo específico del error de límite de productos
+            if (error.response?.data?.message === "No puedes subir mas de 5 productos al dia. Prueba a hacerte Premium" ||
+                error.response?.data === "No puedes subir mas de 5 productos al dia. Prueba a hacerte Premium" ||
+                error.message?.includes("No puedes subir mas de 5 productos al dia. Prueba a hacerte Premium")) {
+
+                presentToast({
+                    message: "No puedes subir mas de 5 productos al dia. Prueba a hacerte Premium",
+                    duration: 4000,
+                    color: "warning",
+                })
+
+                // No agregamos mensaje de error a la conversación en este caso
+                return
+            }
 
             const errorMessage: Message = {
                 id: Date.now(),
