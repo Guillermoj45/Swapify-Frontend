@@ -14,20 +14,32 @@ export interface UserProfile {
 }
 
 class UserService {
-    static async registerUser(user: User) {
+    async registerUser(user: User, avatarFile?: File) {
+        const formData = new FormData();
 
-        console.log(user)
+        // Añadir los datos básicos
+        formData.append('nickname', user.nickname);
+        formData.append('email', user.email);
+        formData.append('rol', user.rol);
+        formData.append('bornDate', user.bornDate);
+        formData.append('password', user.password);
+        formData.append('ubicacion', user.ubicacion);
+
+        // Añadir el avatar si existe
+        if (avatarFile) {
+            formData.append('avatar', avatarFile);
+        }
+
         try {
-            const response = await api.post("/user/create", user.toPayload(), {
+            const response = await api.post('/user/create', formData, {
                 headers: {
-                    "Content-Type": "application/json",
-                },
-            })
-
-            return response.data
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            return response.data;
         } catch (error) {
-            console.error("Error registering user:", error)
-            throw error
+            console.error('Error al registrar usuario:', error);
+            throw error;
         }
     }
 

@@ -6,7 +6,7 @@ export class User {
         public bornDate: string = '',
         public password: string = '',
         public ubicacion: string = '',
-        public profileImage?: string,
+        public avatar?: string,
         public rol: string = 'USER'
     ) {}
 
@@ -18,7 +18,7 @@ export class User {
         password: string;
         ubicacion?: string;
         rol?: string;
-    }, profileImage?: string): User {
+    }, avatar?: string): User {
         return new User(
             formData.nickname,
             formData.name,
@@ -26,7 +26,7 @@ export class User {
             formData.bornDate,
             formData.password,
             formData.ubicacion,
-            profileImage,
+            avatar,
             formData.rol || 'USER'
         );
     }
@@ -41,17 +41,15 @@ export class User {
     }
 
     toPayload() {
-        const { nickname, name, email, bornDate, password, rol, profileImage, ubicacion } = this;
+        const { nickname, email, rol, bornDate, avatar, password, ubicacion } = this;
         return {
             nickname,
-            name,
             email,
-            bornDate: bornDate,
-            ubicacion: ubicacion,
-            password,
-
             rol,
-            ...(profileImage && { profileImage })
+            bornDate,
+            avatar, // Si es un archivo, se manejará como MultipartFile
+            password,
+            ubicacion,
         };
     }
 }
