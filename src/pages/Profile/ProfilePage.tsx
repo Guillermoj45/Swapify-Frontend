@@ -468,7 +468,7 @@ export default function ProfilePage() {
                     <div className="tab-header">
                         <h3 className="tab-title">
                             <IonIcon icon={cartOutline} className="tab-icon" />
-                            Artículos en venta
+                            Artículos para intercambio
                         </h3>
                         <IonBadge className="count-badge">{userInfo.itemsForSale}</IonBadge>
                     </div>
@@ -738,8 +738,8 @@ export default function ProfilePage() {
                                         <IonIcon icon={cartOutline} className="stat-icon" />
                                     </div>
                                     <div className="stat-content">
-                                        <div className="stat-number">{statistics.objetosEnVenta}</div>
-                                        <div className="stat-label">En Venta</div>
+                                        <div className="stat-number">{userInfo.itemsForSale}</div>
+                                        <div className="stat-label">En Intercambio</div>
                                     </div>
                                     <div className="stat-trend positive">
                                         <IonIcon icon={checkmarkCircleOutline} />
@@ -1068,7 +1068,7 @@ export default function ProfilePage() {
                             <IonSegmentButton value="enVenta" className="modern-segment-button">
                                 <div className="segment-content">
                                     <IonIcon icon={cartOutline} />
-                                    <IonLabel>En venta</IonLabel>
+                                    <IonLabel>En intercambio</IonLabel>
                                 </div>
                             </IonSegmentButton>
                             {/* Only show "Deseados" tab when viewing own profile */}
