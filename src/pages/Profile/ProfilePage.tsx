@@ -468,7 +468,7 @@ export default function ProfilePage() {
                     <div className="tab-header">
                         <h3 className="tab-title">
                             <IonIcon icon={cartOutline} className="tab-icon" />
-                            Artículos en venta
+                            Artículos para intercambio
                         </h3>
                         <IonBadge className="count-badge">{userInfo.itemsForSale}</IonBadge>
                     </div>
@@ -738,8 +738,8 @@ export default function ProfilePage() {
                                         <IonIcon icon={cartOutline} className="stat-icon" />
                                     </div>
                                     <div className="stat-content">
-                                        <div className="stat-number">{statistics.objetosEnVenta}</div>
-                                        <div className="stat-label">En Venta</div>
+                                        <div className="stat-number">{userInfo.itemsForSale}</div>
+                                        <div className="stat-label">En Intercambio</div>
                                     </div>
                                     <div className="stat-trend positive">
                                         <IonIcon icon={checkmarkCircleOutline} />
@@ -1036,7 +1036,7 @@ export default function ProfilePage() {
                             <div className="profile-info-container">
                                 <div className="profile-badges">
                                     {isPremium && (
-                                        <IonBadge className="premium-badge">
+                                        <IonBadge className="premium-badge" style={{ marginTop: "8px" }}>
                                             <IonIcon icon={star} />
                                             PREMIUM
                                         </IonBadge>
@@ -1052,22 +1052,6 @@ export default function ProfilePage() {
                                         <span className="location-text">{profileData.ubicacion}</span>
                                     </div>
                                 )}
-
-                                <div className="rating-container">
-                                    <div className="stars-wrapper">{renderStars(userInfo.rating)}</div>
-                                    <span className="rating-text">({userInfo.totalReviews} reseñas)</span>
-                                </div>
-
-                                <div className="stats-container">
-                                    <div className="stat-item">
-                                        <IonIcon icon={checkmarkCircleOutline} className="stat-icon" />
-                                        <span>100% fiable</span>
-                                    </div>
-                                    <div className="stat-item">
-                                        <IonIcon icon={cartOutline} className="stat-icon" />
-                                        <span>31 comprados</span>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -1084,7 +1068,7 @@ export default function ProfilePage() {
                             <IonSegmentButton value="enVenta" className="modern-segment-button">
                                 <div className="segment-content">
                                     <IonIcon icon={cartOutline} />
-                                    <IonLabel>En venta</IonLabel>
+                                    <IonLabel>En intercambio</IonLabel>
                                 </div>
                             </IonSegmentButton>
                             {/* Only show "Deseados" tab when viewing own profile */}

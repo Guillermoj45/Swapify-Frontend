@@ -397,7 +397,7 @@ const Settings: React.FC = () => {
                         <IonLabel style={{ marginBottom: "15px" }} position="floating">
                             Premium
                         </IonLabel>
-                        <IonInput value={profile.premium} readonly />
+                        <IonInput value={profile.premium === "PREMIUN" ? "Activado" : "Desactivado"} readonly />
                     </IonItem>
 
                     <div className="ion-padding-top">

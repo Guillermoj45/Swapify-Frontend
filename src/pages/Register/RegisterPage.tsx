@@ -119,34 +119,30 @@ const RegisterPage: React.FC = () => {
         setIsLoading(true)
 
         try {
-            console.log("Form data before creating user:", form) // Debug log
+            console.log("Form data before creating user:", form)
             const user = User.fromFormData(form)
-            console.log("User object after fromFormData:", user) // Debug log
+            console.log("User object after fromFormData:", user)
 
-            if (selectedImage) {
-                const base64Image = await User.fileToBase64(selectedImage)
-                user.profileImage = base64Image
-            }
+            // Crear una instancia del servicio
+            const userService = new UserService()
 
-            const response = await UserService.registerUser(user)
+            // Pasar tanto el usuario como el archivo de imagen por separado
+            const response = await userService.registerUser(user, selectedImage || undefined)
             console.log("User registered successfully:", response)
 
-            // Mostrar mensaje de correo de verificación
             setToastMessage("Registro exitoso. Te hemos enviado un correo de verificación.")
             setToastColor("success")
             setShowToast(true)
 
-            // Esperar un momento para que el usuario vea el mensaje
             setTimeout(() => {
                 history.push("/login")
-            }, 2500) // 2.5 segundos
+            }, 2500)
         } catch (error) {
             setToastMessage("Error al registrar usuario. Inténtalo de nuevo.")
             setToastColor("danger")
             setShowToast(true)
             console.error("Failed to register user:", error)
         } finally {
-            // Hide loading when done (whether success or error)
             setIsLoading(false)
         }
     }
