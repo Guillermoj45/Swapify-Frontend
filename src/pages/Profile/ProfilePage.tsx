@@ -1036,7 +1036,7 @@ export default function ProfilePage() {
                             <div className="profile-info-container">
                                 <div className="profile-badges">
                                     {isPremium && (
-                                        <IonBadge className="premium-badge">
+                                        <IonBadge className="premium-badge" style={{ marginTop: "8px" }}>
                                             <IonIcon icon={star} />
                                             PREMIUM
                                         </IonBadge>
